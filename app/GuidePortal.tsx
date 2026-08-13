@@ -138,7 +138,10 @@ function openDetailsTo(element:HTMLElement){let current:HTMLElement|null=element
 function scrollInside(shadow:ShadowRoot,anchor:string){const el=shadow.getElementById(anchor.replace(/^#/,""));if(el){openDetailsTo(el);setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),30)}}
 
 function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void){
-  shadow.onclick=(event)=>{
+  const boundShadow=shadow as ShadowRoot&{_portalClickHandler?:EventListener};
+  if(boundShadow._portalClickHandler)boundShadow.removeEventListener("click",boundShadow._portalClickHandler);
+  const handleClick:EventListener=(rawEvent)=>{
+    const event=rawEvent as MouseEvent;
     const target=event.target as HTMLElement;
     const portal=target.closest<HTMLElement>("[data-portal-module]");
     if(portal){event.preventDefault();openModule(Number(portal.dataset.portalModule),portal.dataset.portalAnchor||"");return}
@@ -160,6 +163,8 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
     if(action==="expand-bosses")shadow.querySelectorAll<HTMLDetailsElement>(".floor.boss").forEach(d=>d.open=true);
     if(action==="collapse-all")shadow.querySelectorAll<HTMLDetailsElement>(".floor").forEach(d=>d.open=false);
   };
+  boundShadow.addEventListener("click",handleClick);
+  boundShadow._portalClickHandler=handleClick;
   if(module===1)bindM1(shadow);
   if(module===2)bindM2(shadow);
   if(module===4||module===5)bindM4or5(shadow,module);
