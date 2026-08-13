@@ -32,7 +32,10 @@ export function GuidePortal(){
 
   const openModule=useCallback((id:number,anchor="")=>{
     pendingAnchor.current=anchor;
-    setActive(id);
+    setActive(previous=>{
+      if(previous===id&&anchor)setTimeout(()=>{if(shadowRef.current)scrollInside(shadowRef.current,anchor)},30);
+      return id;
+    });
     setQuery("");
     history.replaceState(null,"",`#modulo-${id}${anchor||""}`);
     window.scrollTo({top:0,behavior:"auto"});
@@ -115,7 +118,20 @@ export function GuidePortal(){
 }
 
 function Library({openModule}:{openModule:(id:number)=>void}){
-  return <section className="library"><div className="library-head"><div><span className="kicker">BarrasRO · GUÍA INTEGRADA</span><h1>Biblioteca<br/>Pre-Renewal</h1><p>Todo el contenido está reunido aquí. Elige un módulo y continúa leyendo sin salir del sitio, sin documentos duplicados y sin cambiar de formato.</p></div><div className="library-stats"><div><b>8</b><span>Módulos completos</span></div><div><b>13.2</b><span>Episodio máximo</span></div></div></div><div className="section-title"><h2>Explora por tema</h2><span>Selecciona un módulo para abrirlo aquí mismo</span></div><div className="module-grid">{MODULES.map(m=><button className="module-card" key={m.id} onClick={()=>openModule(m.id)}><div className="card-top"><span className="card-number">MÓDULO {m.id} · {m.version}</span><span className="card-tag">{m.tag}</span></div><span className="card-icon">{m.icon}</span><h3>{m.title}</h3><p>{m.description}</p><span className="card-open">→</span></button>)}</div></section>
+  return <section className="library">
+    <div className="library-head">
+      <div className="library-intro">
+        <div className="library-crest" aria-hidden="true"><span>BR</span></div>
+        <span className="kicker">BarrasRO · ARCHIVO DE MIDGARD</span>
+        <h1>Biblioteca<br/>Pre-Renewal</h1>
+        <div className="ornament" aria-hidden="true"><i/><b>◆</b><i/></div>
+        <p>Todo el conocimiento del servidor reunido en un solo lugar. Explora rutas, accesos, historias, jobs y sistemas sin abandonar esta biblioteca.</p>
+      </div>
+      <div className="library-stats"><div><b>8</b><span>Módulos completos</span></div><div><b>13.2</b><span>Episodio máximo</span></div></div>
+    </div>
+    <div className="section-title"><div><span className="kicker">ELIGE TU CAMINO</span><h2>Explora por tema</h2></div><span>Selecciona un módulo para abrirlo aquí mismo</span></div>
+    <div className="module-grid">{MODULES.map(m=><button className="module-card" key={m.id} onClick={()=>openModule(m.id)}><div className="card-top"><span className="card-number">MÓDULO {m.id} · {m.version}</span><span className="card-tag">{m.tag}</span></div><span className="card-icon">{m.icon}</span><h3>{m.title}</h3><p>{m.description}</p><span className="card-open">ABRIR <b>→</b></span></button>)}</div>
+  </section>
 }
 
 function openDetailsTo(element:HTMLElement){let current:HTMLElement|null=element;while(current){if(current.tagName==="DETAILS")(current as HTMLDetailsElement).open=true;current=current.parentElement}}
@@ -127,7 +143,13 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
     const portal=target.closest<HTMLElement>("[data-portal-module]");
     if(portal){event.preventDefault();openModule(Number(portal.dataset.portalModule),portal.dataset.portalAnchor||"");return}
     const link=target.closest<HTMLAnchorElement>("a[href]");
-    if(link){const href=link.getAttribute("href")||"";if(href.startsWith("#")&&!href.startsWith("#module-")){event.preventDefault();scrollInside(shadow,href);return}if(/^https?:\/\//i.test(href)){event.preventDefault();window.open(href,"_blank","noopener,noreferrer");return}}
+    if(link){
+      const href=link.getAttribute("href")||"";
+      const crossModule=href.match(/^#module-(\d+)(#.*)?$/);
+      if(crossModule){event.preventDefault();openModule(Number(crossModule[1]),crossModule[2]||"");return}
+      if(href.startsWith("#")){event.preventDefault();scrollInside(shadow,href);return}
+      if(/^https?:\/\//i.test(href)){event.preventDefault();window.open(href,"_blank","noopener,noreferrer");return}
+    }
     const button=target.closest<HTMLElement>("[data-module-action]");
     if(!button)return;
     const action=button.dataset.moduleAction,state=button.dataset.moduleState==="1",id=button.dataset.moduleTarget||"";

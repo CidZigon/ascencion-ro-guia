@@ -12,3 +12,58 @@ details,.accordion,.quest-card,.jobcard,.platinum-skill,.floor,.item-card{backgr
 footer{border-top:1px solid #2d4264!important;color:#929fb3!important;padding:34px 0!important;margin-top:50px!important}
 @media(max-width:760px){:host{font-size:14.5px!important}.wrap,main{padding-inline:14px!important}header{padding-top:34px!important}h1{font-size:2.65rem!important}.grid,.choice-grid,.compare-grid,.advanced-grid,.statgrid,.mvp-grid,.mobgrid,.item-grid,.refine-grid{grid-template-columns:1fr!important}.controls,.control-row,.item-controls{align-items:stretch!important}.controls input,.controls select,.controls button,.control-row>*{width:100%!important;min-width:0!important}.table{margin-inline:-2px!important}th,td{padding:9px!important}}
 @media(prefers-reduced-motion:reduce){:host{scroll-behavior:auto!important}}
+
+/* BarrasRO fantasy archive theme — shared by every integrated module. */
+:host{
+  --bg:#121416!important;--panel:#191719!important;--panel2:#241a24!important;
+  --text:#d9d7d3!important;--muted:#aaa49e!important;--gold:#c9aa71!important;
+  --mint:#9b83ae!important;--line:#4f4137!important;
+  background:radial-gradient(circle at 84% 0,#382047 0,transparent 34rem),radial-gradient(circle at 10% 72%,#291915 0,transparent 30rem),repeating-linear-gradient(135deg,#fff04 0 1px,transparent 1px 10px),#121416!important;
+  color:#d9d7d3!important;font-family:Inter,"Segoe UI",sans-serif!important
+}
+header{border-bottom-color:#5b4938!important}
+h1{color:#e4d9ca!important;text-transform:uppercase!important;letter-spacing:.025em!important;text-shadow:0 4px 22px #000!important}
+h2{color:#c9aa71!important;text-transform:uppercase!important;letter-spacing:.04em!important}
+h3,h4{color:#d7c39d!important}
+p,li,td,.acc-body,.quest-body,.jobbody,.platinum-body,.floorbody,.item-body,.story-body,.body{color:#c5c0ba!important}
+a{color:#cbb48d!important}a:hover{color:#f0d392!important}
+nav{background:#0e0e0ff2!important;border-color:#5b4938!important;box-shadow:0 8px 28px #0008!important}
+nav a,.routebar a{background:#1c1819!important;border-color:#5b4837!important;border-radius:2px!important;color:#d8d1c8!important;text-transform:uppercase!important;letter-spacing:.035em!important;font-size:.78rem!important}
+nav a:hover,.routebar a:hover{background:#302033!important;border-color:#c9aa71!important;color:#f0d392!important}
+.card,.panel,.qcard,.quest-card,.jobcard,.platinum-skill,.story,.compare-box,.companion,.homcard,.advanced-block,.advanced-section,.item-section,.mvp-panel,.zone-goal,.zone-note,.release-note,.release-badge,.server-note,.verify-note,.source-note,.socket,.refinebox,.audit,.auditline{
+  background:linear-gradient(145deg,#1a1718,#241625)!important;border-color:#4f4137!important;border-radius:3px!important;box-shadow:inset 0 0 0 3px #111011,0 14px 32px #0005!important
+}
+.card b,.qcard h3,.quest-title,.jobtitle,.platinum-title,.story-title,.acc-title,.mobname,.item-name,.companion b,.compare-box>b{color:#d9bd87!important}
+details,.accordion,.quest-card,.jobcard,.platinum-skill,.floor,.item-card{background:#171416!important;border-color:#4b3d35!important;border-radius:3px!important;box-shadow:0 10px 28px #0005!important}
+details:hover,.accordion:hover,.quest-card:hover,.jobcard:hover,.platinum-skill:hover,.floor:hover,.item-card:hover{border-color:#876e4c!important}
+details[open],.accordion[open],.quest-card[open],.jobcard[open],.floor[open],.item-card[open]{border-color:#c9aa71!important}
+summary,.accordion summary,.quest-card>summary,.jobcard>summary,.platinum-skill>summary,.floor>summary,.item-card>summary{background:linear-gradient(105deg,#2b1c2e,#1a1618)!important;color:#ded7ce!important}
+summary:hover{background:linear-gradient(105deg,#3a2540,#20191a)!important}
+.acc-head,.quest-meta,.jobmeta,.item-summary-meta,.floorattrs,.facts,.meta{color:#a89e95!important}
+.controls,.control-row,.item-controls,.section-tools,.filter-row{background:#131112!important;border-color:#514137!important;border-radius:3px!important}
+input,select,button,.filter-btn{background:#1a1718!important;color:#ded9d3!important;border-color:#604f3e!important;border-radius:2px!important}
+input::placeholder{color:#91877f!important}
+button:hover,.filter-btn:hover,.filter-btn.active{background:#35243a!important;border-color:#c9aa71!important;color:#f1ddb5!important}
+input:focus,select:focus,button:focus-visible,summary:focus-visible,a:focus-visible{outline-color:#c9aa71!important}
+.table{border-color:#4f4137!important;border-radius:3px!important;background:#151314!important;scrollbar-color:#735c43 #151314!important}
+.table table,table{background:#151314!important;color:#d6d0ca!important}
+th{background:#33241d!important;color:#e0c58e!important}
+th,td{border-bottom-color:#3f342f!important}
+tbody tr:nth-child(even) td{background:#1c181a!important}tbody tr:hover td{background:#2d1e30!important}
+code,.id,.rawscript{background:#100f10!important;color:#cbb895!important;border-color:#514137!important;border-radius:2px!important}
+.badge,.ibadge,.adv-badge,.mvp-tag,.quest-chip,.route-chip,.stat,.reward,.identity,.choice,.node,.tree-node,.prereq-chain span,.compact span,.linklegend span{background:#241d1b!important;border-color:#67543f!important;color:#d8c39d!important;border-radius:3px!important}
+.official,.good,.yes,.patch-ok{color:#a5c3a8!important}.server,.medium,.conditional,.warn{color:#d8b671!important}.no,.danger,.warning{color:#dba0a0!important}
+.callout,.notice,.recommended,.story-note,.editorial,.quest-purpose,.prepare,.prereq,.warning,.danger,.warn-note,.custom-note,.unlock-line{border-radius:3px!important;background:#211824!important;border-color:#5f4667!important;color:#d3cbd4!important}
+.callout,.notice,.recommended,.story-note,.editorial,.quest-purpose,.prepare,.unlock-line{border-left-color:#9b83ae!important}
+.warning,.warn-note,.custom-note{background:#2d2419!important;border-color:#766039!important;border-left-color:#c9aa71!important;color:#e5d4b5!important}
+.danger{background:#2a171d!important;border-color:#70424a!important;color:#e6c2c7!important}
+.prereq{background:#1b1922!important;border-color:#4e485f!important}.recommended{background:#1b2420!important;border-color:#435f52!important;border-left-color:#789e88!important}
+.sources,.source-links{background:#151314!important;border-color:#4f4137!important;border-radius:3px!important}
+.sources a,.source-links a,.item-links a,.route-links a,.adv-link{background:#211a1b!important;border-color:#5c493a!important;border-radius:2px!important}
+.phase,.flow>*,.tree-node,.adv-node,.hom-flow>*{background:#1c181d!important;border-color:#58433e!important;border-radius:3px!important;color:#d6cfc8!important}
+.play-link,.family-link,.zone-route-link{background:#322239!important;border-color:#826b72!important;border-radius:2px!important;color:#e7ddd0!important}
+.region,.path,.zone,.advanced-section,.item-section,.subsection{border-top-color:#4f4137!important}
+.quick-path,.routebar{background:#151314!important;border-color:#514238!important;border-radius:3px!important}
+.mvp-item,.mobcard,.adv-card,.skill-index-card,.hom-build,.mercgroup{background:#1a1719!important;border-color:#4e4038!important;border-radius:3px!important}
+.boss,.mvp,.bossmob{border-color:#967341!important}.special{border-color:#765d82!important}.truth{background:#1b2420!important;border-color:#435f52!important}.petbonus{color:#a6c4ad!important}.none{color:#9d958f!important}
+footer{border-top-color:#4f4137!important;color:#958c84!important}
