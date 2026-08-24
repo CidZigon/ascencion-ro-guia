@@ -39,7 +39,7 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
 
 test("el índice del mundo resuelve mapas, monstruos, NPC y guías con medios locales",async()=>{
   const world=JSON.parse(await readFile(new URL("../public/data/world-index.json",import.meta.url),"utf8"));
-  assert.ok(world.counts.maps>=140);
+  assert.ok(world.counts.maps>=180);
   assert.ok(world.counts.monsters>=20);
   assert.ok(world.counts.npcs>=280);
   assert.ok(world.counts.references>=140);
@@ -52,7 +52,11 @@ test("el índice del mundo resuelve mapas, monstruos, NPC y guías con medios lo
   assert.match(prontera.image,/^\/world\/maps\/prontera\.gif$/);
   assert.ok(prontera.points.some(point=>point.x===183&&point.y===333));
   assert.equal(world.monsters.filter(entry=>entry.sprite).length,world.monsters.length);
+  assert.ok(world.monsters.every(entry=>entry.locations.length>0));
+  assert.ok(world.monsters.find(entry=>entry.id===1007).locations.some(location=>location.map==="prt_fild00"));
   assert.ok(world.npcs.find(entry=>entry.name==="Valkyrie"));
+  assert.ok(world.npcs.filter(entry=>entry.sprite).length>=90);
+  assert.equal(world.npcs.find(entry=>entry.name==="Aelle").sprite,"/world/npcs/79.gif");
   assert.ok(world.references.find(entry=>entry.id==="endless-tower"));
 });
 

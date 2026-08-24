@@ -16,7 +16,6 @@ const targets=[
     remotes:[`https://file5s.ratemyserver.net/maps_xl/${map.id}.gif`,`https://file5s.ratemyserver.net/maps_xl/${map.id}_re.gif`],
     entry:map,
     field:"image",
-    refresh:true,
   })),
 ];
 

@@ -7,6 +7,8 @@ const maps=new Map();
 const monsters=new Map();
 const npcs=new Map();
 const references=new Map();
+let entityCache={monsters:{},npcs:{}};
+try{entityCache=JSON.parse(await readFile(new URL("../public/data/world-entities-cache.json",import.meta.url),"utf8"))}catch{/* La caché se genera por separado. */}
 const topicNames=["","Progresión y EXP","Accesos y dungeons","Historias y lore","Aventuras regionales","Jobs y habilidades","Equipo y fabricación","Endless Tower","Compañeros"];
 
 function decode(value=""){
@@ -107,9 +109,29 @@ for(const file of files){
 }
 
 for(const npc of npcs.values()){
+  const cached=entityCache.npcs?.[npc.id];
+  npc.sprite=cached?.sprite||null;
+  const verified=cached?.verifiedLocation;
+  if(verified){
+    npc.map??=verified.map;
+    const verifiedLabel=`📍 ${verified.map} ${verified.x},${verified.y}`;
+    addUnique(npc.locations,verifiedLabel);
+    addPoint(npc.points,verifiedLabel,"npc");
+  }
   if(!npc.map||!maps.has(npc.map))continue;
   const map=maps.get(npc.map);
   for(const location of npc.locations)addPoint(map.points,`${npc.name} · ${location}`,"npc");
+}
+
+for(const monster of monsters.values()){
+  monster.locations=entityCache.monsters?.[monster.id]?.locations||[];
+  for(const location of monster.locations){
+    const map=maps.get(location.map)??{id:location.map,code:location.map,labels:[],points:[],contexts:[],topics:[]};
+    addUnique(map.labels,`${location.map}${location.name&&location.name!==location.map?` · ${location.name}`:""}`);
+    addUnique(map.contexts,`${monster.name} · ${location.spawn}`);
+    for(const topic of monster.topics)if(!map.topics.includes(topic))map.topics.push(topic);
+    maps.set(location.map,map);
+  }
 }
 
 const mapEntries=await Promise.all([...maps.values()].map(async entry=>({...entry,image:entry.id.startsWith("area-")?null:await mediaPath("maps",entry.id)})));
