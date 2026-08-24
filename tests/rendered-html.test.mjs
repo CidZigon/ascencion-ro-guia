@@ -151,6 +151,23 @@ test("las ocho secciones contienen sólo texto final orientado al jugador",async
   assert.match(pkg.scripts["data:modules"],/finalize-guide-content\.mjs/);
 });
 
+test("Endless Tower muestra un sprite local en cada tarjeta de monstruo",async()=>{
+  const html=await readFile(new URL("../public/data/modules/module-7.html",import.meta.url),"utf8");
+  const cards=(html.match(/class="mobcard"/g)??[]).length;
+  const sprites=[...html.matchAll(/<img class="mob-sprite" src="\/world\/sprites\/(\d+)\.gif"[^>]*>/g)];
+  const ids=new Set(sprites.map(match=>match[1]));
+  assert.equal(cards,451);
+  assert.equal(sprites.length,cards);
+  assert.equal(ids.size,327);
+  assert.ok(sprites.every(match=>/loading="lazy"/.test(match[0])&&/alt="Sprite de [^"]+"/.test(match[0])));
+  for(const id of ids){
+    const path=new URL(`../public/world/sprites/${id}.gif`,import.meta.url);
+    await access(path);
+    const bytes=await readFile(path);
+    assert.match(bytes.subarray(0,6).toString("ascii"),/^GIF8[79]a$/);
+  }
+});
+
 test("la auditoría exhaustiva resuelve localmente cada enlace",async()=>{
   const report=JSON.parse(await readFile(new URL("../public/data/module-link-audit.json",import.meta.url),"utf8"));
   assert.equal(report.summary.modules,8);

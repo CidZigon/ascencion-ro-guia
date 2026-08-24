@@ -89,6 +89,13 @@ function cleanTextNodes(html) {
   return output.replace(/<x-finalize-block data-index="(\d+)"><\/x-finalize-block>/g, (_match, index) => protectedBlocks[Number(index)]);
 }
 
+function addEndlessTowerSprites(html) {
+  return html.replace(/<div class="mobcard"><div class="mobname"><b>([^<]+)<\/b>([\s\S]*?)<\/div><div class="mobmeta">([\s\S]*?)<span class="id">ID\s+(\d+)<\/span>([\s\S]*?)<\/div><\/div>/g, (_match, name, nameTail, metaStart, id, metaEnd) => {
+    const label = stripTags(name).replaceAll('"', "&quot;");
+    return `<div class="mobcard"><img class="mob-sprite" src="/world/sprites/${id}.gif" alt="Sprite de ${label}" loading="lazy" width="72" height="72"/><div class="mobcard-copy"><div class="mobname"><b>${name}</b>${nameTail}</div><div class="mobmeta">${metaStart}<span class="id">ID ${id}</span>${metaEnd}</div></div></div>`;
+  });
+}
+
 function removeMetaElements(html) {
   const metaLabel = /m[oó]dulo\s*\d|release|entregable|auditor[ií]a|control de versi[oó]n|alcance editorial|fuentes\s*\/\s*l[ií]mites|contenido avanzado absorbido/i;
   const blocks = [
@@ -114,6 +121,7 @@ function applyPlayerFacingRewrites(html) {
     ["Contenido avanzado absorbido de Módulo 9", "Crafting avanzado"],
     ["Contenido avanzado absorbido de sección 9", "Crafting avanzado"],
     ["Aquí solo entra la parte avanzada que termina en <b>crear equipment</b>: progreso de Seals, God Item Creation, materiales de castillos y Okolnir. Estrategia WoE y Endless Tower permanecen fuera de Módulo 6.", "Aquí encontrarás las rutas que terminan en <b>crear equipment</b>: progreso de Seals, God Item Creation, materiales de castillos y Okolnir."],
+    ["Aquí solo entra la parte avanzada que termina en crear equipment : progreso de Seals, God Item Creation, materiales de castillos y Okolnir. Estrategia WoE y Endless Tower permanecen fuera de Módulo 6.", "Rutas para crear equipment: progreso de Seals, God Item Creation, materiales de castillos y Okolnir."],
     ["Aquí solo entra la parte avanzada que termina en crear equipment : progreso de Seals, God Item Creation, materiales de castillos y Okolnir. Estrategia WoE y Endless Tower permanecen fuera de Equipo y fabricación.", "Rutas para crear equipment: progreso de Seals, God Item Creation, materiales de castillos y Okolnir."],
     ["<div class=\"recommended\"><b>✅ Versión final entregable de Módulo 8.</b> Incluye Mercenarios, Homúnculos clásicos y Cute Pets Pre-Renewal, con builds, materiales, stats/percentiles, consumibles, AI y bonus pasivos Loyal traducidos.</div>", "<div class=\"recommended\"><b>✅ Tres sistemas completos.</b> Mercenarios, Homúnculos clásicos y Cute Pets Pre-Renewal con builds, materiales, estadísticas, consumibles, AI y bonus pasivos.</div>"],
     ["<div class=\"callout\"><b>Estructura de Módulo 8:</b>", "<div class=\"callout\"><b>Diferencias rápidas:</b>"],
@@ -153,9 +161,11 @@ function finalizeModule(html, id) {
   for (const section of removedSections.get(id) ?? []) output = removeSection(output, section);
   output = output.replace(/<a\b[^>]*href=["']#(?:fuentes|metodologia|limites)["'][^>]*>[\s\S]*?<\/a>/gi, "");
   output = output.replace(/<footer\b[^>]*>[\s\S]*?<\/footer>/gi, "");
+  output = output.replace(/<p>\s*<\/p>/gi, "");
   output = output.replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/i, headings.get(id));
   output = removeMetaElements(output);
   output = cleanTextNodes(output);
+  if (id === 7) output = addEndlessTowerSprites(output);
   return output;
 }
 

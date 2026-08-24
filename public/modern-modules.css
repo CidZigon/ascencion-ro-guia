@@ -66,6 +66,7 @@ code,.id,.rawscript{background:#100f10!important;color:#cbb895!important;border-
 .region,.path,.zone,.advanced-section,.item-section,.subsection{border-top-color:#4f4137!important}
 .quick-path,.routebar{background:#151314!important;border-color:#514238!important;border-radius:3px!important}
 .mvp-item,.mobcard,.adv-card,.skill-index-card,.hom-build,.mercgroup{background:#1a1719!important;border-color:#4e4038!important;border-radius:3px!important}
+.mobcard:has(.mob-sprite){display:grid!important;grid-template-columns:72px minmax(0,1fr)!important;gap:12px!important;align-items:center!important;min-height:100px!important}.mob-sprite{width:72px!important;height:72px!important;display:block!important;object-fit:contain!important;border:1px solid #5f4b3b!important;border-radius:8px!important;background:radial-gradient(circle,#292125,#100e10 72%)!important;box-shadow:inset 0 0 18px #0008,0 0 18px #b98d4930!important}.mobcard-copy{min-width:0!important}.mobcard-copy .mobname{margin-bottom:7px!important}.mobcard-copy .mobmeta{align-items:center!important}
 .boss,.mvp,.bossmob{border-color:#967341!important}.special{border-color:#765d82!important}.truth{background:#1b2420!important;border-color:#435f52!important}.petbonus{color:#a6c4ad!important}.none{color:#9d958f!important}
 footer{border-top-color:#4f4137!important;color:#958c84!important}
 
