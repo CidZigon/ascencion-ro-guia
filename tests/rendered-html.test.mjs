@@ -1,91 +1,55 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
-const templateRoot = new URL("../", import.meta.url);
-const previewRoot = new URL("../app/_sites-preview/", import.meta.url);
-
-async function render() {
+async function render(path="/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
+  return worker.fetch(new Request(`http://localhost${path}`, { headers:{accept:"text/html"} }), { ASSETS:{fetch:async()=>new Response("Not found",{status:404})} }, { waitUntil(){},passThroughOnException(){} });
 }
 
-test("server-renders the starter loading skeleton", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+test("renderiza la biblioteca y el acceso al catálogo local",async()=>{
+  const response=await render();
+  assert.equal(response.status,200);
+  assert.match(response.headers.get("content-type")??"",/^text\/html\b/i);
+  const html=await response.text();
+  assert.match(html,/<title>BarrasRO · Enciclopedia Pre-Renewal<\/title>/i);
+  assert.match(html,/6\.169 fichas locales/);
+  assert.match(html,/Busca cualquier objeto sin salir de BarrasRO/);
+  assert.doesNotMatch(html,/Your site is taking shape|codex-preview/i);
+});
+test("el catálogo contiene todos los registros y bloques declarados",async()=>{
+  const catalog=JSON.parse(await readFile(new URL("../public/data/items-index.json",import.meta.url),"utf8"));
+  const files=(await readdir(new URL("../public/data/items/",import.meta.url))).filter(file=>file.endsWith(".json")).sort();
+  assert.equal(catalog.meta.count,6169);
+  assert.equal(catalog.items.length,6169);
+  assert.equal(files.length,catalog.meta.chunks);
+  assert.equal(new Set(catalog.items.map(item=>item.id)).size,6169);
 
-  const html = await response.text();
-  assert.match(html, developmentPreviewMeta);
-  assert.match(html, /<title>Your site is taking shape<\/title>/i);
-  assert.match(html, /Building your site/);
-  assert.match(html, /Your site is taking shape/);
-  assert.match(
-    html,
-    /Your first version will appear here automatically when it’s ready\./,
-  );
-  assert.doesNotMatch(html, /Codex/);
-  assert.match(html, /react-loading-skeleton/);
-  assert.match(html, /role="status"/);
+  const details=[];
+  for(const file of files){
+    const chunk=JSON.parse(await readFile(new URL(`../public/data/items/${file}`,import.meta.url),"utf8"));
+    details.push(...chunk.items);
+  }
+  assert.equal(details.length,6169);
+  assert.deepEqual(details.map(item=>item.id),catalog.items.map(item=>item.id));
+  assert.ok(details.find(item=>item.id===501&&item.aegisName==="Red_Potion"));
 });
 
-test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, files] = await Promise.all([
-    readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
-    readFile(new URL("preview.css", previewRoot), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readdir(previewRoot),
-  ]);
+test("los módulos se cargan por separado y sus enlaces de objetos se resuelven localmente",async()=>{
+  const portal=await readFile(new URL("../app/GuidePortal.tsx",import.meta.url),"utf8");
+  assert.doesNotMatch(portal,/fetch\("\/content\.bundle"\)/);
+  assert.match(portal,/fetch\(`\/data\/modules\/module-\$\{active\}\.html`\)/);
+  assert.match(portal,/localizeItemLinks\(shadow\)/);
+  assert.match(portal,/#objeto-\$\{id\}/);
 
-  assert.deepEqual(files.sort(), ["SkeletonPreview.tsx", "preview.css"]);
-  assert.match(preview, /from "react-loading-skeleton"/);
-  assert.match(preview, /baseColor="#eceae7"/);
-  assert.match(preview, /highlightColor="#f9f8f6"/);
-  assert.match(preview, /duration=\{2\.8\}/);
-  assert.match(preview, /sites-skeleton-search-placeholder/);
-  assert.match(packageJson, /"react-loading-skeleton": "3\.5\.0"/);
-
-  const shellIndex = preview.indexOf('className="sites-skeleton-shell"');
-  const statusIndex = preview.indexOf('className="sites-skeleton-status"');
-  assert.ok(shellIndex >= 0 && statusIndex > shellIndex);
-  assert.match(css, /position:\s*fixed/);
-  assert.match(css, /inset:\s*0/);
-  assert.match(css, /opacity:\s*0\.52/);
-  assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(css, /#020617|canvas|pets|progress/i);
-  assert.doesNotMatch(
-    preview,
-    /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
-  );
-
-  assert.match(page, /export const metadata:\s*Metadata/);
-  assert.match(page, /"codex-preview": "development"/);
-  assert.match(page, /<SkeletonPreview \/>/);
-  assert.match(layout, /title:\s*"Starter Project"/);
-  assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
-  assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
-
-  await assert.rejects(
-    access(new URL("public/_sites-preview", templateRoot)),
-  );
+  const modules=await readdir(new URL("../public/data/modules/",import.meta.url));
+  assert.equal(modules.filter(file=>file.endsWith(".html")).length,8);
+  let itemLinks=0;
+  for(const file of modules.filter(file=>file.endsWith(".html"))){
+    const html=await readFile(new URL(`../public/data/modules/${file}`,import.meta.url),"utf8");
+    itemLinks+=(html.match(/ratemyserver\.net[^\"']*[?&]item_id=\d+/gi)??[]).length;
+  }
+  assert.ok(itemLinks>=290);
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ItemCatalog } from "./ItemCatalog";
 
 type ModuleInfo = { id:number; icon:string; title:string; description:string; tag:string; version:string };
 type SearchEntry = { module:number; anchor:string; title:string; text:string; moduleTitle:string; icon:string };
@@ -17,21 +18,23 @@ const MODULES: ModuleInfo[] = [
 ];
 
 function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
-function decodeModule(value:string){const bytes=Uint8Array.from(atob(value),c=>c.charCodeAt(0));return new TextDecoder("utf-8").decode(bytes)}
 function excerpt(text:string,query:string){const i=Math.max(0,normalize(text).indexOf(normalize(query)));const start=Math.max(0,i-65);const end=Math.min(text.length,i+query.length+115);return `${start?"…":""}${text.slice(start,end)}${end<text.length?"…":""}`}
 
 export function GuidePortal(){
-  const [moduleData,setModuleData]=useState<Record<string,string>|null>(null);
-  const [searchIndex,setSearchIndex]=useState<SearchEntry[]>([]);
-  const [active,setActive]=useState<number|null>(null);
+  const [moduleData,setModuleData]=useState<Record<number,string>>({});
+  const [searchIndex,setSearchIndex]=useState<SearchEntry[]|null>(null);
+  const [active,setActive]=useState<number|"items"|null>(null);
   const [query,setQuery]=useState("");
   const [loadError,setLoadError]=useState(false);
+  const [selectedItemId,setSelectedItemId]=useState<number|null>(null);
+  const [catalogQuery,setCatalogQuery]=useState("");
   const hostRef=useRef<HTMLDivElement>(null);
   const shadowRef=useRef<ShadowRoot|null>(null);
   const pendingAnchor=useRef("");
 
   const openModule=useCallback((id:number,anchor="")=>{
     pendingAnchor.current=anchor;
+    setLoadError(false);
     setActive(previous=>{
       if(previous===id&&anchor)setTimeout(()=>{if(shadowRef.current)scrollInside(shadowRef.current,anchor)},30);
       return id;
@@ -39,6 +42,20 @@ export function GuidePortal(){
     setQuery("");
     history.replaceState(null,"",`#modulo-${id}${anchor||""}`);
     window.scrollTo({top:0,behavior:"auto"});
+  },[]);
+
+  const openCatalog=useCallback((options:{id?:number;query?:string}={})=>{
+    setActive("items");
+    setSelectedItemId(options.id??null);
+    setCatalogQuery(options.query??"");
+    setQuery("");
+    history.replaceState(null,"",options.id?`#objeto-${options.id}`:"#objetos");
+    window.scrollTo({top:0,behavior:"auto"});
+  },[]);
+
+  const selectItem=useCallback((id:number)=>{
+    setSelectedItemId(id);
+    history.replaceState(null,"",`#objeto-${id}`);
   },[]);
 
   const showLibrary=useCallback(()=>{
@@ -49,24 +66,31 @@ export function GuidePortal(){
   },[]);
 
   useEffect(()=>{
-    const applyHash=()=>{const match=location.hash.match(/^#modulo-(\d+)(#.*)?$/);if(match){pendingAnchor.current=match[2]||"";setActive(Number(match[1]))}else setActive(null)};
+    const applyHash=()=>{
+      const item=location.hash.match(/^#objeto-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/);
+      if(item){setSelectedItemId(Number(item[1]));setActive("items")}
+      else if(location.hash==="#objetos"){setSelectedItemId(null);setActive("items")}
+      else if(moduleMatch){pendingAnchor.current=moduleMatch[2]||"";setActive(Number(moduleMatch[1]))}
+      else setActive(null);
+    };
     applyHash();
     window.addEventListener("hashchange",applyHash);
     return()=>window.removeEventListener("hashchange",applyHash);
   },[]);
 
   useEffect(()=>{
+    if(typeof active!=="number"||moduleData[active])return;
     let live=true;
-    fetch("/content.bundle").then(r=>{if(!r.ok)throw new Error("content");return r.text()}).then(text=>{
-      const dataKey="const MODULE_DATA=",metaKey=";const MODULE_META=",searchKey="const SEARCH_INDEX=";
-      const dataStart=text.indexOf(dataKey)+dataKey.length,dataEnd=text.indexOf(metaKey,dataStart);
-      const searchStart=text.indexOf(searchKey)+searchKey.length;
-      const searchTail=text.slice(searchStart).match(/^(\[.*\]);\s*let currentModule=/s);
-      if(dataStart<dataKey.length||dataEnd<0||searchStart<searchKey.length||!searchTail)throw new Error("parse");
-      if(live){setModuleData(JSON.parse(text.slice(dataStart,dataEnd)));setSearchIndex(JSON.parse(searchTail[1]))}
-    }).catch(()=>{if(live)setLoadError(true)});
+    fetch(`/data/modules/module-${active}.html`).then(response=>{if(!response.ok)throw new Error("module");return response.text()}).then(html=>{if(live)setModuleData(current=>({...current,[active]:html}))}).catch(()=>{if(live)setLoadError(true)});
     return()=>{live=false};
-  },[]);
+  },[active,moduleData]);
+
+  useEffect(()=>{
+    if(query.trim().length<2||searchIndex)return;
+    let live=true;
+    fetch("/data/guide-search.json").then(response=>{if(!response.ok)throw new Error("search");return response.json()}).then(data=>{if(live)setSearchIndex(data)}).catch(()=>{if(live)setSearchIndex([])});
+    return()=>{live=false};
+  },[query,searchIndex]);
 
   useEffect(()=>{
     if(!hostRef.current)return;
@@ -76,48 +100,51 @@ export function GuidePortal(){
   useEffect(()=>{
     const shadow=shadowRef.current;
     if(!shadow)return;
-    if(active===null){shadow.innerHTML="";return}
+    if(typeof active!=="number"){shadow.innerHTML="";return}
     if(!moduleData?.[active])return;
-    shadow.innerHTML=decodeModule(moduleData[active])+"<link rel=\"stylesheet\" href=\"/modern-modules.css\">";
-    bindModule(shadow,active,openModule);
+    shadow.innerHTML=moduleData[active]+"<link rel=\"stylesheet\" href=\"/modern-modules.css\">";
+    localizeItemLinks(shadow);
+    bindModule(shadow,active,openModule,openCatalog);
     const anchor=pendingAnchor.current;
     pendingAnchor.current="";
     if(anchor)setTimeout(()=>scrollInside(shadow,anchor),80);
-  },[active,moduleData,openModule]);
+  },[active,moduleData,openModule,openCatalog]);
 
   const results=useMemo(()=>{
     const term=query.trim();
     if(term.length<2)return[];
     const key=normalize(term);
-    return searchIndex.filter(item=>normalize(`${item.title} ${item.text}`).includes(key)).slice(0,50);
+    return (searchIndex??[]).filter(item=>normalize(`${item.title} ${item.text}`).includes(key)).slice(0,50);
   },[query,searchIndex]);
 
-  const current=active?MODULES[active-1]:null;
+  const current=typeof active==="number"?MODULES[active-1]:null;
   return <main className="portal">
     <aside className="sidebar">
       <button className="brand" onClick={showLibrary} aria-label="Abrir biblioteca de BarrasRO"><span className="brand-mark">B</span><span><b>BarrasRO</b><small>ENCICLOPEDIA PRE-RENEWAL</small></span></button>
       <button className={`library-button ${active===null?"active":""}`} onClick={showLibrary}>⌂ Biblioteca completa</button>
+      <button className={`catalog-button ${active==="items"?"active":""}`} onClick={()=>openCatalog()}>◆ <span><b>Objetos</b><small>6.169 fichas locales</small></span></button>
       <nav className="module-nav" aria-label="Módulos de la guía">{MODULES.map(m=><button key={m.id} className={`module-tab ${active===m.id?"active":""}`} onClick={()=>openModule(m.id)}><span className="tab-icon">{m.icon}</span><strong>M{m.id}</strong><span>{m.title}</span></button>)}</nav>
-      <div className="side-note"><b>BarrasRO · 8 MÓDULOS</b><br/>Todo el contenido se consulta dentro de esta misma biblioteca.</div>
+      <div className="side-note"><b>BarrasRO · 8 MÓDULOS + CATÁLOGO</b><br/>Los objetos se consultan desde nuestra propia base local.</div>
     </aside>
     <section className="workspace">
       <header className="topbar">
-        <div className="current">{current?`Módulo ${current.id} · ${current.title}`:"BarrasRO · Biblioteca"}</div>
+        <div className="current">{active==="items"?"BarrasRO · Objetos":current?`Módulo ${current.id} · ${current.title}`:"BarrasRO · Biblioteca"}</div>
         <div className="search-wrap">
-          <div className="search-field"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar quests, NPC, mapas, jobs, equipo…" aria-label="Buscar en todos los módulos"/><button onClick={()=>setQuery("")}>Limpiar</button></div>
-          {query.trim().length>=2&&<div className="search-panel"><div className="search-label">{results.length?`${results.length} RESULTADOS VISIBLES`:"SIN RESULTADOS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {r.title}</b><small>Módulo {r.module} · {excerpt(r.text,query)}</small></button>)}</div>}
+          <div className="search-field"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar quests, NPC, mapas, jobs u objetos…" aria-label="Buscar en toda la enciclopedia"/><button onClick={()=>setQuery("")}>Limpiar</button></div>
+          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” en 6.169 objetos</b><small>Consulta local por nombre, Aegis o ID</small></button><div className="search-label">{searchIndex===null?"CARGANDO GUÍA…":results.length?`${results.length} RESULTADOS DE LA GUÍA`:"SIN RESULTADOS EN LA GUÍA"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {r.title}</b><small>Módulo {r.module} · {excerpt(r.text,query)}</small></button>)}</div>}
         </div>
       </header>
-      <nav className="mobile-nav" aria-label="Módulos"><button className={active===null?"active":""} onClick={showLibrary}>⌂ Inicio</button>{MODULES.map(m=><button key={m.id} className={active===m.id?"active":""} onClick={()=>openModule(m.id)}>{m.icon} M{m.id}</button>)}</nav>
+      <nav className="mobile-nav" aria-label="Módulos"><button className={active===null?"active":""} onClick={showLibrary}>⌂ Inicio</button><button className={active==="items"?"active":""} onClick={()=>openCatalog()}>◆ Objetos</button>{MODULES.map(m=><button key={m.id} className={active===m.id?"active":""} onClick={()=>openModule(m.id)}>{m.icon} M{m.id}</button>)}</nav>
       <div className="content">
-        {active===null&&<Library openModule={openModule}/>} 
-        {active!==null&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la biblioteca</h2><p>Intenta recargar la página.</p></div>:!moduleData?<div className="module-loading"><div className="loader"/><p>Preparando el módulo completo…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
+        {active===null&&<Library openModule={openModule} openCatalog={openCatalog}/>}
+        {active==="items"&&<ItemCatalog key={catalogQuery} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/>}
+        {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la biblioteca</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando el módulo…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
   </main>;
 }
 
-function Library({openModule}:{openModule:(id:number)=>void}){
+function Library({openModule,openCatalog}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void}){
   return <section className="library">
     <div className="library-head">
       <div className="library-intro">
@@ -127,8 +154,9 @@ function Library({openModule}:{openModule:(id:number)=>void}){
         <div className="ornament" aria-hidden="true"><i/><b>◆</b><i/></div>
         <p>Todo el conocimiento del servidor reunido en un solo lugar. Explora rutas, accesos, historias, jobs y sistemas sin abandonar esta biblioteca.</p>
       </div>
-      <div className="library-stats"><div><b>8</b><span>Módulos completos</span></div><div><b>13.2</b><span>Episodio máximo</span></div></div>
+      <div className="library-stats"><div><b>8</b><span>Módulos completos</span></div><div><b>6.169</b><span>Objetos locales</span></div></div>
     </div>
+    <button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><small>NUEVA BASE LOCAL PRE-RENEWAL</small><b>Busca cualquier objeto sin salir de BarrasRO</b><em>Datos, scripts, restricciones, equipo y precios desde una instantánea revisable.</em></span><strong>ABRIR CATÁLOGO →</strong></button>
     <div className="section-title"><div><span className="kicker">ELIGE TU CAMINO</span><h2>Explora por tema</h2></div><span>Selecciona un módulo para abrirlo aquí mismo</span></div>
     <div className="module-grid">{MODULES.map(m=><button className="module-card" key={m.id} onClick={()=>openModule(m.id)}><div className="card-top"><span className="card-number">MÓDULO {m.id} · {m.version}</span><span className="card-tag">{m.tag}</span></div><span className="card-icon">{m.icon}</span><h3>{m.title}</h3><p>{m.description}</p><span className="card-open">ABRIR <b>→</b></span></button>)}</div>
   </section>
@@ -137,7 +165,17 @@ function Library({openModule}:{openModule:(id:number)=>void}){
 function openDetailsTo(element:HTMLElement){let current:HTMLElement|null=element;while(current){if(current.tagName==="DETAILS")(current as HTMLDetailsElement).open=true;current=current.parentElement}}
 function scrollInside(shadow:ShadowRoot,anchor:string){const el=shadow.getElementById(anchor.replace(/^#/,""));if(el){openDetailsTo(el);setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),30)}}
 
-function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void){
+function localizeItemLinks(shadow:ShadowRoot){
+  shadow.querySelectorAll<HTMLAnchorElement>('a[href*="ratemyserver.net"][href*="item_id="]').forEach(link=>{
+    const id=(link.getAttribute("href")||"").match(/[?&]item_id=(\d+)/)?.[1];
+    if(!id)return;
+    link.setAttribute("href",`#objeto-${id}`);
+    link.dataset.localItem=id;
+    link.title=`Abrir ficha local del objeto #${id}`;
+  });
+}
+
+function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void){
   const boundShadow=shadow as ShadowRoot&{_portalClickHandler?:EventListener};
   if(boundShadow._portalClickHandler)boundShadow.removeEventListener("click",boundShadow._portalClickHandler);
   const handleClick:EventListener=(rawEvent)=>{
@@ -148,6 +186,8 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
     const link=target.closest<HTMLAnchorElement>("a[href]");
     if(link){
       const href=link.getAttribute("href")||"";
+      const localItem=href.match(/^#objeto-(\d+)$/);
+      if(localItem){event.preventDefault();openCatalog({id:Number(localItem[1])});return}
       const crossModule=href.match(/^#module-(\d+)(#.*)?$/);
       if(crossModule){event.preventDefault();openModule(Number(crossModule[1]),crossModule[2]||"");return}
       if(href.startsWith("#")){event.preventDefault();scrollInside(shadow,href);return}
