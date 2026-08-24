@@ -101,12 +101,22 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.doesNotMatch(portal,/window\.open/);
 
   const atlas=await readFile(new URL("../app/WorldCatalog.tsx",import.meta.url),"utf8");
-  assert.match(atlas,/Ciudades y mapas de Midgard/);
+  assert.match(atlas,/Regiones y mapas de Midgard/);
+  assert.match(atlas,/name:"Prontera".*prefixes:\["prt_","iz_"/s);
+  assert.match(atlas,/name:"Geffen".*prefixes:\["gef_","gl_"/s);
+  assert.match(atlas,/name:"Payon".*prefixes:\["pay_"/s);
+  assert.match(atlas,/world-region-group/);
+  assert.match(atlas,/scrollIntoView/);
+  assert.doesNotMatch(atlas,/Mostrar 80 mapas más/);
   assert.match(atlas,/NPC registrados en este mapa/);
   assert.match(atlas,/Quests y referencias relacionadas/);
   assert.match(atlas,/findEntry\(payload,current\)/);
   assert.doesNotMatch(atlas,/option value="monster"/);
   assert.doesNotMatch(atlas,/function worldEntries/);
+
+  const theme=await readFile(new URL("../app/theme.css",import.meta.url),"utf8");
+  assert.match(theme,/\.world-detail\{[^}]*max-height:calc\(100dvh - 104px\)[^}]*overflow-y:auto/s);
+  assert.match(theme,/@media\(max-width:800px\).*\.world-results\{grid-row:2\}/s);
 
   const modules=await readdir(new URL("../public/data/modules/",import.meta.url));
   assert.equal(modules.filter(file=>file.endsWith(".html")).length,8);
