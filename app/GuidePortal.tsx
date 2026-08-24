@@ -8,6 +8,12 @@ const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCa
 const WorldCatalog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldCatalog}));
 const WorldReferenceDialog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldReferenceDialog}));
 
+let moduleStylePromise:Promise<string>|null=null;
+function loadModuleStyle(){
+  moduleStylePromise??=fetch("/modern-modules.css").then(response=>{if(!response.ok)throw new Error("module-style");return response.text()});
+  return moduleStylePromise;
+}
+
 type ModuleInfo = { id:number; icon:string; title:string; description:string };
 type SearchEntry = { module:number; anchor:string; title:string; text:string; moduleTitle:string; icon:string };
 type ExternalDestination = { href:string; label:string };
@@ -38,7 +44,7 @@ function cleanUserText(value:string){
 }
 
 export function GuidePortal(){
-  const [moduleData,setModuleData]=useState<Record<number,string>>({});
+  const [moduleData,setModuleData]=useState<Record<number,{html:string;style:string}>>({});
   const [searchIndex,setSearchIndex]=useState<SearchEntry[]|null>(null);
   const [active,setActive]=useState<number|"items"|"world"|null>(null);
   const [query,setQuery]=useState("");
@@ -146,7 +152,10 @@ export function GuidePortal(){
   useEffect(()=>{
     if(typeof active!=="number"||moduleData[active])return;
     let live=true;
-    fetch(`/data/modules/module-${active}.html`).then(response=>{if(!response.ok)throw new Error("module");return response.text()}).then(html=>{if(live)setModuleData(current=>({...current,[active]:html}))}).catch(()=>{if(live)setLoadError(true)});
+    Promise.all([
+      fetch(`/data/modules/module-${active}.html`).then(response=>{if(!response.ok)throw new Error("module");return response.text()}),
+      loadModuleStyle(),
+    ]).then(([html,style])=>{if(live)setModuleData(current=>({...current,[active]:{html,style}}))}).catch(()=>{if(live)setLoadError(true)});
     return()=>{live=false};
   },[active,moduleData]);
 
@@ -166,11 +175,12 @@ export function GuidePortal(){
     const shadow=shadowRef.current;
     if(!shadow)return;
     if(typeof active!=="number"){shadow.innerHTML="";return}
-    if(!moduleData?.[active])return;
+    if(!moduleData?.[active]){shadow.innerHTML="";return}
     const prepared=preparedModules.current[active];
     if(prepared)shadow.innerHTML=prepared;
     else{
-      shadow.innerHTML=moduleData[active]+"<link rel=\"stylesheet\" href=\"/modern-modules.css\">";
+      const data=moduleData[active];
+      shadow.innerHTML=`${data.html}<style data-ascencion-theme>${data.style}</style>`;
       cleanVisibleGuideMetadata(shadow);
       localizeItemLinks(shadow);
       localizeWorldLinks(shadow);
@@ -207,7 +217,7 @@ export function GuidePortal(){
         </nav>
         <div className="search-wrap">
           <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en AscencionRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
-          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” en el mundo</b><small>Mapas, coordenadas, monstruos, NPC y guías locales</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
+          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” entre ciudades y mapas</b><small>Planos locales, NPC y quests relacionadas</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
         </div>
       </div>
     </header>
@@ -215,7 +225,7 @@ export function GuidePortal(){
       <div className="content">
         {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openWorld={openWorld}/>}
         {active==="items"&&<Suspense fallback={<SurfaceLoading label="Abriendo el catálogo local…"/>}><ItemCatalog key={catalogQuery} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/></Suspense>}
-        {active==="world"&&<Suspense fallback={<SurfaceLoading label="Abriendo el índice del mundo…"/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld}/></Suspense>}
+        {active==="world"&&<Suspense fallback={<SurfaceLoading label="Abriendo el atlas local…"/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld}/></Suspense>}
         {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la guía</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando la guía…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
@@ -254,7 +264,7 @@ function NeonCursor(){
 
 function Library({openModule,openCatalog,openWorld}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void;openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void}){
   return <section className="library">
-    <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>Recorre el mundo sin salir</b><em>Ubicaciones, monstruos y NPC enlazados desde las guías.</em></span><strong>EXPLORAR <span>→</span></strong></button></div>
+    <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>Explora ciudades y mapas</b><em>Planos locales con los NPC y las quests vinculadas a cada zona.</em></span><strong>EXPLORAR <span>→</span></strong></button></div>
     <div className="section-title"><div><h2>Explora por tema</h2><p>Ocho caminos claros, sin códigos ni versiones que aprender.</p></div></div>
     <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><h3>{topic.title}</h3><p>{topic.description}</p><span className="card-open">Explorar <b>→</b></span></button>)}</div>
   </section>

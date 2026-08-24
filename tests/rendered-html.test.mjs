@@ -17,6 +17,7 @@ test("renderiza la biblioteca limpia y el acceso al catálogo local",async()=>{
   assert.match(html,/<title>AscencionRO · Enciclopedia Pre-Renewal<\/title>/i);
   assert.doesNotMatch(html,/Todo Midgard/);
   assert.match(html,/Busca objetos al instante/);
+  assert.match(html,/Explora ciudades y mapas/);
   assert.doesNotMatch(html,/Your site is taking shape|codex-preview/i);
 });
 test("el catálogo contiene todos los registros y bloques declarados",async()=>{
@@ -86,6 +87,10 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(portal,/bindModule\(shadow,active,openModule,openCatalog,openWorldPreview,openExternalLink\)/);
   assert.match(portal,/cleanVisibleGuideMetadata\(shadow\)/);
   assert.match(portal,/preparedModules\.current\[active\]/);
+  assert.match(portal,/loadModuleStyle\(\)/);
+  assert.match(portal,/data-ascencion-theme/);
+  assert.match(portal,/if\(!moduleData\?\.\[active\]\)\{shadow\.innerHTML="";return\}/);
+  assert.doesNotMatch(portal,/<link rel=\\"stylesheet\\" href=\\"\/modern-modules\.css\\">/);
   assert.match(portal,/a\[href\^="#item-"\]/);
   assert.match(portal,/#objeto-\$\{id\}/);
   assert.match(portal,/#mapa-\$\{map\}/);
@@ -94,6 +99,14 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.doesNotMatch(portal,/>M\{m\.id\}</);
   assert.doesNotMatch(portal,/MÓDULO \{m\.id\}/);
   assert.doesNotMatch(portal,/window\.open/);
+
+  const atlas=await readFile(new URL("../app/WorldCatalog.tsx",import.meta.url),"utf8");
+  assert.match(atlas,/Ciudades y mapas de Midgard/);
+  assert.match(atlas,/NPC registrados en este mapa/);
+  assert.match(atlas,/Quests y referencias relacionadas/);
+  assert.match(atlas,/findEntry\(payload,current\)/);
+  assert.doesNotMatch(atlas,/option value="monster"/);
+  assert.doesNotMatch(atlas,/function worldEntries/);
 
   const modules=await readdir(new URL("../public/data/modules/",import.meta.url));
   assert.equal(modules.filter(file=>file.endsWith(".html")).length,8);
