@@ -90,14 +90,16 @@ button{cursor:pointer}
 .hero-card{position:absolute;z-index:3;padding:11px 14px;border:1px solid #5f4d3d;border-radius:12px;background:#151315e8;color:#cec6be;font-size:11px;box-shadow:0 18px 45px #0008;backdrop-filter:blur(8px)}
 .hero-card-one{left:0;top:25%}.hero-card-two{right:0;bottom:20%}
 
-.catalog-teaser{position:relative;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;align-items:center;margin:26px 0 0;padding:25px 28px;text-align:left;overflow:hidden;border:1px solid #5f4d3b;border-radius:16px;background:linear-gradient(110deg,#171517,#281c2c 65%,#181516);color:var(--text)}
+.database-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:26px}
+.catalog-teaser{position:relative;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;margin:0;padding:23px;text-align:left;overflow:hidden;border:1px solid #5f4d3b;border-radius:16px;background:linear-gradient(110deg,#171517,#281c2c 65%,#181516);color:var(--text)}
 .catalog-teaser:hover{border-color:var(--gold);box-shadow:0 18px 55px #0007}
 .teaser-sigil{width:48px;height:48px;display:grid;place-items:center;border:1px solid #7c6547;border-radius:12px;background:#161217;color:var(--gold)}
 .catalog-teaser>span:nth-child(2){display:grid}
 .catalog-teaser b{font:700 20px Georgia,serif}
 .catalog-teaser em{color:#a59d96;font-size:12px;font-style:normal}
-.catalog-teaser strong{color:var(--gold);font-size:10px;letter-spacing:.1em}
+.catalog-teaser strong{grid-column:2;color:var(--gold);font-size:10px;letter-spacing:.1em}
 .catalog-teaser strong span{font-size:18px;margin-left:6px}
+.world-teaser{background:linear-gradient(110deg,#171517,#211e2e 65%,#181516)}
 .section-title{margin:60px 0 20px}
 .section-title h2{margin:0;color:#ebe3d9;font:700 clamp(30px,4vw,48px)/1 Georgia,serif;letter-spacing:-.025em}
 .section-title p{margin:9px 0 0;color:#9f9790}
@@ -154,7 +156,7 @@ button{cursor:pointer}
   .hero-gem span{font-size:32px}
   .hero-card-one{top:12%}.hero-card-two{bottom:10%}
   .catalog-teaser{grid-template-columns:auto 1fr;padding:20px}
-  .catalog-teaser>strong{grid-column:2}
+  .database-links{grid-template-columns:1fr}
   .module-grid{grid-template-columns:1fr}
   .module-card{min-height:225px}
   .guide-menu-intro{display:block}

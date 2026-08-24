@@ -37,13 +37,27 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   assert.ok(details.find(item=>item.id===501&&item.aegisName==="Red_Potion"));
 });
 
+test("el índice del mundo resuelve mapas, monstruos y NPC localmente",async()=>{
+  const world=JSON.parse(await readFile(new URL("../public/data/world-index.json",import.meta.url),"utf8"));
+  assert.ok(world.counts.maps>=140);
+  assert.ok(world.counts.monsters>=20);
+  assert.ok(world.counts.npcs>=280);
+  assert.equal(new Set(world.maps.map(entry=>entry.id)).size,world.maps.length);
+  assert.equal(new Set(world.monsters.map(entry=>entry.id)).size,world.monsters.length);
+  assert.equal(new Set(world.npcs.map(entry=>entry.id)).size,world.npcs.length);
+  assert.ok(world.maps.find(entry=>entry.id==="prontera"));
+  assert.ok(world.npcs.find(entry=>entry.name==="Valkyrie"));
+});
+
 test("los módulos se cargan por separado y sus enlaces de objetos se resuelven localmente",async()=>{
   const portal=await readFile(new URL("../app/GuidePortal.tsx",import.meta.url),"utf8");
   assert.doesNotMatch(portal,/fetch\("\/content\.bundle"\)/);
   assert.match(portal,/fetch\(`\/data\/modules\/module-\$\{active\}\.html`\)/);
   assert.match(portal,/localizeItemLinks\(shadow\)/);
+  assert.match(portal,/localizeWorldLinks\(shadow\)/);
   assert.match(portal,/cleanVisibleGuideMetadata\(shadow\)/);
   assert.match(portal,/#objeto-\$\{id\}/);
+  assert.match(portal,/#mapa-\$\{map\}/);
   assert.doesNotMatch(portal,/>M\{m\.id\}</);
   assert.doesNotMatch(portal,/MÓDULO \{m\.id\}/);
 

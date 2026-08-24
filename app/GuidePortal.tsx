@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ItemCatalog } from "./ItemCatalog";
+import { WorldCatalog, type WorldKind, type WorldSelection } from "./WorldCatalog";
 
 type ModuleInfo = { id:number; icon:string; title:string; description:string };
 type SearchEntry = { module:number; anchor:string; title:string; text:string; moduleTitle:string; icon:string };
@@ -34,11 +35,13 @@ function cleanUserText(value:string){
 export function GuidePortal(){
   const [moduleData,setModuleData]=useState<Record<number,string>>({});
   const [searchIndex,setSearchIndex]=useState<SearchEntry[]|null>(null);
-  const [active,setActive]=useState<number|"items"|null>(null);
+  const [active,setActive]=useState<number|"items"|"world"|null>(null);
   const [query,setQuery]=useState("");
   const [loadError,setLoadError]=useState(false);
   const [selectedItemId,setSelectedItemId]=useState<number|null>(null);
   const [catalogQuery,setCatalogQuery]=useState("");
+  const [worldQuery,setWorldQuery]=useState("");
+  const [worldSelection,setWorldSelection]=useState<WorldSelection|null>(null);
   const [guidesOpen,setGuidesOpen]=useState(false);
   const headerRef=useRef<HTMLElement>(null);
   const hostRef=useRef<HTMLDivElement>(null);
@@ -73,6 +76,23 @@ export function GuidePortal(){
     history.replaceState(null,"",`#objeto-${id}`);
   },[]);
 
+  const openWorld=useCallback((options:{kind?:WorldKind;id?:string;query?:string}={})=>{
+    setActive("world");
+    setWorldSelection(options.kind&&options.id?{kind:options.kind,id:options.id}:null);
+    setWorldQuery(options.query??"");
+    setQuery("");
+    setGuidesOpen(false);
+    const prefix=options.kind==="map"?"mapa":options.kind==="monster"?"monstruo":options.kind==="npc"?"npc":"mundo";
+    history.replaceState(null,"",options.id?`#${prefix}-${options.id}`:"#mundo");
+    window.scrollTo({top:0,behavior:"auto"});
+  },[]);
+
+  const selectWorld=useCallback((selection:WorldSelection)=>{
+    setWorldSelection(selection);
+    const prefix=selection.kind==="map"?"mapa":selection.kind==="monster"?"monstruo":"npc";
+    history.replaceState(null,"",`#${prefix}-${selection.id}`);
+  },[]);
+
   const showLibrary=useCallback(()=>{
     setActive(null);
     setQuery("");
@@ -91,9 +111,11 @@ export function GuidePortal(){
 
   useEffect(()=>{
     const applyHash=()=>{
-      const item=location.hash.match(/^#objeto-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/);
+      const item=location.hash.match(/^#objeto-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/),world=location.hash.match(/^#(mapa|monstruo|npc)-(.+)$/);
       if(item){setSelectedItemId(Number(item[1]));setActive("items")}
       else if(location.hash==="#objetos"){setSelectedItemId(null);setActive("items")}
+      else if(world){const kind:WorldKind=world[1]==="mapa"?"map":world[1]==="monstruo"?"monster":"npc";setWorldSelection({kind,id:world[2]});setActive("world")}
+      else if(location.hash==="#mundo"){setWorldSelection(null);setActive("world")}
       else if(moduleMatch){pendingAnchor.current=moduleMatch[2]||"";setActive(Number(moduleMatch[1]))}
       else setActive(null);
     };
@@ -129,11 +151,12 @@ export function GuidePortal(){
     shadow.innerHTML=moduleData[active]+"<link rel=\"stylesheet\" href=\"/modern-modules.css\">";
     cleanVisibleGuideMetadata(shadow);
     localizeItemLinks(shadow);
-    bindModule(shadow,active,openModule,openCatalog);
+    localizeWorldLinks(shadow);
+    bindModule(shadow,active,openModule,openCatalog,openWorld);
     const anchor=pendingAnchor.current;
     pendingAnchor.current="";
     if(anchor)setTimeout(()=>scrollInside(shadow,anchor),80);
-  },[active,moduleData,openModule,openCatalog]);
+  },[active,moduleData,openModule,openCatalog,openWorld]);
 
   const results=useMemo(()=>{
     const term=query.trim();
@@ -149,6 +172,7 @@ export function GuidePortal(){
         <nav className="primary-nav" aria-label="Navegación principal">
           <button className={active===null?"active":""} onClick={showLibrary}>Inicio</button>
           <button className={active==="items"?"active":""} onClick={()=>openCatalog()}>Objetos</button>
+          <button className={active==="world"?"active":""} onClick={()=>openWorld()}>Mundo</button>
           <div className="guide-menu-wrap">
             <button className={typeof active==="number"?"active":""} onClick={()=>setGuidesOpen(value=>!value)} aria-expanded={guidesOpen} aria-controls="guide-menu">Guías <span aria-hidden="true">⌄</span></button>
             {guidesOpen&&<div className="guide-menu" id="guide-menu">
@@ -159,21 +183,22 @@ export function GuidePortal(){
         </nav>
         <div className="search-wrap">
           <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en BarrasRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
-          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
+          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” en el mundo</b><small>Ubicaciones, monstruos y NPC</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
         </div>
       </div>
     </header>
     <section className="workspace">
       <div className="content">
-        {active===null&&<Library openModule={openModule} openCatalog={openCatalog}/>}
+        {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openWorld={openWorld}/>}
         {active==="items"&&<ItemCatalog key={catalogQuery} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/>}
+        {active==="world"&&<WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld}/>}
         {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la guía</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando la guía…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
   </main>;
 }
 
-function Library({openModule,openCatalog}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void}){
+function Library({openModule,openCatalog,openWorld}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void;openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void}){
   return <section className="library">
     <div className="library-head">
       <div className="library-intro">
@@ -183,7 +208,7 @@ function Library({openModule,openCatalog}:{openModule:(id:number)=>void;openCata
       </div>
       <div className="hero-art" aria-hidden="true"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-gem"><span>6.169</span><small>objetos listos</small></div><div className="hero-card hero-card-one">Busca por nombre</div><div className="hero-card hero-card-two">Abre cualquier guía</div></div>
     </div>
-    <button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button>
+    <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>Recorre el mundo sin salir</b><em>Ubicaciones, monstruos y NPC enlazados desde las guías.</em></span><strong>EXPLORAR <span>→</span></strong></button></div>
     <div className="section-title"><div><h2>Explora por tema</h2><p>Ocho caminos claros, sin códigos ni versiones que aprender.</p></div></div>
     <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><h3>{topic.title}</h3><p>{topic.description}</p><span className="card-open">Explorar <b>→</b></span></button>)}</div>
   </section>
@@ -228,7 +253,27 @@ function localizeItemLinks(shadow:ShadowRoot){
   });
 }
 
-function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void){
+function worldSlug(value:string){return normalize(value).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+function localizeWorldLinks(shadow:ShadowRoot){
+  shadow.querySelectorAll<HTMLAnchorElement>('a[href*="ratemyserver.net"]').forEach(link=>{
+    const href=(link.getAttribute("href")||"").replaceAll("&amp;","&");
+    try{
+      const url=new URL(href),map=url.searchParams.get("map")||(url.searchParams.get("area")?`area-${url.searchParams.get("area")}`:null),monster=url.searchParams.get("mob_id");
+      if(map){link.setAttribute("href",`#mapa-${map}`);link.dataset.localWorld="map";link.title=`Abrir ubicación local: ${map}`}
+      else if(monster){link.setAttribute("href",`#monstruo-${monster}`);link.dataset.localWorld="monster";link.title=`Abrir ficha local del monstruo #${monster}`}
+    }catch{return}
+  });
+  shadow.querySelectorAll<HTMLAnchorElement>("a.npclink").forEach(link=>{
+    const wrapper=link.closest(".npcref"),mapLink=wrapper?.querySelector<HTMLAnchorElement>("a.maplink"),mapHref=mapLink?.getAttribute("href")||"";
+    const map=mapHref.match(/[?&]map=([^&]+)/)?.[1]||mapHref.match(/^#mapa-(.+)$/)?.[1]||"";
+    const id=`${worldSlug(link.textContent||"npc")}${map?`-${map}`:""}`;
+    link.setAttribute("href",`#npc-${id}`);
+    link.dataset.localWorld="npc";
+    link.title="Abrir ficha local del NPC";
+  });
+}
+
+function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void){
   const boundShadow=shadow as ShadowRoot&{_portalClickHandler?:EventListener};
   if(boundShadow._portalClickHandler)boundShadow.removeEventListener("click",boundShadow._portalClickHandler);
   const handleClick:EventListener=(rawEvent)=>{
@@ -241,6 +286,8 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
       const href=link.getAttribute("href")||"";
       const localItem=href.match(/^#objeto-(\d+)$/);
       if(localItem){event.preventDefault();openCatalog({id:Number(localItem[1])});return}
+      const localWorld=href.match(/^#(mapa|monstruo|npc)-(.+)$/);
+      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":"npc";openWorld({kind,id:localWorld[2]});return}
       const crossModule=href.match(/^#module-(\d+)(#.*)?$/);
       if(crossModule){event.preventDefault();openModule(Number(crossModule[1]),crossModule[2]||"");return}
       if(href.startsWith("#")){event.preventDefault();scrollInside(shadow,href);return}
