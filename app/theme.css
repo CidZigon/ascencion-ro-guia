@@ -70,10 +70,14 @@
 .world-row small{color:#8f8780;font-size:9px}
 .world-row i{color:var(--gold);font-style:normal}
 .world-icon{width:36px;height:36px;display:grid;place-items:center;border:1px solid #544940;border-radius:9px;background:#0e0e0f;color:var(--gold);font-size:18px}
+.sprite-icon{overflow:hidden;background:radial-gradient(circle,#302634,#111)}
+.sprite-icon img{max-width:34px;max-height:34px;object-fit:contain;image-rendering:pixelated}
 .world-detail{position:sticky;top:88px;min-height:430px}
 .world-detail-card{padding:23px}
 .world-detail-title{display:flex;gap:14px;align-items:center;padding-bottom:18px;border-bottom:1px solid #453b34}
 .world-detail-title>span{width:58px;height:58px;display:grid;place-items:center;flex:0 0 auto;border:1px solid #816846;border-radius:15px;background:#211a22;color:var(--gold);font-size:26px}
+.world-detail-title>span.sprite-detail{overflow:hidden;background:radial-gradient(circle,#392a3e,#111)}
+.world-detail-title>span.sprite-detail img{max-width:56px;max-height:56px;object-fit:contain;image-rendering:pixelated}
 .world-detail-title small{color:var(--gold);font-size:9px;text-transform:uppercase;letter-spacing:.1em}
 .world-detail-title h2{margin:3px 0;color:#e7ded3;font:700 25px/1.05 Georgia,serif}
 .world-detail-title code{color:#8d847b;font-size:10px}
@@ -82,6 +86,20 @@
 .world-detail-card ul{display:grid;gap:6px;margin:0;padding-left:20px;color:#aaa198;font-size:11px}
 .context-list{display:grid;gap:8px}
 .context-list p{margin:0;padding:10px;border:1px solid #3e3732;border-radius:8px;background:#181618;color:#aaa198;font-size:11px;line-height:1.55}
+.map-section{padding-bottom:10px!important}
+.map-view{display:grid;gap:10px}
+.map-canvas{position:relative;overflow:hidden;aspect-ratio:1;border:1px solid #5c4c3e;border-radius:12px;background:#090a0a}
+.map-canvas>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:auto}
+.map-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(#fff1 1px,transparent 1px),linear-gradient(90deg,#fff1 1px,transparent 1px);background-size:25% 25%;box-shadow:inset 0 0 50px #0008}
+.map-fallback{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;background:radial-gradient(circle at center,#2c2330,#101113 65%);color:#cbb891}
+.map-fallback span{font-size:34px}.map-fallback b{margin-top:5px;font:700 18px Georgia,serif}.map-fallback small{margin-top:4px;color:#8c837b;font-size:9px}
+.map-pin{position:absolute;z-index:2;width:20px;height:20px;display:grid;place-items:center;transform:translate(-50%,50%);border:2px solid #1a1110;border-radius:50% 50% 50% 0;background:#e0a64b;color:#17100a;box-shadow:0 2px 8px #000;rotate:-45deg}
+.map-pin i{font:900 8px Arial,sans-serif;rotate:45deg}.map-pin.npc-pin{background:#d28bc9}
+.map-coordinate-list{display:grid;gap:5px;max-height:190px;overflow:auto;padding-right:3px}
+.map-coordinate-list>span{display:grid;grid-template-columns:20px 54px minmax(0,1fr);gap:6px;align-items:center;padding:6px 7px;border:1px solid #3e3732;border-radius:7px;background:#171517;color:#9e958d}
+.map-coordinate-list i{width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#d5a35c;color:#17100a;font:900 8px Arial,sans-serif}.map-coordinate-list b{color:#d8c39e;font-size:9px}.map-coordinate-list em{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-style:normal}
+.map-coordinate-list p{margin:0;padding:10px;border:1px solid #3e3732;border-radius:7px;color:#9e958d;font-size:10px;line-height:1.5}
+.topic-chips{display:flex;flex-wrap:wrap;gap:5px}.topic-chips span{padding:5px 8px;border:1px solid #55463b;border-radius:999px;background:#1e191c;color:#cdb98e;font-size:9px}
 
 @media(max-width:1100px){.catalog-body,.world-body{grid-template-columns:minmax(0,1fr) 360px}.item-list,.world-list{grid-template-columns:1fr}.catalog-toolbar{grid-template-columns:1fr 180px 110px auto}}
 @media(max-width:800px){.item-catalog,.world-catalog{padding-top:24px}.catalog-toolbar,.world-toolbar{grid-template-columns:1fr 1fr}.catalog-search{grid-column:1/-1}.catalog-body,.world-body{grid-template-columns:1fr}.item-detail,.world-detail{position:static;grid-row:1}.item-list,.world-list{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-loading,.catalog-fatal{min-height:calc(100vh - 105px)}}

@@ -82,14 +82,14 @@ export function GuidePortal(){
     setWorldQuery(options.query??"");
     setQuery("");
     setGuidesOpen(false);
-    const prefix=options.kind==="map"?"mapa":options.kind==="monster"?"monstruo":options.kind==="npc"?"npc":"mundo";
+    const prefix=options.kind==="map"?"mapa":options.kind==="monster"?"monstruo":options.kind==="npc"?"npc":options.kind==="reference"?"referencia":"mundo";
     history.replaceState(null,"",options.id?`#${prefix}-${options.id}`:"#mundo");
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
 
   const selectWorld=useCallback((selection:WorldSelection)=>{
     setWorldSelection(selection);
-    const prefix=selection.kind==="map"?"mapa":selection.kind==="monster"?"monstruo":"npc";
+    const prefix=selection.kind==="map"?"mapa":selection.kind==="monster"?"monstruo":selection.kind==="npc"?"npc":"referencia";
     history.replaceState(null,"",`#${prefix}-${selection.id}`);
   },[]);
 
@@ -111,10 +111,10 @@ export function GuidePortal(){
 
   useEffect(()=>{
     const applyHash=()=>{
-      const item=location.hash.match(/^#objeto-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/),world=location.hash.match(/^#(mapa|monstruo|npc)-(.+)$/);
+      const item=location.hash.match(/^#objeto-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/),world=location.hash.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/);
       if(item){setSelectedItemId(Number(item[1]));setActive("items")}
       else if(location.hash==="#objetos"){setSelectedItemId(null);setActive("items")}
-      else if(world){const kind:WorldKind=world[1]==="mapa"?"map":world[1]==="monstruo"?"monster":"npc";setWorldSelection({kind,id:world[2]});setActive("world")}
+      else if(world){const kind:WorldKind=world[1]==="mapa"?"map":world[1]==="monstruo"?"monster":world[1]==="npc"?"npc":"reference";setWorldSelection({kind,id:world[2]});setActive("world")}
       else if(location.hash==="#mundo"){setWorldSelection(null);setActive("world")}
       else if(moduleMatch){pendingAnchor.current=moduleMatch[2]||"";setActive(Number(moduleMatch[1]))}
       else setActive(null);
@@ -183,7 +183,7 @@ export function GuidePortal(){
         </nav>
         <div className="search-wrap">
           <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en AscencionRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
-          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” en el mundo</b><small>Ubicaciones, monstruos y NPC</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
+          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” en el mundo</b><small>Mapas, coordenadas, monstruos, NPC y guías locales</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
         </div>
       </div>
     </header>
@@ -270,6 +270,20 @@ function localizeWorldLinks(shadow:ShadowRoot){
     link.dataset.localWorld="npc";
     link.title="Abrir ficha local del NPC";
   });
+  shadow.querySelectorAll<HTMLAnchorElement>('a[href*="irowiki.org/classic/"]').forEach(link=>{
+    try{
+      const url=new URL((link.getAttribute("href")||"").replaceAll("&amp;","&"));
+      const raw=url.pathname.split("/").filter(Boolean).at(-1)||"referencia";
+      let name=raw;
+      try{name=decodeURIComponent(raw)}catch{/* La ruta ya está en texto utilizable. */}
+      const id=worldSlug(name.replaceAll("_"," "))||"referencia";
+      link.setAttribute("href",`#referencia-${id}`);
+      link.dataset.localWorld="reference";
+      link.title=`Abrir referencia local: ${name.replaceAll("_"," ")}`;
+      link.removeAttribute("target");
+      link.removeAttribute("rel");
+    }catch{return}
+  });
 }
 
 function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void){
@@ -285,8 +299,8 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
       const href=link.getAttribute("href")||"";
       const localItem=href.match(/^#objeto-(\d+)$/);
       if(localItem){event.preventDefault();openCatalog({id:Number(localItem[1])});return}
-      const localWorld=href.match(/^#(mapa|monstruo|npc)-(.+)$/);
-      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":"npc";openWorld({kind,id:localWorld[2]});return}
+      const localWorld=href.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/);
+      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":localWorld[1]==="npc"?"npc":"reference";openWorld({kind,id:localWorld[2]});return}
       const crossModule=href.match(/^#module-(\d+)(#.*)?$/);
       if(crossModule){event.preventDefault();openModule(Number(crossModule[1]),crossModule[2]||"");return}
       if(href.startsWith("#")){event.preventDefault();scrollInside(shadow,href);return}
