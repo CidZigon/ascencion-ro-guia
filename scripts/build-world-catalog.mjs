@@ -140,8 +140,10 @@ for(const file of files){
 }
 
 for(const npc of npcs.values()){
+  npc.points=npc.points.filter((point,index,points)=>points.findIndex(candidate=>candidate.x===point.x&&candidate.y===point.y)===index);
   const cached=entityCache.npcs?.[npc.id];
   npc.sprite=cached?.sprite||null;
+  npc.spriteApproximate=Boolean(cached?.spriteApproximate);
   const verified=cached?.verifiedLocation;
   if(verified){
     npc.map??=verified.map;
@@ -149,6 +151,7 @@ for(const npc of npcs.values()){
     addUnique(npc.locations,verifiedLabel);
     addPoint(npc.points,verifiedLabel,"npc");
   }
+  npc.points=npc.points.filter((point,index,points)=>points.findIndex(candidate=>candidate.x===point.x&&candidate.y===point.y)===index);
   if(!npc.map||!maps.has(npc.map))continue;
   const map=maps.get(npc.map);
   for(const location of npc.locations)addPoint(map.points,`${npc.name} · ${location}`,"npc");

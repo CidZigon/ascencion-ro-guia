@@ -4,6 +4,7 @@ const indexUrl=new URL("../public/data/world-index.json",import.meta.url);
 const cacheUrl=new URL("../public/data/world-entities-cache.json",import.meta.url);
 const npcMediaDir=new URL("../public/world/npcs/",import.meta.url);
 const world=JSON.parse(await readFile(indexUrl,"utf8"));
+const refreshNpcs=process.argv.includes("--refresh-npcs");
 let cache={monsters:{},npcs:{}};
 try{cache=JSON.parse(await readFile(cacheUrl,"utf8"))}catch{/* Primera generación de la caché. */}
 cache.monsters??={};
@@ -54,10 +55,11 @@ function parseNpcCandidates(html){
   }).filter(candidate=>candidate.spriteId&&candidate.name);
 }
 function chooseNpc(candidates,npc){
-  const exact=candidates.filter(candidate=>normalize(candidate.name)===normalize(npc.name));
-  const pool=exact.length?exact:candidates;
-  const point=npc.points?.[0];
-  return pool.sort((a,b)=>score(b,npc,point)-score(a,npc,point))[0]||null;
+  const points=npc.points??[];
+  const exactPoint=candidates.filter(candidate=>points.some(point=>candidate.map===npc.map&&candidate.x===point.x&&candidate.y===point.y));
+  if(exactPoint.length)return exactPoint.sort((a,b)=>score(b,npc,points[0])-score(a,npc,points[0]))[0];
+  const exactName=candidates.filter(candidate=>normalize(candidate.name)===normalize(npc.name));
+  return exactName.sort((a,b)=>score(b,npc,points[0])-score(a,npc,points[0]))[0]||null;
 }
 function score(candidate,npc,point){
   return (normalize(candidate.name)===normalize(npc.name)?12:0)+(candidate.map&&candidate.map===npc.map?8:0)+(point&&candidate.x===point.x&&candidate.y===point.y?5:0);
@@ -71,30 +73,59 @@ for(const monster of world.monsters){
   monsterFetched++;
 }
 
-for(let index=0;index<world.npcs.length;index+=5){
-  await Promise.all(world.npcs.slice(index,index+5).map(async npc=>{
-    const existing=cache.npcs[npc.id];
-    if(existing?.checked)return;
+const npcMapPages=new Map();
+function npcMapCandidates(map,renewal){
+  const key=`${map}:${renewal?1:0}`;
+  if(!npcMapPages.has(key))npcMapPages.set(key,(async()=>{
+    const url=new URL("https://ratemyserver.net/index.php");
+    url.searchParams.set("page","npc_shop_warp");
+    url.searchParams.set("map",map);
+    url.searchParams.set("s_block","npc_block");
+    if(renewal)url.searchParams.set("re_mob","1");
+    return parseNpcCandidates(await fetchText(url));
+  })());
+  return npcMapPages.get(key);
+}
+function npcSearchNames(name){
+  return [...new Set([name,name.split("/")[0],name.replace(/\([^)]*\)/g," ")].map(value=>value.replace(/\s+/g," ").trim()).filter(value=>value.length>=3))];
+}
+async function npcNameCandidates(npc){
+  const requests=[];
+  for(const name of npcSearchNames(npc.name))for(const renewal of [false,true]){
     const url=new URL("https://ratemyserver.net/index.php");
     url.searchParams.set("npcsearch","Search");
     url.searchParams.set("page","nsw_npc_search");
-    url.searchParams.set("snpc_name",npc.name);
-    const html=await fetchText(url);
-    const match=chooseNpc(parseNpcCandidates(html),npc);
-    const result={checked:true,sprite:null,verifiedLocation:null};
+    url.searchParams.set("snpc_name",name);
+    url.searchParams.set("re",renewal?"1":"0");
+    requests.push(fetchText(url).then(parseNpcCandidates));
+  }
+  return (await Promise.all(requests)).flat();
+}
+
+for(let index=0;index<world.npcs.length;index+=16){
+  await Promise.all(world.npcs.slice(index,index+16).map(async npc=>{
+    const existing=cache.npcs[npc.id];
+    if(existing?.checked&&!refreshNpcs)return;
+    let candidates=[];
+    if(npc.map)candidates.push(...await npcMapCandidates(npc.map,false),...await npcMapCandidates(npc.map,true));
+    let match=chooseNpc(candidates,npc);
+    if(!match){candidates.push(...await npcNameCandidates(npc));match=chooseNpc(candidates,npc)}
+    const result={checked:true,sprite:existing?.sprite??null,verifiedLocation:null};
     if(match?.spriteId){
       const target=new URL(`${match.spriteId}.gif`,npcMediaDir);
       if(await download(`https://file5s.ratemyserver.net/quests/npcs/${match.spriteId}.gif`,target)){
         result.sprite=`/world/npcs/${match.spriteId}.gif`;
         npcSprites++;
       }
-      if(match.map&&match.x!==null&&match.y!==null)result.verifiedLocation={map:match.map,x:match.x,y:match.y};
+      const exactPoint=npc.points?.some(point=>match.map===npc.map&&match.x===point.x&&match.y===point.y);
+      if(match.map&&match.x!==null&&match.y!==null&&(exactPoint||!npc.points?.length))result.verifiedLocation={map:match.map,x:match.x,y:match.y};
     }
     cache.npcs[npc.id]=result;
     npcFetched++;
   }));
   await writeFile(cacheUrl,JSON.stringify(cache),"utf8");
-  await new Promise(resolve=>setTimeout(resolve,120));
+  console.log(`NPC revisados: ${Math.min(index+16,world.npcs.length)} / ${world.npcs.length}`);
+  await new Promise(resolve=>setTimeout(resolve,80));
 }
 
 await writeFile(cacheUrl,JSON.stringify(cache),"utf8");

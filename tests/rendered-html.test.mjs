@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 async function render(path="/") {
@@ -26,6 +26,14 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   assert.equal(catalog.items.length,6169);
   assert.equal(files.length,catalog.meta.chunks);
   assert.equal(new Set(catalog.items.map(item=>item.id)).size,6169);
+  assert.ok(catalog.items.every(item=>/^\/world\/items\/\d+\.(?:gif|png)$/.test(item.sprite)));
+
+  const sprites=JSON.parse(await readFile(new URL("../public/data/item-sprites.json",import.meta.url),"utf8"));
+  assert.equal(sprites.meta.count,6169);
+  assert.equal(sprites.meta.missing,0);
+  assert.ok(sprites.meta.exact>=6100);
+  assert.equal(Object.keys(sprites.sprites).length,6169);
+  await access(new URL(`../public${sprites.sprites[501]}`,import.meta.url));
 
   const details=[];
   for(const file of files){
@@ -56,7 +64,10 @@ test("el índice del mundo resuelve mapas, monstruos, NPC y guías con medios lo
   assert.ok(world.monsters.find(entry=>entry.id===1007).locations.some(location=>location.map==="prt_fild00"));
   assert.ok(world.npcs.find(entry=>entry.name==="Valkyrie"));
   assert.ok(world.npcs.find(entry=>entry.id==="langry-gef_fild07"));
-  assert.ok(world.npcs.filter(entry=>entry.sprite).length>=90);
+  assert.equal(world.npcs.find(entry=>entry.id==="langry-gef_fild07").points.length,1);
+  assert.equal(world.npcs.filter(entry=>entry.sprite).length,world.npcs.length);
+  assert.ok(world.npcs.filter(entry=>entry.spriteApproximate).length<=100);
+  for(const sprite of new Set(world.npcs.map(entry=>entry.sprite)))await access(new URL(`../public${sprite}`,import.meta.url));
   assert.equal(world.npcs.find(entry=>entry.name==="Aelle").sprite,"/world/npcs/79.gif");
   assert.ok(world.references.find(entry=>entry.id==="endless-tower"));
 });
@@ -70,6 +81,7 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(portal,/WorldReferenceDialog/);
   assert.match(portal,/ExternalLinkDialog/);
   assert.match(portal,/NeonCursor/);
+  assert.match(portal,/link\.dataset\.worldX/);
   assert.match(portal,/link\.closest\("tr"\)/);
   assert.match(portal,/bindModule\(shadow,active,openModule,openCatalog,openWorldPreview,openExternalLink\)/);
   assert.match(portal,/cleanVisibleGuideMetadata\(shadow\)/);

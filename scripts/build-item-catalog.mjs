@@ -8,6 +8,8 @@ const REVISION = "e985006171d2eb320ee512a653f4c83aea3d81b6";
 const SNAPSHOT_DATE = "2026-08-23";
 const SOURCE_FILES = ["item_db_equip.yml", "item_db_usable.yml", "item_db_etc.yml"];
 const CHUNK_SIZE = 400;
+let itemSprites = {};
+try{itemSprites=JSON.parse(await readFile(new URL("../public/data/item-sprites.json",import.meta.url),"utf8")).sprites??{}}catch{/* El catálogo funciona aun antes de crear la caché visual. */}
 
 function scalar(value) {
   const clean = value.trim();
@@ -37,7 +39,7 @@ function parseItemDatabase(text, sourceFile) {
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    const itemStart = line.match(/^  - Id:\s*(\d+)\s*$/);
+    const itemStart = line.match(/^ {2}- Id:\s*(\d+)\s*$/);
     if (itemStart) {
       if (current) items.push(current);
       current = { Id: Number(itemStart[1]), _source: sourceFile };
@@ -45,13 +47,13 @@ function parseItemDatabase(text, sourceFile) {
     }
     if (!current) continue;
 
-    const field = line.match(/^    ([A-Za-z][\w]*):(?:\s*(.*))?$/);
+    const field = line.match(/^ {4}([A-Za-z][\w]*):(?:\s*(.*))?$/);
     if (!field) continue;
     const [, key, raw = ""] = field;
 
     if (raw === "|" || raw === "|-" || raw === ">" || raw === ">-") {
       const block = [];
-      while (index + 1 < lines.length && !/^    [A-Za-z][\w]*:/.test(lines[index + 1]) && !/^  - Id:/.test(lines[index + 1])) {
+      while (index + 1 < lines.length && !/^ {4}[A-Za-z][\w]*:/.test(lines[index + 1]) && !/^ {2}- Id:/.test(lines[index + 1])) {
         index += 1;
         block.push(lines[index].replace(/^ {6}/, ""));
       }
@@ -61,7 +63,7 @@ function parseItemDatabase(text, sourceFile) {
 
     if (!raw) {
       const nested = [];
-      while (index + 1 < lines.length && !/^    [A-Za-z][\w]*:/.test(lines[index + 1]) && !/^  - Id:/.test(lines[index + 1])) {
+      while (index + 1 < lines.length && !/^ {4}[A-Za-z][\w]*:/.test(lines[index + 1]) && !/^ {2}- Id:/.test(lines[index + 1])) {
         index += 1;
         nested.push(lines[index]);
       }
@@ -91,6 +93,7 @@ function detail(item) {
     id: item.Id,
     aegisName: item.AegisName ?? "",
     name: item.Name ?? item.AegisName ?? `Item ${item.Id}`,
+    sprite: itemSprites[item.Id],
     type: item.Type ?? "Etc",
     subType: item.SubType,
     buy: item.Buy,
@@ -126,6 +129,7 @@ function indexEntry(item, chunk) {
     id: item.id,
     name: item.name,
     aegisName: item.aegisName,
+    sprite: item.sprite,
     type: item.type,
     subType: item.subType,
     buy: item.buy,

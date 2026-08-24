@@ -329,6 +329,8 @@ function localizeWorldLinks(shadow:ShadowRoot){
     const id=`${name}-${map}`;
     setLocalLink(link,`#npc-${id}`,"Abrir ficha local del NPC");
     link.dataset.localWorld="npc";
+    const point=(link.closest(".npcref")??link.closest("tr")??link.closest("p")??link.parentElement)?.querySelector<HTMLAnchorElement>("a.maplink")?.textContent?.match(/(?:^|\D)(\d{1,3})\s*,\s*(\d{1,3})(?:\D|$)/);
+    if(point){link.dataset.worldX=point[1];link.dataset.worldY=point[2]}
   });
   shadow.querySelectorAll<HTMLAnchorElement>('a[href*="irowiki.org/classic/"]').forEach(link=>{
     try{
@@ -359,7 +361,7 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
       const localItem=href.match(/^#objeto-(\d+)$/);
       if(localItem){event.preventDefault();openCatalog({id:Number(localItem[1])});return}
       const localWorld=href.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/);
-      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":localWorld[1]==="npc"?"npc":"reference";openWorldReference({kind,id:localWorld[2]});return}
+      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":localWorld[1]==="npc"?"npc":"reference";const x=Number(link.dataset.worldX),y=Number(link.dataset.worldY),point=kind==="npc"&&Number.isFinite(x)&&Number.isFinite(y)?{x,y}:undefined;openWorldReference({kind,id:localWorld[2],point});return}
       const crossModule=href.match(/^#module-(\d+)(#.*)?$/);
       if(crossModule){event.preventDefault();openModule(Number(crossModule[1]),crossModule[2]||"");return}
       if(href.startsWith("#")){event.preventDefault();scrollInside(shadow,href);return}

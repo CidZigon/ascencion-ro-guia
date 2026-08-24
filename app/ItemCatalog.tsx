@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- sprites oficiales pequeños servidos desde la caché local */
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -7,7 +8,7 @@ type CatalogMeta = {
   chunks:number; typeCounts:Record<string,number>;
 };
 type ItemIndex = {
-  id:number; name:string; aegisName:string; type:string; subType?:string; buy?:number; sell?:number;
+  id:number; name:string; aegisName:string; sprite?:string; type:string; subType?:string; buy?:number; sell?:number;
   weight?:number; attack?:number; defense?:number; slots?:number; equipLevelMin?:number;
   refineable?:boolean; locations?:string[]; chunk:number;
 };
@@ -82,7 +83,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem}:{selected
       <div className="catalog-results">
         <div className="catalog-status"><b>{filtered.length.toLocaleString("es-ES")}</b> coincidencias</div>
         <div className="item-list">{filtered.slice(0,limit).map(item=><button key={item.id} className={selectedItemId===item.id?"item-row selected":"item-row"} onClick={()=>onSelectItem(item.id)}>
-          <span className={`item-sigil type-${item.type.toLowerCase()}`}>{TYPE_SIGILS[item.type]??"◆"}</span>
+          <ItemSprite item={item} className="item-sigil"/>
           <span className="item-main"><b>{item.name}</b><small>{TYPE_LABELS[item.type]??item.type}{item.subType?` · ${item.subType}`:""}{item.slots!==undefined?` · ${item.slots} slot${item.slots===1?"":"s"}`:""}</small></span>
           <span className="item-id">#{item.id}</span>
         </button>)}</div>
@@ -97,7 +98,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem}:{selected
 function ItemDetailCard({item}:{item:ItemDetail}){
   const scripts=[['Efecto / uso',item.script],['Al equipar',item.equipScript],['Al desequipar',item.unEquipScript]].filter((entry):entry is [string,string]=>Boolean(entry[1]));
   return <div className="detail-card">
-    <div className="detail-title"><span className="detail-sigil">{TYPE_SIGILS[item.type]??"◆"}</span><div><span>#{item.id}</span><h2>{item.name}</h2><code>{item.aegisName}</code></div></div>
+    <div className="detail-title"><ItemSprite item={item} className="detail-sigil" detail/><div><span>#{item.id}</span><h2>{item.name}</h2><code>{item.aegisName}</code></div></div>
     <div className="detail-badges"><span>{TYPE_LABELS[item.type]??item.type}</span>{item.subType&&<span>{item.subType}</span>}{item.refineable&&<span>Refinable</span>}</div>
     <dl className="stat-grid">
       <div><dt>Compra</dt><dd>{zeny(item.buy)}</dd></div><div><dt>Venta</dt><dd>{zeny(item.sell)}</dd></div>
@@ -111,4 +112,10 @@ function ItemDetailCard({item}:{item:ItemDetail}){
     {scripts.length>0&&<section className="detail-section"><h3>Mecánica verificada</h3>{scripts.map(([label,script])=><details key={label}><summary>{label}</summary><pre>{script}</pre></details>)}</section>}
     {(item.trade||item.flags)&&<section className="detail-section"><details><summary>Restricciones y banderas</summary><pre>{JSON.stringify({flags:item.flags,trade:item.trade},null,2)}</pre></details></section>}
   </div>;
+}
+
+function ItemSprite({item,className,detail=false}:{item:ItemIndex;className:string;detail?:boolean}){
+  const fallback=TYPE_SIGILS[item.type]??"◆";
+  if(!item.sprite)return <span className={className}>{fallback}</span>;
+  return <span className={`${className} item-sprite`}><img src={item.sprite} alt={detail?`Sprite de ${item.name}`:""} loading={detail?"eager":"lazy"} onError={event=>event.currentTarget.parentElement?.classList.add("sprite-broken")}/><i aria-hidden="true">{fallback}</i></span>;
 }

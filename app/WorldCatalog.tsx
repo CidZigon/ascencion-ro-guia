@@ -5,12 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ModalShell } from "./ModalShell";
 
 export type WorldKind="map"|"monster"|"npc"|"reference";
-export type WorldSelection={kind:WorldKind;id:string};
+export type WorldSelection={kind:WorldKind;id:string;point?:{x:number;y:number}};
 type WorldPoint={x:number;y:number;label:string;kind:"npc"|"reference"};
 type MapEntry={id:string;code:string;labels:string[];points:WorldPoint[];image:string|null;contexts:string[];topics:number[]};
 type MonsterLocation={map:string;name:string;spawn:string};
 type MonsterEntry={id:number;name:string;sprite:string|null;locations:MonsterLocation[];contexts:string[];topics:number[]};
-type NpcEntry={id:string;name:string;map:string|null;sprite:string|null;locations:string[];points:WorldPoint[];contexts:string[];topics:number[]};
+type NpcEntry={id:string;name:string;map:string|null;sprite:string|null;spriteApproximate?:boolean;locations:string[];points:WorldPoint[];contexts:string[];topics:number[]};
 type ReferenceEntry={id:string;name:string;contexts:string[];topics:number[]};
 type WorldPayload={counts:{maps:number;monsters:number;npcs:number;references:number};maps:MapEntry[];monsters:MonsterEntry[];npcs:NpcEntry[];references:ReferenceEntry[]};
 type Entry=
@@ -82,7 +82,7 @@ export function WorldReferenceDialog({selection,onClose}:{selection:WorldSelecti
 
   const selected=payload?worldEntries(payload).find(entry=>entry.kind===current.kind&&entry.id===current.id)??null:null;
   return <ModalShell eyebrow="Referencia rápida" title="Consulta sin salir de la guía" onClose={onClose}>
-    {error?<div className="world-dialog-message"><b>No se pudo abrir esta referencia.</b><span>Intenta cerrar la ventana y abrirla de nuevo.</span></div>:!payload?<div className="world-dialog-message"><div className="loader"/><span>Buscando en el índice local…</span></div>:selected?<WorldDetail key={`${selected.kind}-${selected.id}`} entry={selected} maps={payload.maps} onSelect={setCurrent}/>:<div className="world-dialog-message"><b>Referencia no encontrada.</b><span>El enlace existe en la guía, pero aún no tiene una ficha local asociada.</span></div>}
+    {error?<div className="world-dialog-message"><b>No se pudo abrir esta referencia.</b><span>Intenta cerrar la ventana y abrirla de nuevo.</span></div>:!payload?<div className="world-dialog-message"><div className="loader"/><span>Buscando en el índice local…</span></div>:selected?<WorldDetail key={`${selected.kind}-${selected.id}`} entry={selected} maps={payload.maps} onSelect={setCurrent} selectedPoint={current.point}/>:<div className="world-dialog-message"><b>Referencia no encontrada.</b><span>El enlace existe en la guía, pero aún no tiene una ficha local asociada.</span></div>}
   </ModalShell>;
 }
 
@@ -101,21 +101,28 @@ function entrySubtitle(entry:Entry){
   if(entry.kind==="npc")return `${LABELS.npc}${entry.map?` · ${entry.map}`:""}`;
   return `${LABELS.reference} · ${entry.topics.length} ${entry.topics.length===1?"tema":"temas"}`;
 }
-function WorldDetail({entry,maps,onSelect}:{entry:Entry;maps:MapEntry[];onSelect:(selection:WorldSelection)=>void}){
+function WorldDetail({entry,maps,onSelect,selectedPoint}:{entry:Entry;maps:MapEntry[];onSelect:(selection:WorldSelection)=>void;selectedPoint?:{x:number;y:number}}){
   const map=entry.kind==="map"?entry:entry.kind==="npc"&&entry.map?maps.find(item=>item.id===entry.map)??null:null;
-  const points=entry.kind==="map"?entry.points:entry.kind==="npc"?entry.points:[];
-  const lines=entry.kind==="map"?entry.labels:entry.kind==="npc"?entry.locations:[];
+  const points=entry.kind==="map"?entry.points:entry.kind==="npc"?primaryNpcPoints(entry,selectedPoint):[];
+  const lines=entry.kind==="map"?entry.labels:entry.kind==="npc"?entry.locations.slice(0,1):[];
   const image=entry.kind==="map"?entry.image:map?.image??null;
   const portrait=(entry.kind==="monster"||entry.kind==="npc")?entry.sprite:null;
   const portraitName=(entry.kind==="monster"||entry.kind==="npc")?entry.name:"";
   return <div className="world-detail-card">
-    <div className="world-detail-title"><span className={portrait?"sprite-detail":""}>{portrait?<img src={portrait} alt={`Sprite de ${portraitName}`}/>:ICONS[entry.kind]}</span><div><small>{LABELS[entry.kind]}</small><h2>{entryName(entry)}</h2><code>{entry.kind==="map"?entry.code:entry.kind==="monster"?`ID ${entry.id}`:entry.kind==="npc"?entry.map||"Sin mapa indicado":"Referencia integrada"}</code></div></div>
+    <div className="world-detail-title"><span className={portrait?"sprite-detail":""}>{portrait?<img src={portrait} alt={`Sprite de ${portraitName}`}/>:ICONS[entry.kind]}</span><div><small>{LABELS[entry.kind]}</small><h2>{entryName(entry)}</h2><code>{entry.kind==="map"?entry.code:entry.kind==="monster"?`ID ${entry.id}`:entry.kind==="npc"?entry.map||"Sin mapa indicado":"Referencia integrada"}</code>{entry.kind==="npc"&&entry.spriteApproximate&&<em className="sprite-reference-note">Representación visual del rol; el sprite exacto no está publicado.</em>}</div></div>
     {entry.kind==="monster"&&<MonsterLocations key={entry.id} monster={entry} maps={maps} onSelect={onSelect}/>}
     {map&&<section className="map-section"><h3>{entry.kind==="npc"?"Ubicación en el mapa":"Mapa y coordenadas"}</h3><MapBoard code={map.code} image={image} points={points}/></section>}
     {lines.length>0&&<section><h3>Ubicaciones mencionadas</h3><ul>{lines.map(line=><li key={line}>{line}</li>)}</ul></section>}
     {entry.kind==="reference"&&entry.topics.length>0&&<section><h3>Integrada en</h3><div className="topic-chips">{entry.topics.map(topic=><span key={topic}>{TOPICS[topic]||`Tema ${topic}`}</span>)}</div></section>}
     <section><h3>{entry.kind==="reference"?"Contenido disponible en AscencionRO":"Aparece en las guías"}</h3><div className="context-list">{entry.contexts.length?entry.contexts.map((context,index)=><p key={`${context}-${index}`}>{context}</p>):<p>La referencia está indexada localmente, pero no tiene una nota adicional.</p>}</div></section>
   </div>;
+}
+function primaryNpcPoints(entry:Extract<Entry,{kind:"npc"}>,selectedPoint?:{x:number;y:number}){
+  const unique=entry.points.filter((point,index,points)=>points.findIndex(candidate=>candidate.x===point.x&&candidate.y===point.y)===index);
+  if(selectedPoint){const selected=unique.find(point=>point.x===selectedPoint.x&&point.y===selectedPoint.y);if(selected)return[selected]}
+  const stated=entry.locations.flatMap(location=>{const match=location.match(/(?:^|\D)(\d{1,3})\s*,\s*(\d{1,3})(?:\D|$)/);return match?[{x:Number(match[1]),y:Number(match[2])}]:[]});
+  const preferred=unique.find(point=>stated.some(location=>location.x===point.x&&location.y===point.y))??unique[0];
+  return preferred?[preferred]:[];
 }
 function MonsterLocations({monster,maps,onSelect}:{monster:Extract<Entry,{kind:"monster"}>;maps:MapEntry[];onSelect:(selection:WorldSelection)=>void}){
   const [active,setActive]=useState(monster.locations[0]?.map||"");
