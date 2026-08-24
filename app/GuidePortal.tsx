@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ItemCatalog } from "./ItemCatalog";
-import { WorldCatalog, type WorldKind, type WorldSelection } from "./WorldCatalog";
+import { WorldCatalog, WorldReferenceDialog, type WorldKind, type WorldSelection } from "./WorldCatalog";
 
 type ModuleInfo = { id:number; icon:string; title:string; description:string };
 type SearchEntry = { module:number; anchor:string; title:string; text:string; moduleTitle:string; icon:string };
@@ -42,6 +42,7 @@ export function GuidePortal(){
   const [catalogQuery,setCatalogQuery]=useState("");
   const [worldQuery,setWorldQuery]=useState("");
   const [worldSelection,setWorldSelection]=useState<WorldSelection|null>(null);
+  const [worldPreview,setWorldPreview]=useState<WorldSelection|null>(null);
   const [guidesOpen,setGuidesOpen]=useState(false);
   const headerRef=useRef<HTMLElement>(null);
   const hostRef=useRef<HTMLDivElement>(null);
@@ -49,6 +50,7 @@ export function GuidePortal(){
   const pendingAnchor=useRef("");
 
   const openModule=useCallback((id:number,anchor="")=>{
+    setWorldPreview(null);
     pendingAnchor.current=anchor;
     setLoadError(false);
     setActive(previous=>{
@@ -62,6 +64,7 @@ export function GuidePortal(){
   },[]);
 
   const openCatalog=useCallback((options:{id?:number;query?:string}={})=>{
+    setWorldPreview(null);
     setActive("items");
     setSelectedItemId(options.id??null);
     setCatalogQuery(options.query??"");
@@ -77,6 +80,7 @@ export function GuidePortal(){
   },[]);
 
   const openWorld=useCallback((options:{kind?:WorldKind;id?:string;query?:string}={})=>{
+    setWorldPreview(null);
     setActive("world");
     setWorldSelection(options.kind&&options.id?{kind:options.kind,id:options.id}:null);
     setWorldQuery(options.query??"");
@@ -94,6 +98,7 @@ export function GuidePortal(){
   },[]);
 
   const showLibrary=useCallback(()=>{
+    setWorldPreview(null);
     setActive(null);
     setQuery("");
     setGuidesOpen(false);
@@ -152,11 +157,11 @@ export function GuidePortal(){
     cleanVisibleGuideMetadata(shadow);
     localizeItemLinks(shadow);
     localizeWorldLinks(shadow);
-    bindModule(shadow,active,openModule,openCatalog,openWorld);
+    bindModule(shadow,active,openModule,openCatalog,setWorldPreview);
     const anchor=pendingAnchor.current;
     pendingAnchor.current="";
     if(anchor)setTimeout(()=>scrollInside(shadow,anchor),80);
-  },[active,moduleData,openModule,openCatalog,openWorld]);
+  },[active,moduleData,openModule,openCatalog]);
 
   const results=useMemo(()=>{
     const term=query.trim();
@@ -195,6 +200,7 @@ export function GuidePortal(){
         {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la guía</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando la guía…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
+    {worldPreview&&<WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)}/>}
   </main>;
 }
 
@@ -263,7 +269,7 @@ function localizeWorldLinks(shadow:ShadowRoot){
     }catch{return}
   });
   shadow.querySelectorAll<HTMLAnchorElement>("a.npclink").forEach(link=>{
-    const wrapper=link.closest(".npcref"),mapLink=wrapper?.querySelector<HTMLAnchorElement>("a.maplink"),mapHref=mapLink?.getAttribute("href")||"";
+    const wrapper=link.closest(".npcref")??link.closest("tr")??link.closest("p")??link.parentElement,mapLink=wrapper?.querySelector<HTMLAnchorElement>("a.maplink"),mapHref=mapLink?.getAttribute("href")||"";
     const map=mapHref.match(/[?&]map=([^&]+)/)?.[1]||mapHref.match(/^#mapa-(.+)$/)?.[1]||"";
     const id=`${worldSlug(link.textContent||"npc")}${map?`-${map}`:""}`;
     link.setAttribute("href",`#npc-${id}`);
@@ -286,7 +292,7 @@ function localizeWorldLinks(shadow:ShadowRoot){
   });
 }
 
-function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void){
+function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openWorldReference:(selection:WorldSelection)=>void){
   const boundShadow=shadow as ShadowRoot&{_portalClickHandler?:EventListener};
   if(boundShadow._portalClickHandler)boundShadow.removeEventListener("click",boundShadow._portalClickHandler);
   const handleClick:EventListener=(rawEvent)=>{
@@ -300,7 +306,7 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
       const localItem=href.match(/^#objeto-(\d+)$/);
       if(localItem){event.preventDefault();openCatalog({id:Number(localItem[1])});return}
       const localWorld=href.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/);
-      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":localWorld[1]==="npc"?"npc":"reference";openWorld({kind,id:localWorld[2]});return}
+      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":localWorld[1]==="npc"?"npc":"reference";openWorldReference({kind,id:localWorld[2]});return}
       const crossModule=href.match(/^#module-(\d+)(#.*)?$/);
       if(crossModule){event.preventDefault();openModule(Number(crossModule[1]),crossModule[2]||"");return}
       if(href.startsWith("#")){event.preventDefault();scrollInside(shadow,href);return}

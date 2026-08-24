@@ -51,6 +51,18 @@ function anchor(block,className){
   const match=block.match(new RegExp(`<a\\b(?=[^>]*class="[^"]*\\b${className}\\b[^"]*")[^>]*href="([^"]+)"[^>]*>([\\s\\S]*?)<\\/a>`,"i"));
   return match?{href:decode(match[1]),label:text(match[2])}:null;
 }
+function collectNpc(npc,location,topic,html,index){
+  if(!npc)return;
+  const mapUrl=location?safeUrl(location.href):null;
+  const map=mapUrl?.searchParams.get("map")||null;
+  const id=`${slug(npc.label)}${map?`-${map}`:""}`;
+  const entry=npcs.get(id)??{id,name:npc.label,map,locations:[],points:[],contexts:[],topics:[]};
+  addUnique(entry.locations,location?.label||"");
+  addPoint(entry.points,location?.label||"","npc");
+  addUnique(entry.contexts,safeContext(contextAround(html,index)));
+  if(!entry.topics.includes(topic))entry.topics.push(topic);
+  npcs.set(id,entry);
+}
 
 for(const file of files){
   const html=await readFile(new URL(file,modulesDir),"utf8");
@@ -82,16 +94,13 @@ for(const file of files){
   const npcRef=/<span\b[^>]*class="[^"]*\bnpcref\b[^"]*"[^>]*>([\s\S]*?)<\/span>/gi;
   for(const match of html.matchAll(npcRef)){
     const npc=anchor(match[1],"npclink"),location=anchor(match[1],"maplink");
-    if(!npc)continue;
-    const mapUrl=location?safeUrl(location.href):null;
-    const map=mapUrl?.searchParams.get("map")||null;
-    const id=`${slug(npc.label)}${map?`-${map}`:""}`;
-    const entry=npcs.get(id)??{id,name:npc.label,map,locations:[],points:[],contexts:[],topics:[]};
-    addUnique(entry.locations,location?.label||"");
-    addPoint(entry.points,location?.label||"", "npc");
-    addUnique(entry.contexts,safeContext(contextAround(html,match.index||0)));
-    if(!entry.topics.includes(topic))entry.topics.push(topic);
-    npcs.set(id,entry);
+    collectNpc(npc,location,topic,html,match.index||0);
+  }
+
+  const tableRow=/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi;
+  for(const match of html.matchAll(tableRow)){
+    if(/\bnpcref\b/i.test(match[1]))continue;
+    collectNpc(anchor(match[1],"npclink"),anchor(match[1],"maplink"),topic,html,match.index||0);
   }
 
   const visibleHtml=html.replace(/<footer\b[\s\S]*?<\/footer>/gi,"");

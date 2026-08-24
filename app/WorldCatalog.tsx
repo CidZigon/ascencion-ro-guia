@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- sprites GIF animados y mapas estáticos ya optimizados en la caché local */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type WorldKind="map"|"monster"|"npc"|"reference";
 export type WorldSelection={kind:WorldKind;id:string};
@@ -28,6 +28,15 @@ const LABELS:Record<WorldKind,string>={map:"Mapa",monster:"Monstruo",npc:"NPC",r
 const ICONS:Record<WorldKind,string>={map:"⌖",monster:"♜",npc:"♙",reference:"◇"};
 const TOPICS=["","Progresión y EXP","Accesos y dungeons","Historias y lore","Aventuras regionales","Jobs y habilidades","Equipo y fabricación","Endless Tower","Compañeros"];
 
+function worldEntries(payload:WorldPayload):Entry[]{
+  return [
+    ...payload.maps.map(entry=>({...entry,kind:"map" as const})),
+    ...payload.monsters.map(entry=>({...entry,id:String(entry.id),kind:"monster" as const})),
+    ...payload.npcs.map(entry=>({...entry,kind:"npc" as const})),
+    ...payload.references.map(entry=>({...entry,kind:"reference" as const})),
+  ];
+}
+
 export function WorldCatalog({selection,initialQuery,onSelect}:{selection:WorldSelection|null;initialQuery:string;onSelect:(selection:WorldSelection)=>void}){
   const [payload,setPayload]=useState<WorldPayload|null>(null);
   const [query,setQuery]=useState(initialQuery);
@@ -36,12 +45,7 @@ export function WorldCatalog({selection,initialQuery,onSelect}:{selection:WorldS
   const [error,setError]=useState(false);
 
   useEffect(()=>{let live=true;loadWorld().then(data=>{if(live)setPayload(data)}).catch(()=>{if(live)setError(true)});return()=>{live=false}},[]);
-  const entries=useMemo<Entry[]>(()=>payload?[
-    ...payload.maps.map(entry=>({...entry,kind:"map" as const})),
-    ...payload.monsters.map(entry=>({...entry,id:String(entry.id),kind:"monster" as const})),
-    ...payload.npcs.map(entry=>({...entry,kind:"npc" as const})),
-    ...payload.references.map(entry=>({...entry,kind:"reference" as const})),
-  ]:[],[payload]);
+  const entries=useMemo<Entry[]>(()=>payload?worldEntries(payload):[],[payload]);
   const filtered=useMemo(()=>{
     const term=normalize(query.trim());
     return entries.filter(entry=>{
@@ -66,6 +70,34 @@ export function WorldCatalog({selection,initialQuery,onSelect}:{selection:WorldS
       <aside className="world-detail">{selected?<WorldDetail entry={selected} maps={payload.maps} onSelect={onSelect}/>:<div className="detail-placeholder"><span>⌖</span><h2>Selecciona una referencia</h2><p>Verás el mapa, los puntos mencionados, sprites y el contexto de la guía sin abandonar el sitio.</p></div>}</aside>
     </div>
   </section>;
+}
+
+export function WorldReferenceDialog({selection,onClose}:{selection:WorldSelection;onClose:()=>void}){
+  const [payload,setPayload]=useState<WorldPayload|null>(null);
+  const [current,setCurrent]=useState(selection);
+  const [error,setError]=useState(false);
+  const closeRef=useRef<HTMLButtonElement>(null);
+
+  useEffect(()=>{let live=true;loadWorld().then(data=>{if(live)setPayload(data)}).catch(()=>{if(live)setError(true)});return()=>{live=false}},[]);
+  useEffect(()=>{
+    const overflow=document.body.style.overflow;
+    const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")onClose()};
+    document.body.style.overflow="hidden";
+    document.addEventListener("keydown",escape);
+    closeRef.current?.focus();
+    return()=>{document.body.style.overflow=overflow;document.removeEventListener("keydown",escape)};
+  },[onClose]);
+
+  const selected=payload?worldEntries(payload).find(entry=>entry.kind===current.kind&&entry.id===current.id)??null:null;
+  return <div className="world-dialog-backdrop">
+    <button className="world-dialog-dismiss" onClick={onClose} aria-label="Cerrar referencia"/>
+    <section className="world-dialog" role="dialog" aria-modal="true" aria-labelledby="world-dialog-title">
+      <header className="world-dialog-bar"><div><small>Referencia rápida</small><b id="world-dialog-title">Consulta sin salir de la guía</b></div><button ref={closeRef} className="world-dialog-close" onClick={onClose} aria-label="Cerrar referencia">×</button></header>
+      <div className="world-dialog-content">
+        {error?<div className="world-dialog-message"><b>No se pudo abrir esta referencia.</b><span>Intenta cerrar la ventana y abrirla de nuevo.</span></div>:!payload?<div className="world-dialog-message"><div className="loader"/><span>Buscando en el índice local…</span></div>:selected?<WorldDetail key={`${selected.kind}-${selected.id}`} entry={selected} maps={payload.maps} onSelect={setCurrent}/>:<div className="world-dialog-message"><b>Referencia no encontrada.</b><span>El enlace existe en la guía, pero aún no tiene una ficha local asociada.</span></div>}
+      </div>
+    </section>
+  </div>;
 }
 
 function EntryIcon({entry}:{entry:Entry}){
