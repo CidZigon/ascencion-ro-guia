@@ -47,23 +47,23 @@ footer{padding-block:32px;color:var(--muted)}
     .npclink{font-weight:850;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
     </style><div class='module-page'>
 <header>
-<div class="eyebrow">Ragnarok Online Pre-Renewal · Módulo 8</div>
-<div><span class="badge">MINIONS &amp; COMPAÑEROS</span><span class="badge pre">≤ EPISODE 13.2</span><span class="badge">rAthena Pre-Re</span><span class="badge pre">RELEASE ESTABLE · 2026-08-11</span></div>
-<h1>🐾 Minions &amp;<br/><span style="color:var(--gold)">Compañeros · v10.2</span></h1>
+
+<div><span class="badge">MINIONS &amp; COMPAÑEROS</span><span class="badge pre">≤ EPISODE 13.2</span><span class="badge">rAthena Pre-Re</span></div>
+<h1>🐾 Minions &amp;<br/><span style="color:var(--gold)">Compañeros</span></h1>
 <p>Tres sistemas distintos en una guía: Mercenarios, Homúnculos y Cute Pets. Quién puede usarlos, cómo se obtienen, cómo progresan, qué consumen y qué datos usa rAthena Pre-Renewal.</p>
-</header><div class="wrap" style="margin-top:-6px;margin-bottom:12px"><div class="recommended"><b>✅ Versión final entregable de Módulo 8.</b> Incluye Mercenarios, Homúnculos clásicos y Cute Pets Pre-Renewal, con builds, materiales, stats/percentiles, consumibles, AI y bonus pasivos Loyal traducidos.</div></div>
-<nav><div class="wrap"><a href="#inicio">Inicio</a><a href="#mercenarios">Mercenarios</a><a href="#merc-advanced">Merc Build</a><a href="#homunculos">Homúnculos completos</a><a href="#automation">AI / Automatización</a><a href="#pets">Cute Pets</a><a href="#limites">Límites</a><a href="#fuentes">Fuentes</a></div></nav>
+</header><div class="wrap" style="margin-top:-6px;margin-bottom:12px"><div class="recommended"><b>✅ Tres sistemas completos.</b> Mercenarios, Homúnculos clásicos y Cute Pets Pre-Renewal con builds, materiales, estadísticas, consumibles, AI y bonus pasivos.</div></div>
+<nav><div class="wrap"><a href="#inicio">Inicio</a><a href="#mercenarios">Mercenarios</a><a href="#merc-advanced">Merc Build</a><a href="#homunculos">Homúnculos completos</a><a href="#automation">AI / Automatización</a><a href="#pets">Cute Pets</a></div></nav>
 <main>
 <section id="inicio">
 <div class="grid">
 <div class="card"><b class="big">30</b>mercenarios oficiales de Grade 1–10</div>
-<div class="card"><b class="big">3</b>módulos de mercenario</div>
+<div class="card"><b class="big">3</b>secciones de mercenario</div>
 <div class="card"><b class="big">4</b>tipos clásicos de Homunculus</div>
 <div class="card"><b class="big">57</b>entradas Cute Pet en pet_db Pre-Re</div>
 <div class="card"><b class="big">48</b>pets con Script/SupportScript</div>
 </div>
-<div class="callout"><b>Estructura de Módulo 8:</b> Mercenary = compañero temporal contratado; Homunculus = compañero permanente y progresivo del Alchemist/Biochemist; Cute Pet = mascota domesticada basada en tame/egg, hambre e intimidad.</div>
-<div class="warning"><b>Corte histórico:</b> Homunculus S queda fuera. Esta módulo se limita al sistema clásico anterior a 14.1 y mantiene el corte general del proyecto en ≤ Episode 13.2.</div>
+<div class="callout"><b>Diferencias rápidas:</b> Mercenary = compañero temporal contratado; Homunculus = compañero permanente y progresivo del Alchemist/Biochemist; Cute Pet = mascota domesticada basada en tame/egg, hambre e intimidad.</div>
+<div class="warning"><b>Compatibilidad:</b> Homunculus S pertenece a Episode 14.1+; el contenido Pre-Renewal ≤13.2 utiliza Amistr, Filir, Lif y Vanilmirth clásicos.</div>
 </section>
 <section id="mercenarios">
 <div class="eyebrow">Sistema 1</div><h2>⚔️ Mercenarios</h2>
@@ -76,7 +76,7 @@ footer{padding-block:32px;color:var(--muted)}
 <div class="panel">
 <div class="flow"><span class="step">Mercenary Guild</span><span class="arrow">→</span><span class="step">Elegir Grade</span><span class="arrow">→</span><span class="step">Pagar / cumplir Loyalty</span><span class="arrow">→</span><span class="step">Summon Scroll</span><span class="arrow">→</span><span class="step">30 min</span></div>
 </div>
-<div class="warning"><b>Auditoría rAthena actual:</b> <code>npc/other/mercenary_rent.txt</code> instancia <b>Mercenary Manager#Spear</b> en Prontera (41,337) y <b>Mercenary Manager#Bow</b> en Payon Archer Village (99,167). El mismo script define el tipo Sword y un switch GM en Izlude, pero no instancia allí un <code>Mercenary Manager#Sword</code> ni <code>Mercenary Merchant#Sword</code>. En nuestro servidor habrá que revisar/restaurar esa entrada si queremos los tres guilds accesibles.</div>
+<div class="warning"><b>Ubicaciones disponibles:</b> Spear Mercenary Manager está en Prontera (41,337) y Bow Mercenary Manager en Payon Archer Village (99,167). La variante Sword puede no estar disponible; consulta los servicios habilitados en AscencionRO antes de reunir Loyalty para ese gremio.</div>
 <section class="subsection mercgroup" id="merc-bowman-archer">
 <h3>Bowman / Archer</h3>
 <div class="table"><table>
@@ -84,7 +84,7 @@ footer{padding-block:32px;color:var(--muted)}
 <tbody>
 <tr id="portal-f10-1">
 <td>1</td><td><b>Mina</b><br/><span class="id">Merc ID 6017</span></td>
-<td>20</td><td>15+</td><td>7,000z</td><td>—</td>
+<td>20</td><td>15+</td><td>7,000z</td><td></td>
 <td>256</td><td>200</td>
 <td>170–85</td>
 <td>Neutral 1</td>
@@ -92,7 +92,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-2">
 <td>2</td><td><b>Dororu</b><br/><span class="id">Merc ID 6018</span></td>
-<td>30</td><td>25+</td><td>14,000z</td><td>—</td>
+<td>30</td><td>25+</td><td>14,000z</td><td></td>
 <td>457</td><td>70</td>
 <td>228–114</td>
 <td>Neutral 1</td>
@@ -100,7 +100,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-3">
 <td>3</td><td><b>Nami</b><br/><span class="id">Merc ID 6019</span></td>
-<td>40</td><td>35+</td><td>21,000z</td><td>—</td>
+<td>40</td><td>35+</td><td>21,000z</td><td></td>
 <td>732</td><td>93</td>
 <td>260–130</td>
 <td>Neutral 1</td>
@@ -108,7 +108,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-4">
 <td>4</td><td><b>Elfin</b><br/><span class="id">Merc ID 6020</span></td>
-<td>50</td><td>45+</td><td>28,000z</td><td>—</td>
+<td>50</td><td>45+</td><td>28,000z</td><td></td>
 <td>1,092</td><td>116</td>
 <td>310–155</td>
 <td>Neutral 1</td>
@@ -116,7 +116,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-5">
 <td>5</td><td><b>Clara</b><br/><span class="id">Merc ID 6021</span></td>
-<td>60</td><td>55+</td><td>35,000z</td><td>—</td>
+<td>60</td><td>55+</td><td>35,000z</td><td></td>
 <td>2,212</td><td>280</td>
 <td>360–180</td>
 <td>Neutral 1</td>
@@ -124,7 +124,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-6">
 <td>6</td><td><b>Dali</b><br/><span class="id">Merc ID 6022</span></td>
-<td>70</td><td>65+</td><td>42,000z</td><td>—</td>
+<td>70</td><td>65+</td><td>42,000z</td><td></td>
 <td>3,098</td><td>353</td>
 <td>424–212</td>
 <td>Neutral 1</td>
@@ -170,7 +170,7 @@ footer{padding-block:32px;color:var(--muted)}
 <tbody>
 <tr id="portal-f10-11">
 <td>1</td><td><b>Rodin</b><br/><span class="id">Merc ID 6027</span></td>
-<td>22</td><td>15+</td><td>7,000z</td><td>—</td>
+<td>22</td><td>15+</td><td>7,000z</td><td></td>
 <td>2,071</td><td>100</td>
 <td>168–84</td>
 <td>Neutral 1</td>
@@ -178,7 +178,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-12">
 <td>2</td><td><b>Lancer</b><br/><span class="id">Merc ID 6028</span></td>
-<td>34</td><td>25+</td><td>14,000z</td><td>—</td>
+<td>34</td><td>25+</td><td>14,000z</td><td></td>
 <td>2,523</td><td>131</td>
 <td>208–104</td>
 <td>Neutral 1</td>
@@ -186,7 +186,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-13">
 <td>3</td><td><b>Nathan</b><br/><span class="id">Merc ID 6029</span></td>
-<td>41</td><td>35+</td><td>21,000z</td><td>—</td>
+<td>41</td><td>35+</td><td>21,000z</td><td></td>
 <td>3,397</td><td>161</td>
 <td>248–124</td>
 <td>Neutral 1</td>
@@ -194,7 +194,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-14">
 <td>4</td><td><b>Roan</b><br/><span class="id">Merc ID 6030</span></td>
-<td>55</td><td>45+</td><td>28,000z</td><td>—</td>
+<td>55</td><td>45+</td><td>28,000z</td><td></td>
 <td>4,580</td><td>191</td>
 <td>300–150</td>
 <td>Neutral 1</td>
@@ -202,7 +202,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-15">
 <td>5</td><td><b>Orizaro</b><br/><span class="id">Merc ID 6031</span></td>
-<td>60</td><td>55+</td><td>35,000z</td><td>—</td>
+<td>60</td><td>55+</td><td>35,000z</td><td></td>
 <td>5,899</td><td>221</td>
 <td>350–160</td>
 <td>Neutral 1</td>
@@ -210,7 +210,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-16">
 <td>6</td><td><b>Thyla</b><br/><span class="id">Merc ID 6032</span></td>
-<td>72</td><td>65+</td><td>42,000z</td><td>—</td>
+<td>72</td><td>65+</td><td>42,000z</td><td></td>
 <td>7,874</td><td>252</td>
 <td>370–185</td>
 <td>Neutral 1</td>
@@ -256,7 +256,7 @@ footer{padding-block:32px;color:var(--muted)}
 <tbody>
 <tr id="portal-f10-21">
 <td>1</td><td><b>David</b><br/><span class="id">Merc ID 6037</span></td>
-<td>20</td><td>15+</td><td>7,000z</td><td>—</td>
+<td>20</td><td>15+</td><td>7,000z</td><td></td>
 <td>502</td><td>70</td>
 <td>174–87</td>
 <td>Neutral 1</td>
@@ -264,7 +264,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-22">
 <td>2</td><td><b>Ellen</b><br/><span class="id">Merc ID 6038</span></td>
-<td>30</td><td>25+</td><td>14,000z</td><td>—</td>
+<td>30</td><td>25+</td><td>14,000z</td><td></td>
 <td>979</td><td>99</td>
 <td>258–129</td>
 <td>Neutral 1</td>
@@ -272,7 +272,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-23">
 <td>3</td><td><b>Luise</b><br/><span class="id">Merc ID 6039</span></td>
-<td>40</td><td>35+</td><td>21,000z</td><td>—</td>
+<td>40</td><td>35+</td><td>21,000z</td><td></td>
 <td>1,555</td><td>134</td>
 <td>326–163</td>
 <td>Neutral 1</td>
@@ -280,7 +280,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-24">
 <td>4</td><td><b>Frank</b><br/><span class="id">Merc ID 6040</span></td>
-<td>50</td><td>45+</td><td>28,000z</td><td>—</td>
+<td>50</td><td>45+</td><td>28,000z</td><td></td>
 <td>2,397</td><td>162</td>
 <td>382–191</td>
 <td>Neutral 1</td>
@@ -288,7 +288,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-25">
 <td>5</td><td><b>Ryan</b><br/><span class="id">Merc ID 6041</span></td>
-<td>60</td><td>55+</td><td>35,000z</td><td>—</td>
+<td>60</td><td>55+</td><td>35,000z</td><td></td>
 <td>3,387</td><td>195</td>
 <td>406–203</td>
 <td>Neutral 1</td>
@@ -296,7 +296,7 @@ footer{padding-block:32px;color:var(--muted)}
 </tr>
 <tr id="portal-f10-26">
 <td>6</td><td><b>Paolo</b><br/><span class="id">Merc ID 6042</span></td>
-<td>70</td><td>65+</td><td>42,000z</td><td>—</td>
+<td>70</td><td>65+</td><td>42,000z</td><td></td>
 <td>4,495</td><td>241</td>
 <td>436–218</td>
 <td>Neutral 1</td>
@@ -337,7 +337,7 @@ footer{padding-block:32px;color:var(--muted)}
 </section>
 </section>
 <section id="homunculos">
-<div class="eyebrow">Sistema 2 · Flujo completo v10.2</div><h2>🧪 Homúnculos · desde Bioethics hasta la build final</h2>
+<div class="eyebrow">Sistema 2 · Flujo completo</div><h2>🧪 Homúnculos · desde Bioethics hasta la build final</h2>
 <div class="hom-flow">
 <span class="step"><b>1</b> Bioethics</span><span class="arrow">→</span>
 <span class="step"><b>2</b> Crear Embryo</span><span class="arrow">→</span>
@@ -393,7 +393,7 @@ footer{padding-block:32px;color:var(--muted)}
 <span><b>Clases de evolución:</b> Amistr_H, Amistr_H2</span>
 <span><b>Variantes base en DB:</b> 2</span>
 </div>
-<h4>Árbol de skills</h4><ul><li><b>HAMI_CASTLE</b> · Max Lv 5</li><li><b>HAMI_DEFENCE</b> · Max Lv 5 · requiere HAMI_CASTLE Lv5</li><li><b>HAMI_SKIN</b> · Max Lv 5 · requiere HAMI_DEFENCE Lv3</li><li><b>HAMI_BLOODLUST</b> · Max Lv 3 · requiere Intimacy 910, evolucionado</li></ul>
+<h4>Árbol de skills</h4><ul><li><b>HAMI_CASTLE</b> Max Lv 5</li><li><b>HAMI_DEFENCE</b> Max Lv 5 · requiere HAMI_CASTLE Lv5</li><li><b>HAMI_SKIN</b> Max Lv 5 · requiere HAMI_DEFENCE Lv3</li><li><b>HAMI_BLOODLUST</b> Max Lv 3 · requiere Intimacy 910, evolucionado</li></ul>
 <h4>Rangos de crecimiento por level-up</h4><div class="statgrid"><span><b>Hp</b> base 320 · crecimiento 80–130</span><span><b>Sp</b> base 10 · crecimiento 1–4</span><span><b>Str</b> base 20 · crecimiento 8–20</span><span><b>Agi</b> base 17 · crecimiento 4–20</span><span><b>Vit</b> base 35 · crecimiento 4–20</span><span><b>Int</b> base 11 · crecimiento 1–10</span><span><b>Dex</b> base 24 · crecimiento 3–19</span><span><b>Luk</b> base 12 · crecimiento 3–19</span></div>
 <div class="hom-build">
 <h4>Build, stats finales y AI</h4>
@@ -418,7 +418,7 @@ footer{padding-block:32px;color:var(--muted)}
 <span><b>Clases de evolución:</b> Filir_H, Filir_H2</span>
 <span><b>Variantes base en DB:</b> 2</span>
 </div>
-<h4>Árbol de skills</h4><ul><li><b>HFLI_MOON</b> · Max Lv 5</li><li><b>HFLI_FLEET</b> · Max Lv 5 · requiere HFLI_MOON Lv3</li><li><b>HFLI_SPEED</b> · Max Lv 5 · requiere HFLI_FLEET Lv3</li><li><b>HFLI_SBR44</b> · Max Lv 3 · requiere Intimacy 910, evolucionado</li></ul>
+<h4>Árbol de skills</h4><ul><li><b>HFLI_MOON</b> Max Lv 5</li><li><b>HFLI_FLEET</b> Max Lv 5 · requiere HFLI_MOON Lv3</li><li><b>HFLI_SPEED</b> Max Lv 5 · requiere HFLI_FLEET Lv3</li><li><b>HFLI_SBR44</b> Max Lv 3 · requiere Intimacy 910, evolucionado</li></ul>
 <h4>Rangos de crecimiento por level-up</h4><div class="statgrid"><span><b>Hp</b> base 90 · crecimiento 45–75</span><span><b>Sp</b> base 25 · crecimiento 3–6</span><span><b>Str</b> base 29 · crecimiento 4–20</span><span><b>Agi</b> base 35 · crecimiento 8–20</span><span><b>Vit</b> base 9 · crecimiento 1–10</span><span><b>Int</b> base 8 · crecimiento 3–19</span><span><b>Dex</b> base 30 · crecimiento 4–20</span><span><b>Luk</b> base 9 · crecimiento 3–19</span></div>
 <div class="hom-build">
 <h4>Build, stats finales y AI</h4>
@@ -443,7 +443,7 @@ footer{padding-block:32px;color:var(--muted)}
 <span><b>Clases de evolución:</b> Lif_H, Lif_H2</span>
 <span><b>Variantes base en DB:</b> 2</span>
 </div>
-<h4>Árbol de skills</h4><ul><li><b>HLIF_HEAL</b> · Max Lv 5</li><li><b>HLIF_AVOID</b> · Max Lv 5 · requiere HLIF_HEAL Lv3</li><li><b>HLIF_BRAIN</b> · Max Lv 5 · requiere HLIF_HEAL Lv5</li><li><b>HLIF_CHANGE</b> · Max Lv 3 · requiere Intimacy 910, evolucionado</li></ul>
+<h4>Árbol de skills</h4><ul><li><b>HLIF_HEAL</b> Max Lv 5</li><li><b>HLIF_AVOID</b> Max Lv 5 · requiere HLIF_HEAL Lv3</li><li><b>HLIF_BRAIN</b> Max Lv 5 · requiere HLIF_HEAL Lv5</li><li><b>HLIF_CHANGE</b> Max Lv 3 · requiere Intimacy 910, evolucionado</li></ul>
 <h4>Rangos de crecimiento por level-up</h4><div class="statgrid"><span><b>Hp</b> base 150 · crecimiento 60–100</span><span><b>Sp</b> base 40 · crecimiento 4–9</span><span><b>Str</b> base 17 · crecimiento 5–19</span><span><b>Agi</b> base 20 · crecimiento 5–19</span><span><b>Vit</b> base 15 · crecimiento 5–19</span><span><b>Int</b> base 35 · crecimiento 4–20</span><span><b>Dex</b> base 24 · crecimiento 6–20</span><span><b>Luk</b> base 12 · crecimiento 6–20</span></div>
 <div class="hom-build">
 <h4>Build, stats finales y AI</h4>
@@ -468,7 +468,7 @@ footer{padding-block:32px;color:var(--muted)}
 <span><b>Clases de evolución:</b> Vanilmirth_H, Vanilmirth_H2</span>
 <span><b>Variantes base en DB:</b> 2</span>
 </div>
-<h4>Árbol de skills</h4><ul><li><b>HVAN_CAPRICE</b> · Max Lv 5</li><li><b>HVAN_CHAOTIC</b> · Max Lv 5 · requiere HVAN_CAPRICE Lv3</li><li><b>HVAN_INSTRUCT</b> · Max Lv 5 · requiere HVAN_CAPRICE Lv5</li><li><b>HVAN_EXPLOSION</b> · Max Lv 3 · requiere Intimacy 910, evolucionado</li></ul>
+<h4>Árbol de skills</h4><ul><li><b>HVAN_CAPRICE</b> Max Lv 5</li><li><b>HVAN_CHAOTIC</b> Max Lv 5 · requiere HVAN_CAPRICE Lv3</li><li><b>HVAN_INSTRUCT</b> Max Lv 5 · requiere HVAN_CAPRICE Lv5</li><li><b>HVAN_EXPLOSION</b> Max Lv 3 · requiere Intimacy 910, evolucionado</li></ul>
 <h4>Rangos de crecimiento por level-up</h4><div class="statgrid"><span><b>Hp</b> base 80 · crecimiento 30–150</span><span><b>Sp</b> base 11 · crecimiento 0–7</span><span><b>Str</b> base 11 · crecimiento 1–30</span><span><b>Agi</b> base 11 · crecimiento 1–30</span><span><b>Vit</b> base 11 · crecimiento 1–30</span><span><b>Int</b> base 11 · crecimiento 1–30</span><span><b>Dex</b> base 11 · crecimiento 1–30</span><span><b>Luk</b> base 11 · crecimiento 1–30</span></div>
 <div class="hom-build">
 <h4>Build, stats finales y AI</h4>
@@ -485,7 +485,7 @@ footer{padding-block:32px;color:var(--muted)}
 <div class="recommended"><b>Regla de conservación:</b> un Homunculus alrededor o por encima del P95 en dos o tres stats clave para su rol ya es excepcional. El “perfecto teórico” exige prácticamente acertar el roll máximo repetidamente y no es una meta razonable de reroll.</div>
 </section>
 <section id="pets">
-<div class="eyebrow">Sistema 3 · Reordenado v10.2</div><h2>💗 Cute Pets · bonus pasivo claro</h2>
+<div class="eyebrow">Sistema 3</div><h2>💗 Cute Pets · bonus pasivo claro</h2>
 <div class="callout"><b>Cuándo se activa:</b> en el <code>pet_db.yml</code> Pre-Renewal actual, los bonus de estas mascotas comprueban <code>PET_INTIMATE_LOYAL</code>. En rAthena <b>Loyal comienza en 910/1000</b>; 1000 es la intimidad máxima. Por tanto, no necesitas llegar exactamente a 1000 para recibir el pasivo.</div>
 <div class="recommended"><b>Lectura rápida:</b> la segunda columna es lo que realmente obtiene el dueño mientras el pet está vivo y en Loyal. El accesorio se muestra aparte porque es un item del pet; no lo confundimos con el bonus pasivo escrito en <code>Script</code>.</div>
 <div class="grid">
@@ -633,67 +633,67 @@ footer{padding-block:32px;color:var(--muted)}
 <tr class="petrow searchable" data-bonus="good" data-search="zealotus mob id 1200 forbidden red candle id 660 zealotus egg id 9026 immortal heart id 929 — 3.00% 7 10 sí .@i = getpetinfo(petinfo_intimate); if( .@i &gt;= pet_intimate_loyal ){ bonus2 baddrace,rc_demihuman,2; bonus2 bmagicaddrace,rc_demihuman,2; bonus2 baddrace,rc_player_human,2; bonu… magic damage vs demi-human +2% · physical damage vs player human +2% · magic damage vs player human +2% zherlthsh prohibition_red_candle immortal_heart  physical damage vs demi-human +2% · magic damage vs demi-human +2% · physical damage vs player human +2% · magic damage vs player human +2%" id="portal-f10-92">
 <td><b>Zealotus</b><br/><span class="id">Mob ID 1200</span></td>
 <td><div class="petbonus good"><b>Physical damage vs Demi-Human +2% · Magic damage vs Demi-Human +2% · Physical damage vs Player Human +2% · Magic damage vs Player Human +2%</b></div><details class="rawpet" id="portal-f10-173"><summary>Ver script rAthena</summary><code>.@i = getpetinfo(PETINFO_INTIMATE); if( .@i &gt;= PET_INTIMATE_LOYAL ){ bonus2 bAddRace,RC_Demihuman,2; bonus2 bMagicAddRace,RC_DemiHuman,2; bonus2 bAddRace,RC_Player_Human,2; bonus2 bMagicAddRace,RC_Player_Human,2; }</code></details></td>
-<td>Forbidden Red Candle <span class="id">ID 660</span></td><td>Immortal Heart <span class="id">ID 929</span></td><td>—</td><td>3.00%</td>
+<td>Forbidden Red Candle <span class="id">ID 660</span></td><td>Immortal Heart <span class="id">ID 929</span></td><td></td><td>3.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="good" data-search="alice mob id 1275 soft apron id 661 alice egg id 9027 white potion id 504 — 8.00% 2 20 sí .@i = getpetinfo(petinfo_intimate); if( .@i &gt;= pet_intimate_loyal ){ bonus bmdef,1; bonus2 bsubrace,rc_demihuman,1; bonus2 bsubrace,rc_player_human,1; } damage from demi-human -1% · damage from player human -1% alice sway_apron white_potion  mdef +1 · damage from demi-human -1% · damage from player human -1%" id="portal-f10-93">
 <td><b>Alice</b><br/><span class="id">Mob ID 1275</span></td>
 <td><div class="petbonus good"><b>MDEF +1 · Damage from Demi-Human -1% · Damage from Player Human -1%</b></div><details class="rawpet" id="portal-f10-174"><summary>Ver script rAthena</summary><code>.@i = getpetinfo(PETINFO_INTIMATE); if( .@i &gt;= PET_INTIMATE_LOYAL ){ bonus bMdef,1; bonus2 bSubRace,RC_DemiHuman,1; bonus2 bSubRace,RC_Player_Human,1; }</code></details></td>
-<td>Soft Apron <span class="id">ID 661</span></td><td>White Potion <span class="id">ID 504</span></td><td>—</td><td>8.00%</td>
+<td>Soft Apron <span class="id">ID 661</span></td><td>White Potion <span class="id">ID 504</span></td><td></td><td>8.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="good" data-search="rice cake mob id 1815 — hard rice cake id 9028 green herb id 511 — 20.00% 3 50 sí .@i = getpetinfo(petinfo_intimate); if( .@i &gt;= pet_intimate_loyal ){ bonus2 bsubele,ele_neutral,1; bonus bmaxhprate,-1; } max hp -1% event_ricecake  green_herb  damage from neutral -1% · max hp -1%" id="portal-f10-94">
 <td><b>Rice Cake</b><br/><span class="id">Mob ID 1815</span></td>
 <td><div class="petbonus mixed"><b>Damage from Neutral -1% · Max HP -1%</b></div><details class="rawpet" id="portal-f10-175"><summary>Ver script rAthena</summary><code>.@i = getpetinfo(PETINFO_INTIMATE); if( .@i &gt;= PET_INTIMATE_LOYAL ){ bonus2 bSubEle,Ele_Neutral,1; bonus bMaxHPrate,-1; }</code></details></td>
-<td>—</td><td>Green Herb <span class="id">ID 511</span></td><td>—</td><td>20.00%</td>
+<td></td><td>Green Herb <span class="id">ID 511</span></td><td></td><td>20.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="good" data-search="christmas goblin mob id 1245 sweet candy cane id 12225 christmas goblin's egg id 9029 scell id 911 — 20.00% 3 50 sí .@i = getpetinfo(petinfo_intimate); if( .@i &gt;= pet_intimate_loyal ){ bonus bmaxhp,30; bonus2 bsubele,ele_water,1; } damage from water -1% gobline_xmas sweet_candy_striper scell  max hp +30 · damage from water -1%" id="portal-f10-95">
 <td><b>Christmas Goblin</b><br/><span class="id">Mob ID 1245</span></td>
 <td><div class="petbonus good"><b>Max HP +30 · Damage from Water -1%</b></div><details class="rawpet" id="portal-f10-176"><summary>Ver script rAthena</summary><code>.@i = getpetinfo(PETINFO_INTIMATE); if( .@i &gt;= PET_INTIMATE_LOYAL ){ bonus bMaxHP,30; bonus2 bSubEle,Ele_Water,1; }</code></details></td>
-<td>Sweet Candy Cane <span class="id">ID 12225</span></td><td>Scell <span class="id">ID 911</span></td><td>—</td><td>20.00%</td>
+<td>Sweet Candy Cane <span class="id">ID 12225</span></td><td>Scell <span class="id">ID 911</span></td><td></td><td>20.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="good" data-search="green maiden mob id 1519 tantan noodle id 12395 green maiden egg id 9030 bun id 6115 — 20.00% 3 50 sí .@i = getpetinfo(petinfo_intimate); if( .@i &gt;= pet_intimate_loyal ){ bonus bdef,1; bonus2 bsubrace,rc_demihuman,1; bonus2 bsubrace,rc_player_human,1; } damage from demi-human -1% · damage from player human -1% chung_e tantanmen bun_  def +1 · damage from demi-human -1% · damage from player human -1%" id="portal-f10-96">
 <td><b>Green Maiden</b><br/><span class="id">Mob ID 1519</span></td>
 <td><div class="petbonus good"><b>DEF +1 · Damage from Demi-Human -1% · Damage from Player Human -1%</b></div><details class="rawpet" id="portal-f10-177"><summary>Ver script rAthena</summary><code>.@i = getpetinfo(PETINFO_INTIMATE); if( .@i &gt;= PET_INTIMATE_LOYAL ){ bonus bDef,1; bonus2 bSubRace,RC_DemiHuman,1; bonus2 bSubRace,RC_Player_Human,1; }</code></details></td>
-<td>Tantan Noodle <span class="id">ID 12395</span></td><td>Bun <span class="id">ID 6115</span></td><td>—</td><td>20.00%</td>
+<td>Tantan Noodle <span class="id">ID 12395</span></td><td>Bun <span class="id">ID 6115</span></td><td></td><td>20.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="none" data-search="eclipse mob id 1879 — spring rabbit egg id 9031 bok choy id 7766 — 20.00% 3 50 — sin bonus pasivo en el pet_db pre-re actual. eclipse_p  bok_choy " id="portal-f10-97">
 <td><b>Eclipse</b><br/><span class="id">Mob ID 1879</span></td>
 <td><div class="petbonus none"><b>Sin bonus pasivo</b><span>No hay Script de bonus en pet_db Pre-Re.</span></div></td>
-<td>—</td><td>Bok Choy <span class="id">ID 7766</span></td><td>—</td><td>20.00%</td>
+<td></td><td>Bok Choy <span class="id">ID 7766</span></td><td></td><td>20.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="none" data-search="goblin mob id 1122 knife goblin ring id 14569 knife goblin egg id 9032 green apple id 7821 — 8.00% 3 50 — sin bonus pasivo en el pet_db pre-re actual. goblin_1 knife_goblin_ring green_apple " id="portal-f10-98">
 <td><b>Goblin</b><br/><span class="id">Mob ID 1122</span></td>
 <td><div class="petbonus none"><b>Sin bonus pasivo</b><span>No hay Script de bonus en pet_db Pre-Re.</span></div></td>
-<td>Knife Goblin Ring <span class="id">ID 14569</span></td><td>Green Apple <span class="id">ID 7821</span></td><td>—</td><td>8.00%</td>
+<td>Knife Goblin Ring <span class="id">ID 14569</span></td><td>Green Apple <span class="id">ID 7821</span></td><td></td><td>8.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="none" data-search="goblin mob id 1123 flail goblin ring id 14570 flail goblin egg id 9033 green apple id 7821 — 8.00% 3 50 — sin bonus pasivo en el pet_db pre-re actual. goblin_2 flail_goblin_ring green_apple " id="portal-f10-99">
 <td><b>Goblin</b><br/><span class="id">Mob ID 1123</span></td>
 <td><div class="petbonus none"><b>Sin bonus pasivo</b><span>No hay Script de bonus en pet_db Pre-Re.</span></div></td>
-<td>Flail Goblin Ring <span class="id">ID 14570</span></td><td>Green Apple <span class="id">ID 7821</span></td><td>—</td><td>8.00%</td>
+<td>Flail Goblin Ring <span class="id">ID 14570</span></td><td>Green Apple <span class="id">ID 7821</span></td><td></td><td>8.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="none" data-search="goblin mob id 1125 hammer goblin ring id 14571 hammer goblin egg id 9034 green apple id 7821 — 8.00% 3 50 — sin bonus pasivo en el pet_db pre-re actual. goblin_4 hammer_goblin_ring green_apple " id="portal-f10-100">
 <td><b>Goblin</b><br/><span class="id">Mob ID 1125</span></td>
 <td><div class="petbonus none"><b>Sin bonus pasivo</b><span>No hay Script de bonus en pet_db Pre-Re.</span></div></td>
-<td>Hammer Goblin Ring <span class="id">ID 14571</span></td><td>Green Apple <span class="id">ID 7821</span></td><td>—</td><td>8.00%</td>
+<td>Hammer Goblin Ring <span class="id">ID 14571</span></td><td>Green Apple <span class="id">ID 7821</span></td><td></td><td>8.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="none" data-search="deleter mob id 1385 holy marble id 14572 red deleter egg id 9035 whole barbecue id 7822 — 8.00% 4 20 — sin bonus pasivo en el pet_db pre-re actual. deleter_ holy_marble whole_barbecue " id="portal-f10-101">
 <td><b>Deleter</b><br/><span class="id">Mob ID 1385</span></td>
 <td><div class="petbonus none"><b>Sin bonus pasivo</b><span>No hay Script de bonus en pet_db Pre-Re.</span></div></td>
-<td>Holy Marble <span class="id">ID 14572</span></td><td>Whole Barbecue <span class="id">ID 7822</span></td><td>—</td><td>8.00%</td>
+<td>Holy Marble <span class="id">ID 14572</span></td><td>Whole Barbecue <span class="id">ID 7822</span></td><td></td><td>8.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="none" data-search="diabolic mob id 1382 red burning stone id 14573 diabolic egg id 9036 meat veg skewer id 7823 — 8.00% 2 10 — sin bonus pasivo en el pet_db pre-re actual. diabolic red_burning_stone meat_veg_skewer " id="portal-f10-102">
 <td><b>Diabolic</b><br/><span class="id">Mob ID 1382</span></td>
 <td><div class="petbonus none"><b>Sin bonus pasivo</b><span>No hay Script de bonus en pet_db Pre-Re.</span></div></td>
-<td>Red Burning Stone <span class="id">ID 14573</span></td><td>Meat Veg Skewer <span class="id">ID 7823</span></td><td>—</td><td>8.00%</td>
+<td>Red Burning Stone <span class="id">ID 14573</span></td><td>Meat Veg Skewer <span class="id">ID 7823</span></td><td></td><td>8.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="good" data-search="wanderer mob id 1208 vagabond's skull id 14574 wanderer egg id 9037 spirit liquor id 7824 — 8.00% 2 20 sí .@i = getpetinfo(petinfo_intimate); if( .@i &gt;= pet_intimate_loyal ){ bonus bagi,3; bonus bdex,1; } dex +1 wander_man skull_of_vagabond spirit_liquor  agi +3 · dex +1" id="portal-f10-103">
 <td><b>Wanderer</b><br/><span class="id">Mob ID 1208</span></td>
 <td><div class="petbonus good"><b>AGI +3 · DEX +1</b></div><details class="rawpet" id="portal-f10-178"><summary>Ver script rAthena</summary><code>.@i = getpetinfo(PETINFO_INTIMATE); if( .@i &gt;= PET_INTIMATE_LOYAL ){ bonus bAgi,3; bonus bDex,1; }</code></details></td>
-<td>Vagabond's Skull <span class="id">ID 14574</span></td><td>Spirit Liquor <span class="id">ID 7824</span></td><td>—</td><td>8.00%</td>
+<td>Vagabond's Skull <span class="id">ID 14574</span></td><td>Spirit Liquor <span class="id">ID 7824</span></td><td></td><td>8.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="none" data-search="new year doll mob id 1963 — new year doll egg id 9038 mochi id 554 — 8.00% 3 30 — sin bonus pasivo en el pet_db pre-re actual. p_chung_e  mojji " id="portal-f10-104">
 <td><b>New Year Doll</b><br/><span class="id">Mob ID 1963</span></td>
 <td><div class="petbonus none"><b>Sin bonus pasivo</b><span>No hay Script de bonus en pet_db Pre-Re.</span></div></td>
-<td>—</td><td>Mochi <span class="id">ID 554</span></td><td>—</td><td>8.00%</td>
+<td></td><td>Mochi <span class="id">ID 554</span></td><td></td><td>8.00%</td>
 </tr>
 <tr class="petrow searchable" data-bonus="good" data-search="golem mob id 1040 magical lithography id 12371 golem egg id 9053 mystic stone id 6111 spring id 10035 10.00% 7 20 sí .@i = getpetinfo(petinfo_intimate); if( .@i &gt;= pet_intimate_loyal ){ bonus bmaxhp,100; bonus bflee,-5; } flee -5 golem magical_lithography mystic_stone windup_spring max hp +100 · flee -5" id="portal-f10-105">
 <td><b>Golem</b><br/><span class="id">Mob ID 1040</span></td>
@@ -788,14 +788,14 @@ footer{padding-block:32px;color:var(--muted)}
 <tr class="petrow searchable" data-bonus="none" data-search="strange hydra mob id 2081 leaf cat ball id 12408 mystic leaf cat ball id 6221 — — 50.00% 0 0 — sin bonus pasivo en el pet_db pre-re actual. e_hydra leaf_cat_ball  " id="portal-f10-123">
 <td><b>Strange Hydra</b><br/><span class="id">Mob ID 2081</span></td>
 <td><div class="petbonus none"><b>Sin bonus pasivo</b><span>No hay Script de bonus en pet_db Pre-Re.</span></div></td>
-<td>Leaf Cat Ball <span class="id">ID 12408</span></td><td>—</td><td>—</td><td>50.00%</td>
+<td>Leaf Cat Ball <span class="id">ID 12408</span></td><td></td><td></td><td>50.00%</td>
 </tr></tbody>
 </table></div>
-<div class="audit"><b>Fuente del efecto:</b> cada descripción anterior se tradujo directamente desde el <code>Script</code> de <code>db/pre-re/pet_db.yml</code> usando la semántica de <code>doc/item_bonus.txt</code>. El script raw permanece oculto dentro de cada fila para poder auditarlo sin ensuciar la lectura.</div>
+
 </section>
 <section class="advanced-block" id="merc-advanced">
-<div class="eyebrow">v10.1 · Optimización</div><h2>⚔️ Mercenarios · equipo, consumibles y builds reales</h2>
-<div class="truth"><b>No existe equipment equipable para mercenarios clásicos.</b> No poseen slots de arma/armadura/cartas/refine. El headgear mostrado por cada Grade es parte fija de su apariencia y no modifica rendimiento. La “build” del mercenario se hace eligiendo <b>módulo + Grade + buffs + consumibles + AI + kill-count bonuses</b>.</div>
+<div class="eyebrow">Builds recomendadas</div><h2>⚔️ Mercenarios · equipo, consumibles y builds reales</h2>
+<div class="truth"><b>No existe equipment equipable para mercenarios clásicos.</b> No poseen slots de arma/armadura/cartas/refine. El headgear mostrado por cada Grade es parte fija de su apariencia y no modifica rendimiento. La “build” del mercenario se hace eligiendo <b>sección + Grade + buffs + consumibles + AI + kill-count bonuses</b>.</div>
 <div class="compare-grid">
 <div class="compare-box"><b>Ranged DPS</b><p><b>Sukye / Bowman G10.</b> Range 10, DEX 123, HIT 222, Sharpshooting 5 y Charge Arrow. Es la opción más cómoda para kite y objetivos peligrosos.</p></div>
 <div class="compare-box"><b>Tank / escolta</b><p><b>Roux / Spearman G10.</b> 18,000 HP, VIT 90, Auto Guard 10, Devotion 3 y Spiral Pierce 5. Ideal para mantener presión lejos del dueño.</p></div>
@@ -860,7 +860,7 @@ footer{padding-block:32px;color:var(--muted)}
 <div class="compare-box"><b>2 · AzzyAI</b><p>AI Lua clásica para Homunculus + Mercenary. Tiene GUI, tácticas por mob, auto skills, buffs, reserva de SP, kite y comportamiento agresivo/pasivo. Es antigua/no mantenida, pero encaja mejor con clientes clásicos.</p></div>
 <div class="compare-box"><b>3 · AzzyAI-RE</b><p>Fork modernizado para clientes Renewal/Zero modernos. Puede ser útil si tu servidor Pre-Re usa un Ragexe moderno, pero no lo asumiría compatible sin probarlo con tu fecha exacta de cliente.</p></div>
 <div class="compare-box"><b>4 · YggAI / forks</b><p>Alternativas Lua comunitarias centradas sobre todo en Homunculus. Útiles para estudiar FSM/tácticas, pero deben probarse contra el cliente elegido.</p></div>
-<div class="compare-box"><b>5 · OpenKore</b><p><b>No es la misma cosa.</b> Es un cliente/assistant de automatización completo. Para nuestro proyecto lo considero útil para QA en cuentas de prueba y carga del servidor, no como sustituto del AI nativo de companions.</p></div>
+<div class="compare-box"><b>5 · OpenKore</b><p><b>No es la misma cosa.</b> Es un cliente/assistant de automatización completo. No sustituye la AI nativa de los companions y su uso debe respetar las reglas de AscencionRO.</p></div>
 </div>
 <h3>Qué puede hacer legalmente la AI nativa clásica</h3>
 <ul class="techlist">
@@ -888,41 +888,11 @@ footer{padding-block:32px;color:var(--muted)}
 <tr id="portal-f10-142"><td>Roux</td><td>Defensivo</td><td>Alta</td><td>Auto Guard, Devotion según AI</td><td>Spiral priority</td></tr>
 <tr id="portal-f10-143"><td>Wayne</td><td>Melee controlado</td><td>Media</td><td>Bowling Bash/Bash</td><td>Frenzy</td></tr>
 </tbody></table></div>
-<div class="audit"><b>Herramientas de administrador rAthena:</b> para QA existen comandos como <code>@homstats</code> y <code>@homshuffle</code>. <code>@homshuffle</code> recalcula el crecimiento como si subiera nuevamente desde Lv1, por lo que debe permanecer GM-only; es excelente para probar la distribución de stats, pero rompería la progresión si se entrega a jugadores.</div>
+
 </section>
-<section id="limites">
-<div class="eyebrow">Alcance editorial</div><h2>🚧 Qué entra y qué no</h2>
-<div class="grid">
-<div class="card"><b>✅ Mercenary clásico</b><p>Grades 1–10, stats, skills, Loyalty, costo y NPCs.</p></div>
-<div class="card"><b>✅ Homunculus clásico</b><p>Amistr, Filir, Lif, Vanilmirth, crecimiento, comida, skill tree y evolución clásica.</p></div>
-<div class="card"><b>✅ Cute Pets Pre-Re DB</b><p>Tame, egg, food, accessory, capture rate, intimidad y bonus scripts.</p></div>
-<div class="card"><b>❌ Homunculus S</b><p>Contenido 14.1+, fuera del corte ≤13.2.</p></div>
-<div class="card"><b>❌ Elementals</b><p>Sistema de Sorcerer/Renewal, no pertenece a este alcance.</p></div>
-<div class="card"><b>❌ Summons de skills</b><p>Falcon, traps, plants, spheres y summons temporales de skills no se mezclan con estos tres sistemas.</p></div>
-</div>
-</section>
-<section id="fuentes">
-<div class="eyebrow">Auditoría</div><h2>🔎 Fuentes de v10.2</h2>
-<div class="panel source-links">
-<a data-external="1" href="https://rune-nifelheim.com/mercenarios.php" rel="noopener noreferrer" target="_blank">Rune Nifelheim · Database de Mercenarios ↗</a>
-<a data-external="1" href="https://irowiki.org/classic/Mercenary_System" rel="noopener noreferrer" target="_blank">iRO Classic · Mercenary System ↗</a>
-<a data-external="1" href="https://irowiki.org/classic/Homunculus_System" rel="noopener noreferrer" target="_blank">iRO Classic · Homunculus System ↗</a>
-<a data-external="1" href="https://irowiki.org/classic/Homunculus_System" rel="noopener noreferrer" target="_blank">iRO Classic · Bioethics / Homunculus ↗</a>
-<a data-external="1" href="https://rune-nifelheim.com/mascotas.php" rel="noopener noreferrer" target="_blank">Rune Nifelheim · Mascotas / Pets ↗</a>
-<a data-external="1" href="https://rune-nifelheim.com/monstruos/" rel="noopener noreferrer" target="_blank">Rune Nifelheim · Database de Monstruos ↗</a>
-<a data-external="1" href="https://irowiki.org/classic/Mercenary_System" rel="noopener noreferrer" target="_blank">iRO Wiki Classic · Mercenary System ↗</a>
-<a data-external="1" href="https://irowiki.org/classic/Homunculus_System" rel="noopener noreferrer" target="_blank">iRO Wiki Classic · Homunculus System ↗</a>
-<a data-external="1" href="https://irowiki.org/classic/Prepare_Potion" rel="noopener noreferrer" target="_blank">iRO Wiki Classic · Prepare Potion ↗</a>
-<a data-external="1" href="https://irowiki.org/classic/Homunculus_System" rel="noopener noreferrer" target="_blank">iRO Classic · Homunculus System ↗</a>
-<a data-external="1" href="https://irowiki.org/classic/Homunculus_System" rel="noopener noreferrer" target="_blank">iRO Classic · Homunculus System ↗</a>
-<a data-external="1" href="https://www.xatiyaro.net/foro/index.php?topic=261787.0" rel="noopener noreferrer" target="_blank">XatiyaRO · AI Homúnculos y Mercenarios ↗</a>
-<a data-external="1" href="https://www.xatiyaro.net/foro/index.php?topic=261787.0" rel="noopener noreferrer" target="_blank">XatiyaRO · AI Homúnculos y Mercenarios ↗</a>
-<a data-external="1" href="https://www.xatiyaro.net/foro/index.php?topic=93552.0" rel="noopener noreferrer" target="_blank">XatiyaRO · Sistema Mercenary / AI ↗</a>
-<a data-external="1" href="https://www.xatiyaro.net/foro/index.php?topic=100908.0" rel="noopener noreferrer" target="_blank">XatiyaRO · Normas sobre automatización ↗</a>
-<p class="muted"><b>Estado:</b> v10.2 · RELEASE ESTABLE. Módulo 8 cerrada e integrada en la guía completa.</p>
-</div>
-</section>
+
+
 </main>
-<footer>Ragnarok Online Pre-Renewal Guide · Módulo 8 · Minions &amp; Compañeros · v10.2 · RELEASE ESTABLE</footer>
+
 
 </div>

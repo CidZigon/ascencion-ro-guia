@@ -85,7 +85,8 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(portal,/link\.dataset\.worldX/);
   assert.match(portal,/link\.closest\("tr"\)/);
   assert.match(portal,/bindModule\(shadow,active,openModule,openCatalog,openWorldPreview,openExternalLink\)/);
-  assert.match(portal,/cleanVisibleGuideMetadata\(shadow\)/);
+  assert.match(portal,/prepareGuideNavigation\(shadow\)/);
+  assert.doesNotMatch(portal,/cleanVisibleGuideMetadata/);
   assert.match(portal,/preparedModules\.current\[active\]/);
   assert.match(portal,/loadModuleStyle\(\)/);
   assert.match(portal,/data-ascencion-theme/);
@@ -128,14 +129,35 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.ok(itemLinks>=290);
 });
 
-test("la auditoría exhaustiva resuelve cada enlace y separa los destinos externos",async()=>{
+test("las ocho secciones contienen sólo texto final orientado al jugador",async()=>{
+  const forbidden=/lo que se tiene planeado|criterio de|qu[eé] entra y qu[eé] no|control de versi[oó]n|auditor[ií]a|versi[oó]n final entregable|entregable final|release estable|estado de release|nota editorial|regla editorial|alcance editorial|metodolog[ií]a de|contenido avanzado absorbido|m[oó]dulo\s*\d|fuentes de v|cerrad[oa] e integrad[oa]|versiones anteriores|respaldo|contenido deliberadamente fuera|no se desarrolla aqu[ií]/i;
+  const modules=(await readdir(new URL("../public/data/modules/",import.meta.url))).filter(file=>/^module-\d+\.html$/.test(file)).sort();
+  assert.equal(modules.length,8);
+  for(const file of modules){
+    const html=await readFile(new URL(`../public/data/modules/${file}`,import.meta.url),"utf8");
+    const visible=html.replace(/<script\b[\s\S]*?<\/script>/gi," ").replace(/<style\b[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," ");
+    assert.doesNotMatch(visible,forbidden,file);
+    assert.doesNotMatch(html,/<section\b[^>]*id=["'](?:fuentes|metodologia|limites)["']/i,file);
+    assert.doesNotMatch(html,/<footer\b/i,file);
+    assert.match(html,/<h1\b/i,file);
+  }
+  const search=JSON.parse(await readFile(new URL("../public/data/guide-search.json",import.meta.url),"utf8"));
+  assert.ok(search.length>=800);
+  for(const entry of search){
+    assert.doesNotMatch(`${entry.title} ${entry.text}`,forbidden,`${entry.module}${entry.anchor}`);
+    assert.ok(!["#fuentes","#metodologia","#limites"].includes(entry.anchor));
+  }
+  const pkg=JSON.parse(await readFile(new URL("../package.json",import.meta.url),"utf8"));
+  assert.match(pkg.scripts["data:modules"],/finalize-guide-content\.mjs/);
+});
+
+test("la auditoría exhaustiva resuelve localmente cada enlace",async()=>{
   const report=JSON.parse(await readFile(new URL("../public/data/module-link-audit.json",import.meta.url),"utf8"));
   assert.equal(report.summary.modules,8);
-  assert.equal(report.summary.total,2940);
-  assert.equal(report.summary.resolved,2940);
+  assert.equal(report.summary.total,2897);
+  assert.equal(report.summary.resolved,2897);
   assert.equal(report.summary.unresolved,0);
-  assert.equal(report.summary.externalOccurrences,10);
-  assert.equal(report.summary.uniqueExternal,8);
-  assert.equal(report.external.length,8);
-  assert.ok(report.external.every(entry=>entry.status!==404&&entry.status!==410));
+  assert.equal(report.summary.externalOccurrences,0);
+  assert.equal(report.summary.uniqueExternal,0);
+  assert.equal(report.external.length,0);
 });

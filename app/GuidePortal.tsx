@@ -181,7 +181,7 @@ export function GuidePortal(){
     else{
       const data=moduleData[active];
       shadow.innerHTML=`${data.html}<style data-ascencion-theme>${data.style}</style>`;
-      cleanVisibleGuideMetadata(shadow);
+      prepareGuideNavigation(shadow);
       localizeItemLinks(shadow);
       localizeWorldLinks(shadow);
       preparedModules.current[active]=shadow.innerHTML;
@@ -270,29 +270,16 @@ function Library({openModule,openCatalog,openWorld}:{openModule:(id:number)=>voi
   </section>
 }
 
-function cleanVisibleGuideMetadata(shadow:ShadowRoot){
-  shadow.querySelectorAll<HTMLElement>('[id="fuentes"], footer').forEach(element=>element.remove());
-  shadow.querySelectorAll<HTMLAnchorElement>('nav a[href="#fuentes"]').forEach(element=>element.remove());
-  shadow.querySelectorAll<HTMLElement>('.badge,.release-badge,.release-note,.eyebrow,.recommended,.audit').forEach(element=>{
-    if(/m[oó]dulo|release|versi[oó]n|versionado|auditor[ií]a|entregable|\b\d{2}\s+[a-z]{3}\s+\d{4}\b/i.test(element.textContent||""))element.remove();
-  });
-  const walker=document.createTreeWalker(shadow,NodeFilter.SHOW_TEXT);
-  const nodes:Text[]=[];
-  while(walker.nextNode())nodes.push(walker.currentNode as Text);
-  for(const node of nodes){
-    const cleaned=cleanUserText(node.data);
-    if(cleaned!==node.data.trim())node.data=cleaned;
-  }
+function prepareGuideNavigation(shadow:ShadowRoot){
   const navigation=shadow.querySelector<HTMLElement>("nav");
-  if(navigation){
-    const menu=document.createElement("details");
-    const summary=document.createElement("summary");
-    menu.className="section-navigation";
-    summary.textContent="Explorar esta guía";
-    navigation.classList.add("section-navigation-links");
-    navigation.replaceWith(menu);
-    menu.append(summary,navigation);
-  }
+  if(!navigation||navigation.closest(".section-navigation"))return;
+  const menu=document.createElement("details");
+  const summary=document.createElement("summary");
+  menu.className="section-navigation";
+  summary.textContent="Explorar esta guía";
+  navigation.classList.add("section-navigation-links");
+  navigation.replaceWith(menu);
+  menu.append(summary,navigation);
 }
 
 function openDetailsTo(element:HTMLElement){let current:HTMLElement|null=element;while(current){if(current.tagName==="DETAILS")(current as HTMLDetailsElement).open=true;current=current.parentElement}}
