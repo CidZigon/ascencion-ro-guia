@@ -1,0 +1,129 @@
+{
+  "generatedAt": "2026-08-24T18:03:10.890Z",
+  "summary": {
+    "modules": 8,
+    "total": 2940,
+    "resolved": 2940,
+    "unresolved": 0,
+    "localOccurrences": 2930,
+    "externalOccurrences": 10,
+    "uniqueExternal": 8,
+    "categories": {
+      "internal": 272,
+      "npc-local": 572,
+      "map-local": 960,
+      "monster-local": 31,
+      "reference-local": 797,
+      "external-fallback": 10,
+      "item-local": 298
+    }
+  },
+  "external": [
+    {
+      "href": "https://ratemyserver.net/",
+      "count": 1,
+      "modules": [
+        1
+      ],
+      "labels": [
+        "RateMyServer — base Pre-Renewal"
+      ],
+      "status": 200,
+      "finalUrl": "https://ratemyserver.net/",
+      "reachable": true
+    },
+    {
+      "href": "https://rathena.org/board/topic/98133-possible-to-choose-episodes/",
+      "count": 1,
+      "modules": [
+        1
+      ],
+      "labels": [
+        "Referencia rAthena: Pre-Renewal y Episode 13.2 →"
+      ],
+      "status": 403,
+      "finalUrl": "https://rathena.org/board/topic/98133-possible-to-choose-episodes/",
+      "reachable": true
+    },
+    {
+      "href": "https://rune-nifelheim.com/mascotas.php",
+      "count": 1,
+      "modules": [
+        8
+      ],
+      "labels": [
+        "Rune Nifelheim · Mascotas / Pets ↗"
+      ],
+      "status": 200,
+      "finalUrl": "https://rune-nifelheim.com/mascotas.php",
+      "reachable": true
+    },
+    {
+      "href": "https://rune-nifelheim.com/mercenarios.php",
+      "count": 1,
+      "modules": [
+        8
+      ],
+      "labels": [
+        "Rune Nifelheim · Database de Mercenarios ↗"
+      ],
+      "status": 200,
+      "finalUrl": "https://rune-nifelheim.com/mercenarios.php",
+      "reachable": true
+    },
+    {
+      "href": "https://rune-nifelheim.com/monstruos/",
+      "count": 2,
+      "modules": [
+        7,
+        8
+      ],
+      "labels": [
+        "Rune Nifelheim · Database de Monstruos ↗"
+      ],
+      "status": 200,
+      "finalUrl": "https://rune-nifelheim.com/monstruos/",
+      "reachable": true
+    },
+    {
+      "href": "https://www.xatiyaro.net/foro/index.php?topic=100908.0",
+      "count": 1,
+      "modules": [
+        8
+      ],
+      "labels": [
+        "XatiyaRO · Normas sobre automatización ↗"
+      ],
+      "status": 200,
+      "finalUrl": "https://www.xatiyaro.net/foro/index.php?topic=100908.0",
+      "reachable": true
+    },
+    {
+      "href": "https://www.xatiyaro.net/foro/index.php?topic=261787.0",
+      "count": 2,
+      "modules": [
+        8
+      ],
+      "labels": [
+        "XatiyaRO · AI Homúnculos y Mercenarios ↗"
+      ],
+      "status": 200,
+      "finalUrl": "https://www.xatiyaro.net/foro/index.php?topic=261787.0",
+      "reachable": true
+    },
+    {
+      "href": "https://www.xatiyaro.net/foro/index.php?topic=93552.0",
+      "count": 1,
+      "modules": [
+        8
+      ],
+      "labels": [
+        "XatiyaRO · Sistema Mercenary / AI ↗"
+      ],
+      "status": 200,
+      "finalUrl": "https://www.xatiyaro.net/foro/index.php?topic=93552.0",
+      "reachable": true
+    }
+  ],
+  "unresolved": []
+}

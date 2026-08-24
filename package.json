@@ -15,6 +15,7 @@
     "data:world": "node scripts/build-world-catalog.mjs",
     "data:world:entities": "node scripts/cache-world-entity-data.mjs",
     "data:world:media": "node scripts/cache-world-media.mjs",
+    "audit:links": "node scripts/audit-module-links.mjs --write",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"

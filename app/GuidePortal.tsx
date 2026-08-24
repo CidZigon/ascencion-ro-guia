@@ -1,11 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ItemCatalog } from "./ItemCatalog";
-import { WorldCatalog, WorldReferenceDialog, type WorldKind, type WorldSelection } from "./WorldCatalog";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ModalShell } from "./ModalShell";
+import type { WorldKind, WorldSelection } from "./WorldCatalog";
+
+const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCatalog}));
+const WorldCatalog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldCatalog}));
+const WorldReferenceDialog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldReferenceDialog}));
 
 type ModuleInfo = { id:number; icon:string; title:string; description:string };
 type SearchEntry = { module:number; anchor:string; title:string; text:string; moduleTitle:string; icon:string };
+type ExternalDestination = { href:string; label:string };
 
 const MODULES: ModuleInfo[] = [
   { id:1, icon:"🧭", title:"Progresión y EXP", description:"Rutas de leveo, cacerías, quests de EXP y progresión eficiente." },
@@ -43,14 +48,17 @@ export function GuidePortal(){
   const [worldQuery,setWorldQuery]=useState("");
   const [worldSelection,setWorldSelection]=useState<WorldSelection|null>(null);
   const [worldPreview,setWorldPreview]=useState<WorldSelection|null>(null);
+  const [externalLink,setExternalLink]=useState<ExternalDestination|null>(null);
   const [guidesOpen,setGuidesOpen]=useState(false);
   const headerRef=useRef<HTMLElement>(null);
   const hostRef=useRef<HTMLDivElement>(null);
   const shadowRef=useRef<ShadowRoot|null>(null);
+  const preparedModules=useRef<Record<number,string>>({});
   const pendingAnchor=useRef("");
 
   const openModule=useCallback((id:number,anchor="")=>{
     setWorldPreview(null);
+    setExternalLink(null);
     pendingAnchor.current=anchor;
     setLoadError(false);
     setActive(previous=>{
@@ -65,6 +73,7 @@ export function GuidePortal(){
 
   const openCatalog=useCallback((options:{id?:number;query?:string}={})=>{
     setWorldPreview(null);
+    setExternalLink(null);
     setActive("items");
     setSelectedItemId(options.id??null);
     setCatalogQuery(options.query??"");
@@ -81,6 +90,7 @@ export function GuidePortal(){
 
   const openWorld=useCallback((options:{kind?:WorldKind;id?:string;query?:string}={})=>{
     setWorldPreview(null);
+    setExternalLink(null);
     setActive("world");
     setWorldSelection(options.kind&&options.id?{kind:options.kind,id:options.id}:null);
     setWorldQuery(options.query??"");
@@ -99,12 +109,16 @@ export function GuidePortal(){
 
   const showLibrary=useCallback(()=>{
     setWorldPreview(null);
+    setExternalLink(null);
     setActive(null);
     setQuery("");
     setGuidesOpen(false);
     history.replaceState(null,"","#inicio");
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
+
+  const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setWorldPreview(selection)},[]);
+  const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setExternalLink(destination)},[]);
 
   useEffect(()=>{
     const close=(event:PointerEvent)=>{if(headerRef.current&&!headerRef.current.contains(event.target as Node))setGuidesOpen(false)};
@@ -153,15 +167,20 @@ export function GuidePortal(){
     if(!shadow)return;
     if(typeof active!=="number"){shadow.innerHTML="";return}
     if(!moduleData?.[active])return;
-    shadow.innerHTML=moduleData[active]+"<link rel=\"stylesheet\" href=\"/modern-modules.css\">";
-    cleanVisibleGuideMetadata(shadow);
-    localizeItemLinks(shadow);
-    localizeWorldLinks(shadow);
-    bindModule(shadow,active,openModule,openCatalog,setWorldPreview);
+    const prepared=preparedModules.current[active];
+    if(prepared)shadow.innerHTML=prepared;
+    else{
+      shadow.innerHTML=moduleData[active]+"<link rel=\"stylesheet\" href=\"/modern-modules.css\">";
+      cleanVisibleGuideMetadata(shadow);
+      localizeItemLinks(shadow);
+      localizeWorldLinks(shadow);
+      preparedModules.current[active]=shadow.innerHTML;
+    }
+    bindModule(shadow,active,openModule,openCatalog,openWorldPreview,openExternalLink);
     const anchor=pendingAnchor.current;
     pendingAnchor.current="";
     if(anchor)setTimeout(()=>scrollInside(shadow,anchor),80);
-  },[active,moduleData,openModule,openCatalog]);
+  },[active,moduleData,openModule,openCatalog,openWorldPreview,openExternalLink]);
 
   const results=useMemo(()=>{
     const term=query.trim();
@@ -195,24 +214,46 @@ export function GuidePortal(){
     <section className="workspace">
       <div className="content">
         {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openWorld={openWorld}/>}
-        {active==="items"&&<ItemCatalog key={catalogQuery} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/>}
-        {active==="world"&&<WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld}/>}
+        {active==="items"&&<Suspense fallback={<SurfaceLoading label="Abriendo el catálogo local…"/>}><ItemCatalog key={catalogQuery} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/></Suspense>}
+        {active==="world"&&<Suspense fallback={<SurfaceLoading label="Abriendo el índice del mundo…"/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld}/></Suspense>}
         {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la guía</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando la guía…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
-    {worldPreview&&<WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)}/>}
+    {worldPreview&&<Suspense fallback={<ModalShell eyebrow="Referencia rápida" title="Consulta sin salir de la guía" onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>Buscando en el índice local…</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)}/></Suspense>}
+    {externalLink&&<ExternalLinkDialog destination={externalLink} onClose={()=>setExternalLink(null)}/>}
+    <NeonCursor/>
   </main>;
+}
+
+function SurfaceLoading({label}:{label:string}){return <div className="catalog-loading"><div className="loader"/><p>{label}</p></div>}
+
+function ExternalLinkDialog({destination,onClose}:{destination:ExternalDestination;onClose:()=>void}){
+  let host="sitio externo";
+  try{host=new URL(destination.href).hostname.replace(/^www\./,"")}catch{/* El destino ya fue validado al crear el enlace. */}
+  return <ModalShell eyebrow="Recurso externo" title="Este contenido está fuera de AscencionRO" className="external-dialog" onClose={onClose}>
+    <div className="external-link-card"><span className="external-link-sigil" aria-hidden="true">↗</span><div><h2>{destination.label||"Abrir recurso complementario"}</h2><code>{host}</code><p>Este enlace no tiene una ficha local equivalente. Puedes regresar a la guía sin perder tu posición o abrir el recurso en una pestaña nueva.</p></div><div className="external-link-actions"><button onClick={onClose}>Regresar a la guía</button><a href={destination.href} target="_blank" rel="noopener noreferrer" onClick={onClose}>Proceder al sitio externo <span>↗</span></a></div></div>
+  </ModalShell>;
+}
+
+function NeonCursor(){
+  const cursorRef=useRef<HTMLSpanElement>(null);
+  useEffect(()=>{
+    const cursor=cursorRef.current,media=window.matchMedia("(pointer:fine)");
+    if(!cursor||!media.matches)return;
+    const root=document.documentElement;
+    let frame=0,x=-60,y=-60,interactive=false;
+    const paint=()=>{cursor.style.setProperty("--cursor-x",`${x}px`);cursor.style.setProperty("--cursor-y",`${y}px`);cursor.classList.toggle("is-interactive",interactive);cursor.classList.add("is-visible");frame=0};
+    const move=(event:PointerEvent)=>{x=event.clientX;y=event.clientY;interactive=event.composedPath().some(node=>node instanceof Element&&node.matches('a,button,summary,input,select,textarea,label,[role="button"]'));if(!frame)frame=requestAnimationFrame(paint)};
+    const down=()=>cursor.classList.add("is-pressed"),up=()=>cursor.classList.remove("is-pressed"),hide=()=>cursor.classList.remove("is-visible");
+    root.classList.add("cursor-neon-active");
+    document.addEventListener("pointermove",move,{passive:true});document.addEventListener("pointerdown",down,{passive:true});document.addEventListener("pointerup",up,{passive:true});root.addEventListener("pointerleave",hide);window.addEventListener("blur",hide);
+    return()=>{root.classList.remove("cursor-neon-active");document.removeEventListener("pointermove",move);document.removeEventListener("pointerdown",down);document.removeEventListener("pointerup",up);root.removeEventListener("pointerleave",hide);window.removeEventListener("blur",hide);if(frame)cancelAnimationFrame(frame)};
+  },[]);
+  return <span ref={cursorRef} className="neon-cursor" aria-hidden="true"/>;
 }
 
 function Library({openModule,openCatalog,openWorld}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void;openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void}){
   return <section className="library">
-    <div className="library-head">
-      <div className="library-intro">
-        <h1>Todo Midgard,<br/><span>a un clic.</span></h1>
-        <p>Encuentra una ruta de leveo, desbloquea un dungeon o consulta un objeto sin salir de AscencionRO.</p>
-        <div className="hero-actions"><button className="primary-action" onClick={()=>openCatalog()}>Buscar un objeto <span>→</span></button><button className="secondary-action" onClick={()=>openModule(1)}>Comenzar a progresar</button></div>
-      </div>
-    </div>
     <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>Recorre el mundo sin salir</b><em>Ubicaciones, monstruos y NPC enlazados desde las guías.</em></span><strong>EXPLORAR <span>→</span></strong></button></div>
     <div className="section-title"><div><h2>Explora por tema</h2><p>Ocho caminos claros, sin códigos ni versiones que aprender.</p></div></div>
     <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><h3>{topic.title}</h3><p>{topic.description}</p><span className="card-open">Explorar <b>→</b></span></button>)}</div>
@@ -241,7 +282,6 @@ function cleanVisibleGuideMetadata(shadow:ShadowRoot){
     navigation.classList.add("section-navigation-links");
     navigation.replaceWith(menu);
     menu.append(summary,navigation);
-    navigation.addEventListener("click",event=>{if((event.target as HTMLElement).closest("a"))menu.open=false});
   }
 }
 
@@ -249,14 +289,19 @@ function openDetailsTo(element:HTMLElement){let current:HTMLElement|null=element
 function scrollInside(shadow:ShadowRoot,anchor:string){const el=shadow.getElementById(anchor.replace(/^#/,""));if(el){openDetailsTo(el);setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),30)}}
 
 function localizeItemLinks(shadow:ShadowRoot){
+  shadow.querySelectorAll<HTMLAnchorElement>('a[href^="#item-"]').forEach(link=>{
+    const id=(link.getAttribute("href")||"").match(/^#item-(\d+)$/)?.[1];
+    if(id)setLocalLink(link,`#objeto-${id}`,`Abrir ficha local del objeto #${id}`);
+  });
   shadow.querySelectorAll<HTMLAnchorElement>('a[href*="ratemyserver.net"][href*="item_id="]').forEach(link=>{
     const id=(link.getAttribute("href")||"").match(/[?&]item_id=(\d+)/)?.[1];
     if(!id)return;
-    link.setAttribute("href",`#objeto-${id}`);
+    setLocalLink(link,`#objeto-${id}`,`Abrir ficha local del objeto #${id}`);
     link.dataset.localItem=id;
-    link.title=`Abrir ficha local del objeto #${id}`;
   });
 }
+
+function setLocalLink(link:HTMLAnchorElement,href:string,title:string){link.setAttribute("href",href);link.title=title;link.removeAttribute("target");link.removeAttribute("rel");delete link.dataset.external}
 
 function worldSlug(value:string){return normalize(value).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 function localizeWorldLinks(shadow:ShadowRoot){
@@ -264,17 +309,26 @@ function localizeWorldLinks(shadow:ShadowRoot){
     const href=(link.getAttribute("href")||"").replaceAll("&amp;","&");
     try{
       const url=new URL(href),map=url.searchParams.get("map")||(url.searchParams.get("area")?`area-${url.searchParams.get("area")}`:null),monster=url.searchParams.get("mob_id");
-      if(map){link.setAttribute("href",`#mapa-${map}`);link.dataset.localWorld="map";link.title=`Abrir ubicación local: ${map}`}
-      else if(monster){link.setAttribute("href",`#monstruo-${monster}`);link.dataset.localWorld="monster";link.title=`Abrir ficha local del monstruo #${monster}`}
+      if(map){setLocalLink(link,`#mapa-${map}`,`Abrir ubicación local: ${map}`);link.dataset.localWorld="map"}
+      else if(monster){setLocalLink(link,`#monstruo-${monster}`,`Abrir ficha local del monstruo #${monster}`);link.dataset.localWorld="monster"}
     }catch{return}
   });
-  shadow.querySelectorAll<HTMLAnchorElement>("a.npclink").forEach(link=>{
+  const npcLinks=[...shadow.querySelectorAll<HTMLAnchorElement>("a.npclink")];
+  const directNpcMaps=new WeakMap<HTMLAnchorElement,string>(),mapsByName=new Map<string,Set<string>>();
+  for(const link of npcLinks){
     const wrapper=link.closest(".npcref")??link.closest("tr")??link.closest("p")??link.parentElement,mapLink=wrapper?.querySelector<HTMLAnchorElement>("a.maplink"),mapHref=mapLink?.getAttribute("href")||"";
     const map=mapHref.match(/[?&]map=([^&]+)/)?.[1]||mapHref.match(/^#mapa-(.+)$/)?.[1]||"";
-    const id=`${worldSlug(link.textContent||"npc")}${map?`-${map}`:""}`;
-    link.setAttribute("href",`#npc-${id}`);
+    if(!map)continue;
+    directNpcMaps.set(link,map);
+    const name=worldSlug(link.textContent||"npc"),known=mapsByName.get(name)??new Set<string>();
+    known.add(map);mapsByName.set(name,known);
+  }
+  npcLinks.forEach(link=>{
+    const name=worldSlug(link.textContent||"npc"),known=mapsByName.get(name),map=directNpcMaps.get(link)||(known?.size===1?[...known][0]:"");
+    if(!map)return;
+    const id=`${name}-${map}`;
+    setLocalLink(link,`#npc-${id}`,"Abrir ficha local del NPC");
     link.dataset.localWorld="npc";
-    link.title="Abrir ficha local del NPC";
   });
   shadow.querySelectorAll<HTMLAnchorElement>('a[href*="irowiki.org/classic/"]').forEach(link=>{
     try{
@@ -283,16 +337,13 @@ function localizeWorldLinks(shadow:ShadowRoot){
       let name=raw;
       try{name=decodeURIComponent(raw)}catch{/* La ruta ya está en texto utilizable. */}
       const id=worldSlug(name.replaceAll("_"," "))||"referencia";
-      link.setAttribute("href",`#referencia-${id}`);
+      setLocalLink(link,`#referencia-${id}`,`Abrir referencia local: ${name.replaceAll("_"," ")}`);
       link.dataset.localWorld="reference";
-      link.title=`Abrir referencia local: ${name.replaceAll("_"," ")}`;
-      link.removeAttribute("target");
-      link.removeAttribute("rel");
     }catch{return}
   });
 }
 
-function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openWorldReference:(selection:WorldSelection)=>void){
+function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openWorldReference:(selection:WorldSelection)=>void,openExternalLink:(destination:ExternalDestination)=>void){
   const boundShadow=shadow as ShadowRoot&{_portalClickHandler?:EventListener};
   if(boundShadow._portalClickHandler)boundShadow.removeEventListener("click",boundShadow._portalClickHandler);
   const handleClick:EventListener=(rawEvent)=>{
@@ -302,6 +353,8 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
     if(portal){event.preventDefault();openModule(Number(portal.dataset.portalModule),portal.dataset.portalAnchor||"");return}
     const link=target.closest<HTMLAnchorElement>("a[href]");
     if(link){
+      const sectionMenu=link.closest<HTMLDetailsElement>(".section-navigation");
+      if(sectionMenu)sectionMenu.open=false;
       const href=link.getAttribute("href")||"";
       const localItem=href.match(/^#objeto-(\d+)$/);
       if(localItem){event.preventDefault();openCatalog({id:Number(localItem[1])});return}
@@ -310,7 +363,7 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
       const crossModule=href.match(/^#module-(\d+)(#.*)?$/);
       if(crossModule){event.preventDefault();openModule(Number(crossModule[1]),crossModule[2]||"");return}
       if(href.startsWith("#")){event.preventDefault();scrollInside(shadow,href);return}
-      if(/^https?:\/\//i.test(href)){event.preventDefault();window.open(href,"_blank","noopener,noreferrer");return}
+      if(/^https?:\/\//i.test(href)){event.preventDefault();openExternalLink({href,label:cleanUserText(link.textContent||"Recurso complementario")});return}
     }
     const button=target.closest<HTMLElement>("[data-module-action]");
     if(!button)return;

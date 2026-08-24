@@ -9,13 +9,13 @@ async function render(path="/") {
   return worker.fetch(new Request(`http://localhost${path}`, { headers:{accept:"text/html"} }), { ASSETS:{fetch:async()=>new Response("Not found",{status:404})} }, { waitUntil(){},passThroughOnException(){} });
 }
 
-test("renderiza la biblioteca y el acceso al catálogo local",async()=>{
+test("renderiza la biblioteca limpia y el acceso al catálogo local",async()=>{
   const response=await render();
   assert.equal(response.status,200);
   assert.match(response.headers.get("content-type")??"",/^text\/html\b/i);
   const html=await response.text();
   assert.match(html,/<title>AscencionRO · Enciclopedia Pre-Renewal<\/title>/i);
-  assert.match(html,/Todo Midgard/);
+  assert.doesNotMatch(html,/Todo Midgard/);
   assert.match(html,/Busca objetos al instante/);
   assert.doesNotMatch(html,/Your site is taking shape|codex-preview/i);
 });
@@ -68,15 +68,20 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(portal,/localizeItemLinks\(shadow\)/);
   assert.match(portal,/localizeWorldLinks\(shadow\)/);
   assert.match(portal,/WorldReferenceDialog/);
+  assert.match(portal,/ExternalLinkDialog/);
+  assert.match(portal,/NeonCursor/);
   assert.match(portal,/link\.closest\("tr"\)/);
-  assert.match(portal,/bindModule\(shadow,active,openModule,openCatalog,setWorldPreview\)/);
+  assert.match(portal,/bindModule\(shadow,active,openModule,openCatalog,openWorldPreview,openExternalLink\)/);
   assert.match(portal,/cleanVisibleGuideMetadata\(shadow\)/);
+  assert.match(portal,/preparedModules\.current\[active\]/);
+  assert.match(portal,/a\[href\^="#item-"\]/);
   assert.match(portal,/#objeto-\$\{id\}/);
   assert.match(portal,/#mapa-\$\{map\}/);
   assert.match(portal,/#referencia-\$\{id\}/);
   assert.match(portal,/a\[href\*="irowiki\.org\/classic\/"\]/);
   assert.doesNotMatch(portal,/>M\{m\.id\}</);
   assert.doesNotMatch(portal,/MÓDULO \{m\.id\}/);
+  assert.doesNotMatch(portal,/window\.open/);
 
   const modules=await readdir(new URL("../public/data/modules/",import.meta.url));
   assert.equal(modules.filter(file=>file.endsWith(".html")).length,8);
@@ -86,4 +91,16 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
     itemLinks+=(html.match(/ratemyserver\.net[^"']*[?&]item_id=\d+/gi)??[]).length;
   }
   assert.ok(itemLinks>=290);
+});
+
+test("la auditoría exhaustiva resuelve cada enlace y separa los destinos externos",async()=>{
+  const report=JSON.parse(await readFile(new URL("../public/data/module-link-audit.json",import.meta.url),"utf8"));
+  assert.equal(report.summary.modules,8);
+  assert.equal(report.summary.total,2940);
+  assert.equal(report.summary.resolved,2940);
+  assert.equal(report.summary.unresolved,0);
+  assert.equal(report.summary.externalOccurrences,10);
+  assert.equal(report.summary.uniqueExternal,8);
+  assert.equal(report.external.length,8);
+  assert.ok(report.external.every(entry=>entry.status!==404&&entry.status!==410));
 });

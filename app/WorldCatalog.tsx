@@ -1,7 +1,8 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- sprites GIF animados y mapas estáticos ya optimizados en la caché local */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ModalShell } from "./ModalShell";
 
 export type WorldKind="map"|"monster"|"npc"|"reference";
 export type WorldSelection={kind:WorldKind;id:string};
@@ -76,28 +77,13 @@ export function WorldReferenceDialog({selection,onClose}:{selection:WorldSelecti
   const [payload,setPayload]=useState<WorldPayload|null>(null);
   const [current,setCurrent]=useState(selection);
   const [error,setError]=useState(false);
-  const closeRef=useRef<HTMLButtonElement>(null);
 
   useEffect(()=>{let live=true;loadWorld().then(data=>{if(live)setPayload(data)}).catch(()=>{if(live)setError(true)});return()=>{live=false}},[]);
-  useEffect(()=>{
-    const overflow=document.body.style.overflow;
-    const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")onClose()};
-    document.body.style.overflow="hidden";
-    document.addEventListener("keydown",escape);
-    closeRef.current?.focus();
-    return()=>{document.body.style.overflow=overflow;document.removeEventListener("keydown",escape)};
-  },[onClose]);
 
   const selected=payload?worldEntries(payload).find(entry=>entry.kind===current.kind&&entry.id===current.id)??null:null;
-  return <div className="world-dialog-backdrop">
-    <button className="world-dialog-dismiss" onClick={onClose} aria-label="Cerrar referencia"/>
-    <section className="world-dialog" role="dialog" aria-modal="true" aria-labelledby="world-dialog-title">
-      <header className="world-dialog-bar"><div><small>Referencia rápida</small><b id="world-dialog-title">Consulta sin salir de la guía</b></div><button ref={closeRef} className="world-dialog-close" onClick={onClose} aria-label="Cerrar referencia">×</button></header>
-      <div className="world-dialog-content">
-        {error?<div className="world-dialog-message"><b>No se pudo abrir esta referencia.</b><span>Intenta cerrar la ventana y abrirla de nuevo.</span></div>:!payload?<div className="world-dialog-message"><div className="loader"/><span>Buscando en el índice local…</span></div>:selected?<WorldDetail key={`${selected.kind}-${selected.id}`} entry={selected} maps={payload.maps} onSelect={setCurrent}/>:<div className="world-dialog-message"><b>Referencia no encontrada.</b><span>El enlace existe en la guía, pero aún no tiene una ficha local asociada.</span></div>}
-      </div>
-    </section>
-  </div>;
+  return <ModalShell eyebrow="Referencia rápida" title="Consulta sin salir de la guía" onClose={onClose}>
+    {error?<div className="world-dialog-message"><b>No se pudo abrir esta referencia.</b><span>Intenta cerrar la ventana y abrirla de nuevo.</span></div>:!payload?<div className="world-dialog-message"><div className="loader"/><span>Buscando en el índice local…</span></div>:selected?<WorldDetail key={`${selected.kind}-${selected.id}`} entry={selected} maps={payload.maps} onSelect={setCurrent}/>:<div className="world-dialog-message"><b>Referencia no encontrada.</b><span>El enlace existe en la guía, pero aún no tiene una ficha local asociada.</span></div>}
+  </ModalShell>;
 }
 
 function EntryIcon({entry}:{entry:Entry}){

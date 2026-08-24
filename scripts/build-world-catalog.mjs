@@ -51,6 +51,15 @@ function anchor(block,className){
   const match=block.match(new RegExp(`<a\\b(?=[^>]*class="[^"]*\\b${className}\\b[^"]*")[^>]*href="([^"]+)"[^>]*>([\\s\\S]*?)<\\/a>`,"i"));
   return match?{href:decode(match[1]),label:text(match[2])}:null;
 }
+function enclosingBlock(html,index,tag,predicate=()=>true){
+  let start=html.lastIndexOf(`<${tag}`,index);
+  while(start>=0){
+    const openingEnd=html.indexOf(">",start),end=html.indexOf(`</${tag}>`,openingEnd);
+    if(openingEnd>=0&&end>=index&&predicate(html.slice(start,openingEnd+1)))return html.slice(start,end+tag.length+3);
+    start=html.lastIndexOf(`<${tag}`,start-1);
+  }
+  return "";
+}
 function collectNpc(npc,location,topic,html,index){
   if(!npc)return;
   const mapUrl=location?safeUrl(location.href):null;
@@ -101,6 +110,19 @@ for(const file of files){
   for(const match of html.matchAll(tableRow)){
     if(/\bnpcref\b/i.test(match[1]))continue;
     collectNpc(anchor(match[1],"npclink"),anchor(match[1],"maplink"),topic,html,match.index||0);
+  }
+
+  // Quest walkthroughs also place NPCs in paragraphs and list items. Index those
+  // direct NPC/location pairs so the guide never creates a dead local reference.
+  const npcAnchor=/<a\b(?=[^>]*class="[^"]*\bnpclink\b[^"]*")[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  for(const match of html.matchAll(npcAnchor)){
+    const index=match.index||0;
+    const span=enclosingBlock(html,index,"span",tag=>/\bnpcref\b/i.test(tag));
+    const row=enclosingBlock(html,index,"tr");
+    const paragraph=enclosingBlock(html,index,"p");
+    const listItem=enclosingBlock(html,index,"li");
+    const location=anchor(span||row||paragraph||listItem,"maplink");
+    if(location)collectNpc({href:decode(match[1]),label:text(match[2])},location,topic,html,index);
   }
 
   const visibleHtml=html.replace(/<footer\b[\s\S]*?<\/footer>/gi,"");
