@@ -49,7 +49,7 @@ export function WorldCatalog({selection,initialQuery,onSelect}:{selection:WorldS
   if(!payload)return <section className="catalog-loading"><div className="loader"/><p>Abriendo el índice de Midgard…</p></section>;
 
   return <section className="world-catalog">
-    <header className="catalog-hero world-hero"><div><h1>Mundo de Midgard</h1><p>Busca ubicaciones, monstruos y NPC sin salir de BarrasRO. Cada resultado nace de las referencias usadas por las guías.</p></div></header>
+    <header className="catalog-hero world-hero"><div><h1>Mundo de Midgard</h1><p>Busca ubicaciones, monstruos y NPC sin salir de AscencionRO. Cada resultado nace de las referencias usadas por las guías.</p></div></header>
     <div className="world-toolbar">
       <label><span>Buscar</span><input value={query} onChange={event=>{setQuery(event.target.value);setLimit(100)}} placeholder="Prontera, Poring, Valkyrie…"/></label>
       <label><span>Mostrar</span><select value={kind} onChange={event=>{setKind(event.target.value as WorldKind|"all");setLimit(100)}}><option value="all">Todo el mundo</option><option value="map">Ubicaciones · {payload.counts.maps}</option><option value="monster">Monstruos · {payload.counts.monsters}</option><option value="npc">NPC · {payload.counts.npcs}</option></select></label>

@@ -13,7 +13,7 @@ footer{border-top:1px solid #2d4264!important;color:#929fb3!important;padding:34
 @media(max-width:760px){:host{font-size:14.5px!important}.wrap,main{padding-inline:14px!important}header{padding-top:34px!important}h1{font-size:2.65rem!important}.grid,.choice-grid,.compare-grid,.advanced-grid,.statgrid,.mvp-grid,.mobgrid,.item-grid,.refine-grid{grid-template-columns:1fr!important}.controls,.control-row,.item-controls{align-items:stretch!important}.controls input,.controls select,.controls button,.control-row>*{width:100%!important;min-width:0!important}.table{margin-inline:-2px!important}th,td{padding:9px!important}}
 @media(prefers-reduced-motion:reduce){:host{scroll-behavior:auto!important}}
 
-/* BarrasRO fantasy archive theme — shared by every integrated module. */
+/* AscencionRO fantasy archive theme — shared by every integrated guide. */
 :host{
   --bg:#121416!important;--panel:#191719!important;--panel2:#241a24!important;
   --text:#d9d7d3!important;--muted:#aaa49e!important;--gold:#c9aa71!important;

@@ -10,6 +10,5 @@ directorio; el catálogo web es una representación compacta y revisable de sus
 campos públicos.
 
 La presencia de un objeto en la base Pre-Renewal no confirma por sí sola su
-disponibilidad en BarrasRO. La disponibilidad concreta sigue dependiendo de la
+disponibilidad en AscencionRO. La disponibilidad concreta sigue dependiendo de la
 configuración y el episodio activo del servidor.
-

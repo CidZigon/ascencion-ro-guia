@@ -168,7 +168,7 @@ export function GuidePortal(){
   return <main className="portal">
     <header className="site-header" ref={headerRef}>
       <div className="nav-shell">
-        <button className="brand" onClick={showLibrary} aria-label="Ir al inicio de BarrasRO"><span className="brand-mark">B</span><span><b>BarrasRO</b><small>Guía Pre-Renewal</small></span></button>
+        <button className="brand" onClick={showLibrary} aria-label="Ir al inicio de AscencionRO"><span className="brand-mark">A</span><span><b>AscencionRO</b><small>Guía Pre-Renewal</small></span></button>
         <nav className="primary-nav" aria-label="Navegación principal">
           <button className={active===null?"active":""} onClick={showLibrary}>Inicio</button>
           <button className={active==="items"?"active":""} onClick={()=>openCatalog()}>Objetos</button>
@@ -182,7 +182,7 @@ export function GuidePortal(){
           </div>
         </nav>
         <div className="search-wrap">
-          <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en BarrasRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
+          <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en AscencionRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
           {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” en el mundo</b><small>Ubicaciones, monstruos y NPC</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
         </div>
       </div>
@@ -203,10 +203,9 @@ function Library({openModule,openCatalog,openWorld}:{openModule:(id:number)=>voi
     <div className="library-head">
       <div className="library-intro">
         <h1>Todo Midgard,<br/><span>a un clic.</span></h1>
-        <p>Encuentra una ruta de leveo, desbloquea un dungeon o consulta un objeto sin salir de BarrasRO.</p>
+        <p>Encuentra una ruta de leveo, desbloquea un dungeon o consulta un objeto sin salir de AscencionRO.</p>
         <div className="hero-actions"><button className="primary-action" onClick={()=>openCatalog()}>Buscar un objeto <span>→</span></button><button className="secondary-action" onClick={()=>openModule(1)}>Comenzar a progresar</button></div>
       </div>
-      <div className="hero-art" aria-hidden="true"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-gem"><span>6.169</span><small>objetos listos</small></div><div className="hero-card hero-card-one">Busca por nombre</div><div className="hero-card hero-card-two">Abre cualquier guía</div></div>
     </div>
     <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>Recorre el mundo sin salir</b><em>Ubicaciones, monstruos y NPC enlazados desde las guías.</em></span><strong>EXPLORAR <span>→</span></strong></button></div>
     <div className="section-title"><div><h2>Explora por tema</h2><p>Ocho caminos claros, sin códigos ni versiones que aprender.</p></div></div>

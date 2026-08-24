@@ -14,7 +14,7 @@ test("renderiza la biblioteca y el acceso al catálogo local",async()=>{
   assert.equal(response.status,200);
   assert.match(response.headers.get("content-type")??"",/^text\/html\b/i);
   const html=await response.text();
-  assert.match(html,/<title>BarrasRO · Enciclopedia Pre-Renewal<\/title>/i);
+  assert.match(html,/<title>AscencionRO · Enciclopedia Pre-Renewal<\/title>/i);
   assert.match(html,/Todo Midgard/);
   assert.match(html,/Busca objetos al instante/);
   assert.doesNotMatch(html,/Your site is taking shape|codex-preview/i);

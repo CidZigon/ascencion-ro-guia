@@ -50,7 +50,7 @@ FINAL RELEASE AUDIT
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Barras Ro · Enciclopedia Pre-Renewal</title>
+<title>AscencionRO · Enciclopedia Pre-Renewal</title>
 <style>
 :root{--bg:#06111b;--panel:#0d2131;--panel2:#132e43;--line:#29495f;--text:#eef7ff;--muted:#a9bfce;--gold:#f1c95e;--mint:#65d7c7;--shadow:0 18px 55px #0008}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 80% -10%,#173950 0,transparent 34rem),linear-gradient(#06111b,#091926 58%,#06111b);color:var(--text);font:14px/1.48 system-ui,-apple-system,Segoe UI,sans-serif}
@@ -77,15 +77,15 @@ button,input{font:inherit}.layout{display:grid;grid-template-columns:244px minma
   <div class="brand"><div class="eyebrow">Enciclopedia oficial</div><h1>Barras <span>Ro</span><br>Pre-Renewal</h1><p>8 módulos · ≤ Episode 13.2 · lectura continua</p></div>
   <button class="home" onclick="showHome()">⌂ Biblioteca · Todos los módulos</button>
   <div class="module-nav"><button class="module-tab" id="tab-1" onclick="openModule(1)"><span>🧭</span><b>M1</b><small>Progresión &amp; EXP</small></button><button class="module-tab" id="tab-2" onclick="openModule(2)"><span>🗺️</span><b>M2</b><small>Accesos &amp; Dungeons</small></button><button class="module-tab" id="tab-3" onclick="openModule(3)"><span>📖</span><b>M3</b><small>Historias &amp; Lore</small></button><button class="module-tab" id="tab-4" onclick="openModule(4)"><span>🧩</span><b>M4</b><small>Regional &amp; Standalone</small></button><button class="module-tab" id="tab-5" onclick="openModule(5)"><span>⚔️</span><b>M5</b><small>Jobs &amp; Platinum Skills</small></button><button class="module-tab" id="tab-6" onclick="openModule(6)"><span>🔨</span><b>M6</b><small>Equipment &amp; Crafting</small></button><button class="module-tab" id="tab-7" onclick="openModule(7)"><span>🏰</span><b>M7</b><small>Endless Tower</small></button><button class="module-tab" id="tab-8" onclick="openModule(8)"><span>🐾</span><b>M8</b><small>Compañeros</small></button></div>
-  <div class="sidefoot"><b>BARRAS RO · GUÍA COMPLETA</b><br>Contenido conservado y presentado con una experiencia moderna de lectura.</div>
+  <div class="sidefoot"><b>ASCENCIONRO · GUÍA COMPLETA</b><br>Contenido conservado y presentado con una experiencia moderna de lectura.</div>
 </aside>
 <main class="content">
   <div class="topbar">
-    <div class="current" id="currentTitle">Barras Ro · Biblioteca</div>
+    <div class="current" id="currentTitle">AscencionRO · Biblioteca</div>
     <div class="searchbox"><input id="globalSearch" placeholder="Buscar en todos los módulos…"><button onclick="clearSearch()">Limpiar</button></div>
   </div>
   <div class="mobilemods"><button id="mobile-home" onclick="showHome()">⌂ Inicio</button><button id="mobile-1" onclick="openModule(1)">🧭 M1</button><button id="mobile-2" onclick="openModule(2)">🗺️ M2</button><button id="mobile-3" onclick="openModule(3)">📖 M3</button><button id="mobile-4" onclick="openModule(4)">🧩 M4</button><button id="mobile-5" onclick="openModule(5)">⚔️ M5</button><button id="mobile-6" onclick="openModule(6)">🔨 M6</button><button id="mobile-7" onclick="openModule(7)">🏰 M7</button><button id="mobile-8" onclick="openModule(8)">🐾 M8</button></div>
-  <section id="homeView"><div class="hero"><div><div class="eyebrow">Barras Ro · Enciclopedia Pre-Renewal</div><h2>Todo Midgard.<br><span>Una sola biblioteca.</span></h2><p>Consulta rutas, accesos, quests, jobs, equipo, Endless Tower y compañeros sin perderte entre documentos. El contenido completo está organizado en ocho módulos legibles y conectados entre sí.</p></div><div class="guide-home-art"><img src="/og.png" alt="Portal fantástico de Barras Ro bajo la luna"><small>TU AVENTURA EMPIEZA AQUÍ</small></div></div><div class="grid"><button class="module-card" onclick="openModule(1)">
+  <section id="homeView"><div class="hero"><div><div class="eyebrow">AscencionRO · Enciclopedia Pre-Renewal</div><h2>Todo Midgard.<br><span>Una sola biblioteca.</span></h2><p>Consulta rutas, accesos, quests, jobs, equipo, Endless Tower y compañeros sin perderte entre documentos. El contenido completo está organizado en ocho secciones legibles y conectadas entre sí.</p></div><div class="guide-home-art"><img src="/og.png" alt="Portal fantástico de AscencionRO bajo la luna"><small>TU AVENTURA EMPIEZA AQUÍ</small></div></div><div class="grid"><button class="module-card" onclick="openModule(1)">
     <div class="mc-top"><span>MÓDULO 1</span><em>v1.11</em></div>
     <div class="mc-icon">🧭</div>
     <h2>Progresión &amp; EXP</h2>
@@ -148,7 +148,7 @@ const shadow=host.attachShadow({mode:'open'});
 
 function decodeModule(n){const bytes=Uint8Array.from(atob(MODULE_DATA[n]),c=>c.charCodeAt(0));return new TextDecoder('utf-8').decode(bytes)}
 function setActive(n){document.querySelectorAll('.module-tab,.mobilemods button').forEach(x=>x.classList.remove('active'));if(n){document.getElementById('tab-'+n)?.classList.add('active');document.getElementById('mobile-'+n)?.classList.add('active')}else document.getElementById('mobile-home')?.classList.add('active')}
-function showHome(){currentModule=null;shadow.innerHTML='';view.style.display='none';home.style.display='block';currentTitle.textContent='Barras Ro · Biblioteca';setActive(null);history.replaceState(null,'','#inicio')}
+function showHome(){currentModule=null;shadow.innerHTML='';view.style.display='none';home.style.display='block';currentTitle.textContent='AscencionRO · Biblioteca';setActive(null);history.replaceState(null,'','#inicio')}
 function openDetailsTo(el){let p=el;while(p){if(p.tagName==='DETAILS')p.open=true;p=p.parentElement}}
 function scrollInside(anchor){if(!anchor)return;const id=anchor.replace(/^#/,'');const el=shadow.getElementById(id);if(el){openDetailsTo(el);setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),40)}}
 
@@ -205,7 +205,7 @@ function bindM6(){
 function bindM7(){const q=shadow.getElementById('q');q?.addEventListener('input',()=>{const t=q.value.toLowerCase().trim();shadow.querySelectorAll('.floor').forEach(el=>{const hay=(el.innerText+' '+(el.dataset.search||'')).toLowerCase();el.style.display=(!t||hay.includes(t))?'':'none'})})}
 function bindM8(){let mode='all';const s=shadow.getElementById('search'),rows=[...shadow.querySelectorAll('#petTable tbody tr')];function apply(){const t=(s?.value||'').trim().toLowerCase();rows.forEach(r=>{const hit=!t||r.innerText.toLowerCase().includes(t)||(r.dataset.search||'').includes(t),kind=r.dataset.bonus||'none',ok=mode==='all'||(mode==='bonus'&&kind!=='none')||(mode==='none'&&kind==='none');r.classList.toggle('hidden',!(hit&&ok))})}s?.addEventListener('input',apply);shadow.getElementById('withBonus')?.addEventListener('click',()=>{mode=mode==='bonus'?'all':'bonus';apply()});shadow.getElementById('noBonus')?.addEventListener('click',()=>{mode=mode==='none'?'all':'none';apply()});shadow.getElementById('clear')?.addEventListener('click',()=>{if(s)s.value='';mode='all';apply()})}
 
-function openModule(n,anchor=''){const m=MODULE_META[n];if(!m)return;currentModule=Number(n);home.style.display='none';view.style.display='block';shadow.innerHTML=decodeModule(n)+'<link rel="stylesheet" href="/modern-modules.css">';currentTitle.textContent='Barras Ro · Módulo '+n+' · '+m.title;setActive(n);bindCommon(n);if(n===1)bindM1();if(n===2)bindM2();if(n===4||n===5)bindM4or5(n);if(n===6)bindM6();if(n===7)bindM7();if(n===8)bindM8();history.replaceState(null,'','#modulo-'+n+(anchor||''));window.scrollTo({top:0,behavior:'instant'});if(anchor)setTimeout(()=>scrollInside(anchor),50)}
+function openModule(n,anchor=''){const m=MODULE_META[n];if(!m)return;currentModule=Number(n);home.style.display='none';view.style.display='block';shadow.innerHTML=decodeModule(n)+'<link rel="stylesheet" href="/modern-modules.css">';currentTitle.textContent='AscencionRO · '+m.title;setActive(n);bindCommon(n);if(n===1)bindM1();if(n===2)bindM2();if(n===4||n===5)bindM4or5(n);if(n===6)bindM6();if(n===7)bindM7();if(n===8)bindM8();history.replaceState(null,'','#modulo-'+n+(anchor||''));window.scrollTo({top:0,behavior:'instant'});if(anchor)setTimeout(()=>scrollInside(anchor),50)}
 
 function norm(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function esc(s){return(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}

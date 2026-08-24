@@ -166,7 +166,7 @@ for (let start = 0; start < items.length; start += CHUNK_SIZE) {
 
 const catalog = {
   meta: {
-    title: "BarrasRO · Catálogo local Pre-Renewal",
+    title: "AscencionRO · Catálogo local Pre-Renewal",
     count: items.length,
     revision: REVISION,
     snapshotDate: SNAPSHOT_DATE,
