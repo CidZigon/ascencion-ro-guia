@@ -15,8 +15,8 @@ test("renderiza la biblioteca y el acceso al catálogo local",async()=>{
   assert.match(response.headers.get("content-type")??"",/^text\/html\b/i);
   const html=await response.text();
   assert.match(html,/<title>BarrasRO · Enciclopedia Pre-Renewal<\/title>/i);
-  assert.match(html,/6\.169 fichas locales/);
-  assert.match(html,/Busca cualquier objeto sin salir de BarrasRO/);
+  assert.match(html,/Todo Midgard/);
+  assert.match(html,/Busca objetos al instante/);
   assert.doesNotMatch(html,/Your site is taking shape|codex-preview/i);
 });
 test("el catálogo contiene todos los registros y bloques declarados",async()=>{
@@ -42,7 +42,10 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.doesNotMatch(portal,/fetch\("\/content\.bundle"\)/);
   assert.match(portal,/fetch\(`\/data\/modules\/module-\$\{active\}\.html`\)/);
   assert.match(portal,/localizeItemLinks\(shadow\)/);
+  assert.match(portal,/cleanVisibleGuideMetadata\(shadow\)/);
   assert.match(portal,/#objeto-\$\{id\}/);
+  assert.doesNotMatch(portal,/>M\{m\.id\}</);
+  assert.doesNotMatch(portal,/MÓDULO \{m\.id\}/);
 
   const modules=await readdir(new URL("../public/data/modules/",import.meta.url));
   assert.equal(modules.filter(file=>file.endsWith(".html")).length,8);

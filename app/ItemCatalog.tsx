@@ -70,8 +70,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem}:{selected
 
   return <section className="item-catalog">
     <header className="catalog-hero">
-      <div><span className="kicker">BASE LOCAL · SIN CONSULTAS A RATEMYSERVER</span><h1>Objetos Pre-Renewal</h1><p>{catalog.meta.count.toLocaleString("es-ES")} registros revisables, servidos desde BarrasRO y enlazados desde los módulos de la guía.</p></div>
-      <div className="catalog-metrics"><div><b>{catalog.meta.count.toLocaleString("es-ES")}</b><span>objetos</span></div><div><b>{Object.keys(catalog.meta.typeCounts).length}</b><span>tipos</span></div><div><b>Local</b><span>origen de carga</span></div></div>
+      <div><h1>Objetos de Midgard</h1><p>Encuentra cualquiera de los {catalog.meta.count.toLocaleString("es-ES")} objetos por nombre, Aegis o ID. Las fichas se abren aquí mismo.</p></div>
     </header>
     <div className="catalog-toolbar">
       <label className="catalog-search"><span>Buscar por nombre, Aegis o ID</span><input value={query} onChange={event=>{setQuery(event.target.value);setLimit(80)}} placeholder="Ej. Poring Card, Red Potion, 501…"/></label>
@@ -81,7 +80,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem}:{selected
     </div>
     <div className="catalog-body">
       <div className="catalog-results">
-        <div className="catalog-status"><b>{filtered.length.toLocaleString("es-ES")}</b> coincidencias <span>· la búsqueda ocurre en tu navegador</span></div>
+        <div className="catalog-status"><b>{filtered.length.toLocaleString("es-ES")}</b> coincidencias</div>
         <div className="item-list">{filtered.slice(0,limit).map(item=><button key={item.id} className={selectedItemId===item.id?"item-row selected":"item-row"} onClick={()=>onSelectItem(item.id)}>
           <span className={`item-sigil type-${item.type.toLowerCase()}`}>{TYPE_SIGILS[item.type]??"◆"}</span>
           <span className="item-main"><b>{item.name}</b><small>{TYPE_LABELS[item.type]??item.type}{item.subType?` · ${item.subType}`:""}{item.slots!==undefined?` · ${item.slots} slot${item.slots===1?"":"s"}`:""}</small></span>
@@ -90,16 +89,15 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem}:{selected
         {!filtered.length&&<div className="catalog-empty"><b>No encontramos ese objeto.</b><span>Prueba por ID, nombre en inglés o nombre Aegis.</span></div>}
         {limit<filtered.length&&<button className="load-more" onClick={()=>setLimit(value=>value+80)}>Mostrar 80 más</button>}
       </div>
-      <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>Selecciona un objeto</h2><p>Su ficha se abre desde esta lista o desde cualquier enlace de objeto dentro de los ocho módulos.</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>Cargando ficha local…</p></div>:<ItemDetailCard item={activeDetail}/>}</aside>
+      <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>Selecciona un objeto</h2><p>Su ficha se abre desde esta lista o desde cualquier enlace dentro de las guías.</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>Cargando ficha…</p></div>:<ItemDetailCard item={activeDetail}/>}</aside>
     </div>
-    <footer className="catalog-source">Instantánea {catalog.meta.snapshotDate} · {catalog.meta.source} · revisión <code>{catalog.meta.revision.slice(0,7)}</code>. La presencia en la base no confirma disponibilidad en el episodio activo. <a href={catalog.meta.sourceUrl} target="_blank" rel="noreferrer">Ver fuente</a></footer>
   </section>;
 }
 
 function ItemDetailCard({item}:{item:ItemDetail}){
   const scripts=[['Efecto / uso',item.script],['Al equipar',item.equipScript],['Al desequipar',item.unEquipScript]].filter((entry):entry is [string,string]=>Boolean(entry[1]));
   return <div className="detail-card">
-    <div className="detail-title"><span className="detail-sigil">{TYPE_SIGILS[item.type]??"◆"}</span><div><span>OBJETO #{item.id}</span><h2>{item.name}</h2><code>{item.aegisName}</code></div></div>
+    <div className="detail-title"><span className="detail-sigil">{TYPE_SIGILS[item.type]??"◆"}</span><div><span>#{item.id}</span><h2>{item.name}</h2><code>{item.aegisName}</code></div></div>
     <div className="detail-badges"><span>{TYPE_LABELS[item.type]??item.type}</span>{item.subType&&<span>{item.subType}</span>}{item.refineable&&<span>Refinable</span>}</div>
     <dl className="stat-grid">
       <div><dt>Compra</dt><dd>{zeny(item.buy)}</dd></div><div><dt>Venta</dt><dd>{zeny(item.sell)}</dd></div>
@@ -112,6 +110,5 @@ function ItemDetailCard({item}:{item:ItemDetail}){
     {item.classes.length>0&&<section className="detail-section"><h3>Clases</h3><p>{list(item.classes)}</p></section>}
     {scripts.length>0&&<section className="detail-section"><h3>Mecánica verificada</h3>{scripts.map(([label,script])=><details key={label}><summary>{label}</summary><pre>{script}</pre></details>)}</section>}
     {(item.trade||item.flags)&&<section className="detail-section"><details><summary>Restricciones y banderas</summary><pre>{JSON.stringify({flags:item.flags,trade:item.trade},null,2)}</pre></details></section>}
-    <div className="detail-foot">Fuente: {item.sourceFile}</div>
   </div>;
 }

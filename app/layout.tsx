@@ -4,7 +4,7 @@ import "./theme.css";
 
 export const metadata: Metadata = {
   title: "BarrasRO · Enciclopedia Pre-Renewal",
-  description: "Ocho módulos y un catálogo local de 6.169 objetos para comenzar, progresar y explorar BarrasRO sin depender de consultas externas.",
+  description: "Guías y un catálogo de 6.169 objetos para comenzar, progresar y explorar BarrasRO sin depender de consultas externas.",
   icons: { icon: "/favicon.svg" },
 };
 

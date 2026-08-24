@@ -67,3 +67,13 @@ code,.id,.rawscript{background:#100f10!important;color:#cbb895!important;border-
 .mvp-item,.mobcard,.adv-card,.skill-index-card,.hom-build,.mercgroup{background:#1a1719!important;border-color:#4e4038!important;border-radius:3px!important}
 .boss,.mvp,.bossmob{border-color:#967341!important}.special{border-color:#765d82!important}.truth{background:#1b2420!important;border-color:#435f52!important}.petbonus{color:#a6c4ad!important}.none{color:#9d958f!important}
 footer{border-top-color:#4f4137!important;color:#958c84!important}
+
+/* The former horizontal section bar becomes a compact menu that always fits. */
+.section-navigation{position:sticky!important;top:0!important;z-index:25!important;margin:0!important;border:0!important;border-radius:0!important;background:#0e0e0ff2!important;box-shadow:0 8px 28px #0008!important;overflow:visible!important}
+.section-navigation>summary{min-height:48px!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:10px 18px!important;border-block:1px solid #5b4938!important;background:#141214!important;color:#e2d7c8!important;text-transform:none!important;letter-spacing:0!important}
+.section-navigation>summary:after{content:"＋";margin-left:9px;color:#c9aa71;font-size:1rem}
+.section-navigation[open]>summary:after{content:"−"}
+.section-navigation-links{position:absolute!important;top:100%!important;left:50%!important;width:min(940px,calc(100vw - 24px))!important;max-height:calc(100dvh - 72px)!important;display:grid!important;grid-template-columns:repeat(auto-fit,minmax(145px,1fr))!important;gap:7px!important;padding:12px!important;overflow-y:auto!important;overflow-x:hidden!important;transform:translateX(-50%)!important;border:1px solid #66543f!important;border-radius:0 0 12px 12px!important;background:#121113f8!important;box-shadow:0 28px 70px #000c!important}
+.section-navigation-links .wrap{display:contents!important}
+.section-navigation-links a{min-width:0!important;margin:0!important;display:grid!important;place-items:center!important;text-align:center!important;white-space:normal!important;line-height:1.25!important}
+@media(max-width:760px){.section-navigation-links{grid-template-columns:repeat(2,minmax(0,1fr))!important;left:12px!important;right:12px!important;width:auto!important;max-height:calc(100dvh - 122px)!important;transform:none!important}}

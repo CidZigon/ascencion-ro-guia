@@ -3,22 +3,33 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ItemCatalog } from "./ItemCatalog";
 
-type ModuleInfo = { id:number; icon:string; title:string; description:string; tag:string; version:string };
+type ModuleInfo = { id:number; icon:string; title:string; description:string };
 type SearchEntry = { module:number; anchor:string; title:string; text:string; moduleTitle:string; icon:string };
 
 const MODULES: ModuleInfo[] = [
-  { id:1, icon:"🧭", title:"Progresión & EXP", description:"Rutas de leveo, cacerías, quests de EXP y progresión eficiente.", tag:"Empieza aquí", version:"v1.11" },
-  { id:2, icon:"🗺️", title:"Accesos & Dungeons", description:"Prerrequisitos, NPC, coordenadas y desbloqueo de contenido.", tag:"Exploración", version:"v2.4" },
-  { id:3, icon:"📖", title:"Historias & Lore", description:"Arcos narrativos y contexto del mundo para entender cada aventura.", tag:"Historia", version:"v3.4" },
-  { id:4, icon:"🧩", title:"Regional & Standalone", description:"Quests regionales e independientes organizadas para consulta rápida.", tag:"Quests", version:"v4.1" },
-  { id:5, icon:"⚔️", title:"Jobs & Platinum Skills", description:"Cambios de clase y habilidades especiales explicados paso a paso.", tag:"Clases", version:"v5.4" },
-  { id:6, icon:"🔨", title:"Equipment & Crafting", description:"Equipo, materiales, refinamiento y fabricación para cada etapa.", tag:"Progreso", version:"v6.2" },
-  { id:7, icon:"🏰", title:"Endless Tower", description:"Pisos, MVP, elementos y estrategia para completar la torre.", tag:"Endgame", version:"v8.1" },
-  { id:8, icon:"🐾", title:"Compañeros", description:"Pets, homúnculos y mercenarios con datos Pre-Renewal.", tag:"Sistemas", version:"v10.2" },
+  { id:1, icon:"🧭", title:"Progresión y EXP", description:"Rutas de leveo, cacerías, quests de EXP y progresión eficiente." },
+  { id:2, icon:"🗺️", title:"Accesos y dungeons", description:"Prerrequisitos, NPC, coordenadas y desbloqueo de contenido." },
+  { id:3, icon:"📖", title:"Historias y lore", description:"Arcos narrativos y contexto del mundo para entender cada aventura." },
+  { id:4, icon:"🧩", title:"Aventuras regionales", description:"Quests regionales e independientes organizadas para consulta rápida." },
+  { id:5, icon:"⚔️", title:"Jobs y habilidades", description:"Cambios de clase y habilidades especiales explicados paso a paso." },
+  { id:6, icon:"🔨", title:"Equipo y fabricación", description:"Equipo, materiales, refinamiento y fabricación para cada etapa." },
+  { id:7, icon:"🏰", title:"Endless Tower", description:"Pisos, MVP, elementos y estrategia para completar la torre." },
+  { id:8, icon:"🐾", title:"Compañeros", description:"Pets, homúnculos y mercenarios con datos Pre-Renewal." },
 ];
 
 function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function excerpt(text:string,query:string){const i=Math.max(0,normalize(text).indexOf(normalize(query)));const start=Math.max(0,i-65);const end=Math.min(text.length,i+query.length+115);return `${start?"…":""}${text.slice(start,end)}${end<text.length?"…":""}`}
+function cleanUserText(value:string){
+  let result=value;
+  for(const topic of MODULES)result=result.replace(new RegExp(`m[oó]dulo\\s*0?${topic.id}`,"gi"),topic.title);
+  return result
+    .replace(/\bm[oó]dulos\b/gi,"secciones")
+    .replace(/\bm[oó]dulo\b/gi,"sección")
+    .replace(/\s*[·—-]?\s*(?:release\s+estable|release)(?:\s*[·—-]\s*\d{4}-\d{2}-\d{2})?/gi,"")
+    .replace(/\s*[·—-]?\s*v\d+(?:\.\d+)+/gi,"")
+    .replace(/\s{2,}/g," ")
+    .trim();
+}
 
 export function GuidePortal(){
   const [moduleData,setModuleData]=useState<Record<number,string>>({});
@@ -28,6 +39,8 @@ export function GuidePortal(){
   const [loadError,setLoadError]=useState(false);
   const [selectedItemId,setSelectedItemId]=useState<number|null>(null);
   const [catalogQuery,setCatalogQuery]=useState("");
+  const [guidesOpen,setGuidesOpen]=useState(false);
+  const headerRef=useRef<HTMLElement>(null);
   const hostRef=useRef<HTMLDivElement>(null);
   const shadowRef=useRef<ShadowRoot|null>(null);
   const pendingAnchor=useRef("");
@@ -40,6 +53,7 @@ export function GuidePortal(){
       return id;
     });
     setQuery("");
+    setGuidesOpen(false);
     history.replaceState(null,"",`#modulo-${id}${anchor||""}`);
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
@@ -49,6 +63,7 @@ export function GuidePortal(){
     setSelectedItemId(options.id??null);
     setCatalogQuery(options.query??"");
     setQuery("");
+    setGuidesOpen(false);
     history.replaceState(null,"",options.id?`#objeto-${options.id}`:"#objetos");
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
@@ -61,8 +76,17 @@ export function GuidePortal(){
   const showLibrary=useCallback(()=>{
     setActive(null);
     setQuery("");
+    setGuidesOpen(false);
     history.replaceState(null,"","#inicio");
     window.scrollTo({top:0,behavior:"auto"});
+  },[]);
+
+  useEffect(()=>{
+    const close=(event:PointerEvent)=>{if(headerRef.current&&!headerRef.current.contains(event.target as Node))setGuidesOpen(false)};
+    const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")setGuidesOpen(false)};
+    document.addEventListener("pointerdown",close);
+    document.addEventListener("keydown",escape);
+    return()=>{document.removeEventListener("pointerdown",close);document.removeEventListener("keydown",escape)};
   },[]);
 
   useEffect(()=>{
@@ -103,6 +127,7 @@ export function GuidePortal(){
     if(typeof active!=="number"){shadow.innerHTML="";return}
     if(!moduleData?.[active])return;
     shadow.innerHTML=moduleData[active]+"<link rel=\"stylesheet\" href=\"/modern-modules.css\">";
+    cleanVisibleGuideMetadata(shadow);
     localizeItemLinks(shadow);
     bindModule(shadow,active,openModule,openCatalog);
     const anchor=pendingAnchor.current;
@@ -117,28 +142,32 @@ export function GuidePortal(){
     return (searchIndex??[]).filter(item=>normalize(`${item.title} ${item.text}`).includes(key)).slice(0,50);
   },[query,searchIndex]);
 
-  const current=typeof active==="number"?MODULES[active-1]:null;
   return <main className="portal">
-    <aside className="sidebar">
-      <button className="brand" onClick={showLibrary} aria-label="Abrir biblioteca de BarrasRO"><span className="brand-mark">B</span><span><b>BarrasRO</b><small>ENCICLOPEDIA PRE-RENEWAL</small></span></button>
-      <button className={`library-button ${active===null?"active":""}`} onClick={showLibrary}>⌂ Biblioteca completa</button>
-      <button className={`catalog-button ${active==="items"?"active":""}`} onClick={()=>openCatalog()}>◆ <span><b>Objetos</b><small>6.169 fichas locales</small></span></button>
-      <nav className="module-nav" aria-label="Módulos de la guía">{MODULES.map(m=><button key={m.id} className={`module-tab ${active===m.id?"active":""}`} onClick={()=>openModule(m.id)}><span className="tab-icon">{m.icon}</span><strong>M{m.id}</strong><span>{m.title}</span></button>)}</nav>
-      <div className="side-note"><b>BarrasRO · 8 MÓDULOS + CATÁLOGO</b><br/>Los objetos se consultan desde nuestra propia base local.</div>
-    </aside>
-    <section className="workspace">
-      <header className="topbar">
-        <div className="current">{active==="items"?"BarrasRO · Objetos":current?`Módulo ${current.id} · ${current.title}`:"BarrasRO · Biblioteca"}</div>
+    <header className="site-header" ref={headerRef}>
+      <div className="nav-shell">
+        <button className="brand" onClick={showLibrary} aria-label="Ir al inicio de BarrasRO"><span className="brand-mark">B</span><span><b>BarrasRO</b><small>Guía Pre-Renewal</small></span></button>
+        <nav className="primary-nav" aria-label="Navegación principal">
+          <button className={active===null?"active":""} onClick={showLibrary}>Inicio</button>
+          <button className={active==="items"?"active":""} onClick={()=>openCatalog()}>Objetos</button>
+          <div className="guide-menu-wrap">
+            <button className={typeof active==="number"?"active":""} onClick={()=>setGuidesOpen(value=>!value)} aria-expanded={guidesOpen} aria-controls="guide-menu">Guías <span aria-hidden="true">⌄</span></button>
+            {guidesOpen&&<div className="guide-menu" id="guide-menu">
+              <div className="guide-menu-intro"><b>¿Qué quieres hacer?</b><span>Elige un tema y abre la guía directamente.</span></div>
+              <div className="guide-menu-grid">{MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>openModule(topic.id)}><span>{topic.icon}</span><span><b>{topic.title}</b><small>{topic.description}</small></span><i aria-hidden="true">→</i></button>)}</div>
+            </div>}
+          </div>
+        </nav>
         <div className="search-wrap">
-          <div className="search-field"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar quests, NPC, mapas, jobs u objetos…" aria-label="Buscar en toda la enciclopedia"/><button onClick={()=>setQuery("")}>Limpiar</button></div>
-          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” en 6.169 objetos</b><small>Consulta local por nombre, Aegis o ID</small></button><div className="search-label">{searchIndex===null?"CARGANDO GUÍA…":results.length?`${results.length} RESULTADOS DE LA GUÍA`:"SIN RESULTADOS EN LA GUÍA"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {r.title}</b><small>Módulo {r.module} · {excerpt(r.text,query)}</small></button>)}</div>}
+          <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en BarrasRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
+          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
         </div>
-      </header>
-      <nav className="mobile-nav" aria-label="Módulos"><button className={active===null?"active":""} onClick={showLibrary}>⌂ Inicio</button><button className={active==="items"?"active":""} onClick={()=>openCatalog()}>◆ Objetos</button>{MODULES.map(m=><button key={m.id} className={active===m.id?"active":""} onClick={()=>openModule(m.id)}>{m.icon} M{m.id}</button>)}</nav>
+      </div>
+    </header>
+    <section className="workspace">
       <div className="content">
         {active===null&&<Library openModule={openModule} openCatalog={openCatalog}/>}
         {active==="items"&&<ItemCatalog key={catalogQuery} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/>}
-        {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la biblioteca</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando el módulo…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
+        {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la guía</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando la guía…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
   </main>;
@@ -148,18 +177,42 @@ function Library({openModule,openCatalog}:{openModule:(id:number)=>void;openCata
   return <section className="library">
     <div className="library-head">
       <div className="library-intro">
-        <div className="library-crest" aria-hidden="true"><span>BR</span></div>
-        <span className="kicker">BarrasRO · ARCHIVO DE MIDGARD</span>
-        <h1>Biblioteca<br/>Pre-Renewal</h1>
-        <div className="ornament" aria-hidden="true"><i/><b>◆</b><i/></div>
-        <p>Todo el conocimiento del servidor reunido en un solo lugar. Explora rutas, accesos, historias, jobs y sistemas sin abandonar esta biblioteca.</p>
+        <h1>Todo Midgard,<br/><span>a un clic.</span></h1>
+        <p>Encuentra una ruta de leveo, desbloquea un dungeon o consulta un objeto sin salir de BarrasRO.</p>
+        <div className="hero-actions"><button className="primary-action" onClick={()=>openCatalog()}>Buscar un objeto <span>→</span></button><button className="secondary-action" onClick={()=>openModule(1)}>Comenzar a progresar</button></div>
       </div>
-      <div className="library-stats"><div><b>8</b><span>Módulos completos</span></div><div><b>6.169</b><span>Objetos locales</span></div></div>
+      <div className="hero-art" aria-hidden="true"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-gem"><span>6.169</span><small>objetos listos</small></div><div className="hero-card hero-card-one">Busca por nombre</div><div className="hero-card hero-card-two">Abre cualquier guía</div></div>
     </div>
-    <button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><small>NUEVA BASE LOCAL PRE-RENEWAL</small><b>Busca cualquier objeto sin salir de BarrasRO</b><em>Datos, scripts, restricciones, equipo y precios desde una instantánea revisable.</em></span><strong>ABRIR CATÁLOGO →</strong></button>
-    <div className="section-title"><div><span className="kicker">ELIGE TU CAMINO</span><h2>Explora por tema</h2></div><span>Selecciona un módulo para abrirlo aquí mismo</span></div>
-    <div className="module-grid">{MODULES.map(m=><button className="module-card" key={m.id} onClick={()=>openModule(m.id)}><div className="card-top"><span className="card-number">MÓDULO {m.id} · {m.version}</span><span className="card-tag">{m.tag}</span></div><span className="card-icon">{m.icon}</span><h3>{m.title}</h3><p>{m.description}</p><span className="card-open">ABRIR <b>→</b></span></button>)}</div>
+    <button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button>
+    <div className="section-title"><div><h2>Explora por tema</h2><p>Ocho caminos claros, sin códigos ni versiones que aprender.</p></div></div>
+    <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><h3>{topic.title}</h3><p>{topic.description}</p><span className="card-open">Explorar <b>→</b></span></button>)}</div>
   </section>
+}
+
+function cleanVisibleGuideMetadata(shadow:ShadowRoot){
+  shadow.querySelectorAll<HTMLElement>('[id="fuentes"], footer').forEach(element=>element.remove());
+  shadow.querySelectorAll<HTMLAnchorElement>('nav a[href="#fuentes"]').forEach(element=>element.remove());
+  shadow.querySelectorAll<HTMLElement>('.badge,.release-badge,.release-note,.eyebrow,.recommended,.audit').forEach(element=>{
+    if(/m[oó]dulo|release|versi[oó]n|versionado|auditor[ií]a|entregable|\b\d{2}\s+[a-z]{3}\s+\d{4}\b/i.test(element.textContent||""))element.remove();
+  });
+  const walker=document.createTreeWalker(shadow,NodeFilter.SHOW_TEXT);
+  const nodes:Text[]=[];
+  while(walker.nextNode())nodes.push(walker.currentNode as Text);
+  for(const node of nodes){
+    const cleaned=cleanUserText(node.data);
+    if(cleaned!==node.data.trim())node.data=cleaned;
+  }
+  const navigation=shadow.querySelector<HTMLElement>("nav");
+  if(navigation){
+    const menu=document.createElement("details");
+    const summary=document.createElement("summary");
+    menu.className="section-navigation";
+    summary.textContent="Explorar esta guía";
+    navigation.classList.add("section-navigation-links");
+    navigation.replaceWith(menu);
+    menu.append(summary,navigation);
+    navigation.addEventListener("click",event=>{if((event.target as HTMLElement).closest("a"))menu.open=false});
+  }
 }
 
 function openDetailsTo(element:HTMLElement){let current:HTMLElement|null=element;while(current){if(current.tagName==="DETAILS")(current as HTMLDetailsElement).open=true;current=current.parentElement}}
