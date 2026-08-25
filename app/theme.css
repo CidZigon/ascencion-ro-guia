@@ -2,8 +2,10 @@
 .item-catalog{max-width:1420px;margin:auto;padding:clamp(26px,4vw,54px) clamp(14px,4vw,48px) 70px}
 .catalog-hero{padding:clamp(28px,5vw,58px);border:1px solid #5e4c3a;border-radius:20px;background:linear-gradient(115deg,#121113,#2a1b2f 70%,#151216);box-shadow:0 24px 70px #0007}
 .catalog-hero h1{margin:0;color:#eee5da;font:700 clamp(42px,6vw,76px)/.92 Georgia,serif;letter-spacing:-.045em}
+.catalog-hero small{display:block;margin-bottom:8px;color:#d6ad6f;font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
 .catalog-hero p{max-width:760px;margin:20px 0 0;color:#b2aaa3;font-size:16px;line-height:1.7}
 .catalog-toolbar{display:grid;grid-template-columns:minmax(260px,1fr) 210px 130px auto;gap:10px;align-items:end;margin:18px 0;padding:14px;border:1px solid #433a34;border-radius:14px;background:#151416}
+.catalog-toolbar.scoped{grid-template-columns:minmax(260px,1fr) 130px auto}
 .catalog-toolbar label{display:grid;gap:5px}
 .catalog-toolbar label>span{color:#9b938c;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
 .catalog-toolbar input,.catalog-toolbar select{width:100%;height:43px;padding:0 12px;border:1px solid #51463e;border-radius:9px;background:#0f0f10;color:#e7e0d8}
@@ -11,7 +13,8 @@
 .catalog-toggle{height:43px;padding:0 15px;border:1px solid #51463e;border-radius:9px;background:#1d191b;color:#bdb5ad}
 .catalog-toggle.active{border-color:var(--gold);background:#34263a;color:#f0d7aa}
 .catalog-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(350px,430px);gap:14px;align-items:start}
-.catalog-results,.item-detail{overflow:hidden;border:1px solid #433a34;border-radius:14px;background:#131214}
+.catalog-results,.item-detail{border:1px solid #433a34;border-radius:14px;background:#131214}
+.catalog-results{overflow:hidden}
 .catalog-status{padding:11px 15px;border-bottom:1px solid #3d3530;color:#aaa198;font-size:11px}
 .catalog-status b{color:var(--gold)}
 .item-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#302a26}
@@ -27,7 +30,7 @@
 .load-more{display:block;margin:16px auto;padding:10px 20px;border:1px solid var(--gold);border-radius:999px;background:#211a18;color:#e4cea5;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em}
 .catalog-empty{display:grid;gap:3px;padding:50px;text-align:center;color:#8f8780}
 .catalog-empty b{color:#d7cec4}
-.item-detail{position:sticky;top:88px;min-height:430px}
+.item-detail{position:sticky;top:88px;min-height:430px;max-height:calc(100dvh - 104px);overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#735a43 #151416;scrollbar-width:thin}
 .detail-placeholder{min-height:430px;display:grid;align-content:center;justify-items:center;padding:35px;text-align:center;color:#938a82}
 .detail-placeholder>span{color:var(--gold);font-size:34px}
 .detail-placeholder h2{margin:12px 0 4px;color:#dcd3c7;font:700 22px Georgia,serif}
@@ -49,6 +52,15 @@
 .detail-section details{margin-top:6px;border:1px solid #403832;border-radius:8px;background:#0f0f10}
 .detail-section summary{padding:8px 10px;color:#c9b58c;font-size:10px;cursor:pointer}
 .detail-section pre{max-height:260px;overflow:auto;margin:0;padding:11px;border-top:1px solid #352f2b;background:#0a0a0b;color:#aaa69f;font:10px/1.55 Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.source-list{display:grid;gap:6px;max-height:280px;overflow:auto;padding-right:3px;margin-top:8px}
+.source-row{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 9px;border:1px solid #3e3732;border-radius:8px;background:#181618}
+.source-row>div{min-width:0}
+.source-row b,.source-row small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.source-row b{color:#e0d7cd;font-size:11px}
+.source-row small{margin-top:2px;color:#948c85;font-size:9px}
+.source-row em{color:#d2b071;font:700 11px Georgia,serif;font-style:normal;white-space:nowrap}
+.source-row .mvp{margin-left:6px;color:#e0a64b;font-size:8px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+.source-empty{margin:0;color:#8f8780;font-size:11px}
 .catalog-loading,.catalog-fatal{min-height:calc(100vh - 74px);display:grid;align-content:center;justify-items:center;text-align:center;color:#aaa198}
 .catalog-fatal h1{color:#e4d6c2;font-family:Georgia,serif}
 
