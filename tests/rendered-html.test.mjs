@@ -17,7 +17,9 @@ test("renderiza la biblioteca limpia y el acceso al catálogo local",async()=>{
   assert.match(html,/<title>AscencionRO · Enciclopedia Pre-Renewal<\/title>/i);
   assert.doesNotMatch(html,/Todo Midgard/);
   assert.match(html,/Busca objetos al instante/);
+  assert.match(html,/Consulta el bestiario local/);
   assert.match(html,/Explora ciudades y mapas/);
+  assert.match(html,/>Monstruos</);
   assert.doesNotMatch(html,/Your site is taking shape|codex-preview/i);
 });
 test("el catálogo contiene todos los registros y bloques declarados",async()=>{
@@ -56,6 +58,40 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   const cardSources=JSON.parse(await readFile(new URL(`../public/data/item-sources/chunk-${String(cardChunk).padStart(3,"0")}.json`,import.meta.url),"utf8"));
   const poringCard=cardSources.items[4001]??cardSources.items["4001"];
   assert.equal(poringCard.drops[0].name,"Poring");
+  assert.equal(poringCard.drops[0].id,1002);
+});
+
+test("el catálogo de monstruos cubre el bestiario Pre-Renewal y enlaza drops",async()=>{
+  const catalog=JSON.parse(await readFile(new URL("../public/data/monsters-index.json",import.meta.url),"utf8"));
+  const files=(await readdir(new URL("../public/data/monsters/",import.meta.url))).filter(file=>file.endsWith(".json")).sort();
+  assert.equal(catalog.meta.count,1004);
+  assert.equal(catalog.items.length,1004);
+  assert.equal(files.length,catalog.meta.chunks);
+  assert.equal(new Set(catalog.items.map(item=>item.id)).size,1004);
+  const poring=catalog.items.find(item=>item.id===1002);
+  assert.equal(poring.name,"Poring");
+  assert.equal(poring.aegisName,"PORING");
+  assert.equal(poring.race,"Plant");
+  assert.ok(poring.maps>=1);
+  assert.ok(poring.drops>=1);
+
+  const details=[];
+  for(const file of files){
+    const chunk=JSON.parse(await readFile(new URL(`../public/data/monsters/${file}`,import.meta.url),"utf8"));
+    details.push(...chunk.items);
+  }
+  assert.equal(details.length,1004);
+  const poringDetail=details.find(item=>item.id===1002);
+  assert.ok(poringDetail.maps.includes("prt_fild08")||poringDetail.maps.length>0);
+  assert.ok(poringDetail.drops.some(drop=>drop.id===909||drop.name==="Jellopy"));
+
+  const portal=await readFile(new URL("../app/GuidePortal.tsx",import.meta.url),"utf8");
+  assert.match(portal,/active==="monsters"/);
+  assert.match(portal,/#monstruo-\$\{/);
+  assert.match(portal,/onOpenMonster=\{openMonster\}/);
+  const items=await readFile(new URL("../app/ItemCatalog.tsx",import.meta.url),"utf8");
+  assert.match(items,/onOpenMonster\(\{id:drop\.id\}\)/);
+  assert.match(items,/source-row source-link/);
 });
 
 test("el índice del mundo resuelve mapas, monstruos, NPC y guías con medios locales",async()=>{
@@ -96,7 +132,7 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(portal,/NeonCursor/);
   assert.match(portal,/link\.dataset\.worldX/);
   assert.match(portal,/link\.closest\("tr"\)/);
-  assert.match(portal,/bindModule\(shadow,active,openModule,openCatalog,openWorldPreview,openExternalLink\)/);
+  assert.match(portal,/bindModule\(shadow,active,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink\)/);
   assert.match(portal,/prepareGuideNavigation\(shadow\)/);
   assert.doesNotMatch(portal,/cleanVisibleGuideMetadata/);
   assert.match(portal,/preparedModules\.current\[active\]/);

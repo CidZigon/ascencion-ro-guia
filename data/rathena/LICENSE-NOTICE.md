@@ -13,6 +13,6 @@ La presencia de un objeto en la base Pre-Renewal no confirma por sí sola su
 disponibilidad en AscencionRO. La disponibilidad concreta sigue dependiendo de la
 configuración y el episodio activo del servidor.
 
-Los drops y las tiendas NPC de la ficha de objeto se derivan de
-`db/pre-re/mob_db.yml` y de los scripts de `npc/` (sin Renewal) de la misma
-revisión.
+Los drops y las tiendas NPC de la ficha de objeto, y el catálogo de monstruos,
+se derivan de `db/pre-re/mob_db.yml` y de los scripts de `npc/` (sin Renewal)
+de la misma revisión.

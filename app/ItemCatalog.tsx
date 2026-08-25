@@ -60,7 +60,7 @@ export type CatalogScope =
   | { kind:"slot"; location:string; eyebrow:string; title:string; description:string }
   | { kind:"weapon"; subType:string; eyebrow:string; title:string; description:string };
 
-export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,scope}:{selectedItemId:number|null;initialQuery:string;onSelectItem:(id:number)=>void;scope?:CatalogScope}){
+export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMonster,scope}:{selectedItemId:number|null;initialQuery:string;onSelectItem:(id:number)=>void;onOpenMonster:(options:{id:number})=>void;scope?:CatalogScope}){
   const [catalog,setCatalog]=useState<CatalogPayload|null>(null);
   const [detail,setDetail]=useState<ItemDetail|null>(null);
   const [sources,setSources]=useState<ItemSources|null>(null);
@@ -125,12 +125,12 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,scope}:{se
         {!filtered.length&&<div className="catalog-empty"><b>No encontramos ese objeto.</b><span>Prueba por ID, nombre en inglés o nombre Aegis.</span></div>}
         {limit<filtered.length&&<button className="load-more" onClick={()=>setLimit(value=>value+80)}>Mostrar 80 más</button>}
       </div>
-      <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>Selecciona un objeto</h2><p>Su ficha se abre desde esta lista o desde cualquier enlace dentro de las guías.</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>Cargando ficha…</p></div>:<ItemDetailCard item={activeDetail} sources={sources}/>}</aside>
+      <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>Selecciona un objeto</h2><p>Su ficha se abre desde esta lista o desde cualquier enlace dentro de las guías.</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>Cargando ficha…</p></div>:<ItemDetailCard item={activeDetail} sources={sources} onOpenMonster={onOpenMonster}/>}</aside>
     </div>
   </section>;
 }
 
-function ItemDetailCard({item,sources}:{item:ItemDetail;sources:ItemSources|null}){
+function ItemDetailCard({item,sources,onOpenMonster}:{item:ItemDetail;sources:ItemSources|null;onOpenMonster:(options:{id:number})=>void}){
   const scripts=[['Efecto / uso',item.script],['Al equipar',item.equipScript],['Al desequipar',item.unEquipScript]].filter((entry):entry is [string,string]=>Boolean(entry[1]));
   const drops=sources?.drops??[];
   const shops=sources?.shops??[];
@@ -143,7 +143,7 @@ function ItemDetailCard({item,sources}:{item:ItemDetail;sources:ItemSources|null
       <div><dt>ATK</dt><dd>{item.attack??"—"}</dd></div><div><dt>MATK</dt><dd>{item.magicAttack??"—"}</dd></div>
       <div><dt>DEF</dt><dd>{item.defense??"—"}</dd></div><div><dt>Slots</dt><dd>{item.slots??"—"}</dd></div>
     </dl>
-    <section className="detail-section"><h3>Lo dropean</h3>{sources===null?<p className="source-empty">Buscando monstruos…</p>:drops.length?<div className="source-list">{drops.map(drop=><article className="source-row" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`}><div><b>{drop.name}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>{drop.maps.length?drop.maps.join(" · "):"Mapa no publicado en esta instantánea"}</small></div><em>{dropRate(drop.rate)}</em></article>)}</div>:<p className="source-empty">Ningún monstruo de la base Pre-Renewal lo deja caer.</p>}</section>
+    <section className="detail-section"><h3>Lo dropean</h3>{sources===null?<p className="source-empty">Buscando monstruos…</p>:drops.length?<div className="source-list">{drops.map(drop=><button type="button" className="source-row source-link" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`} onClick={()=>onOpenMonster({id:drop.id})}><div><b>{drop.name}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>{drop.maps.length?drop.maps.join(" · "):"Mapa no publicado en esta instantánea"}</small></div><em>{dropRate(drop.rate)}</em></button>)}</div>:<p className="source-empty">Ningún monstruo de la base Pre-Renewal lo deja caer.</p>}</section>
     <section className="detail-section"><h3>Dónde se compra</h3>{sources===null?<p className="source-empty">Buscando tiendas…</p>:shops.length?<div className="source-list">{shops.map(shop=><article className="source-row" key={`${shop.map}-${shop.x}-${shop.y}-${shop.name}`}><div><b>{shop.name}</b><small>{shop.map} {shop.x},{shop.y}{shop.cash?" · Cash":""}</small></div><em>{shop.price<0?zeny(item.buy):shop.cash?`${shop.price} C`:zeny(shop.price)}</em></article>)}</div>:<p className="source-empty">Ninguna tienda NPC lo vende en esta instantánea.</p>}</section>
     <section className="detail-section"><h3>Ubicación de equipo</h3><p>{list(item.locations)}</p></section>
     <section className="detail-section"><h3>Jobs compatibles</h3><p>{list(item.jobs)}</p></section>
