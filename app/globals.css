@@ -40,6 +40,7 @@ button{cursor:pointer}
 .primary-nav>button,.guide-menu-wrap>button{min-height:38px;padding:8px 12px;border:0;border-radius:999px;background:transparent;color:#c5bfba;font-weight:750}
 .primary-nav button:hover,.primary-nav button.active{background:#2c2030;color:#f7e7c8}
 .guide-menu-wrap{position:relative}
+.guide-menu-wrap:has(.guide-menu)::after{content:"";position:absolute;left:-10px;right:-10px;top:100%;height:22px}
 .guide-menu-wrap>button span{display:inline-block;margin-left:3px;transition:transform .18s}
 .guide-menu-wrap>button[aria-expanded="true"] span{transform:rotate(180deg)}
 .guide-menu{position:absolute;top:calc(100% + 17px);left:50%;width:min(880px,calc(100vw - 40px));max-height:calc(100dvh - 92px);overflow-y:auto;overscroll-behavior:contain;transform:translateX(-50%);padding:18px;border:1px solid #66543f;border-radius:18px;background:linear-gradient(145deg,#151416f5,#211924f8);box-shadow:var(--shadow)}
@@ -55,6 +56,8 @@ button{cursor:pointer}
 .guide-menu-grid b{font:700 14px Georgia,serif}
 .guide-menu-grid small{margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#948c85;font-size:10px}
 .guide-menu-grid i{color:var(--gold);font-style:normal}
+.guide-menu.equip-menu{width:min(560px,calc(100vw - 40px))}
+.guide-menu.weapon-menu{width:min(760px,calc(100vw - 40px))}
 
 .search-wrap{position:relative;min-width:0}
 .search-field{height:42px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:0 12px;border:1px solid #4a4039;border-radius:999px;background:#171619;color:#8d8580}
@@ -103,6 +106,7 @@ button{cursor:pointer}
 
 @media(max-width:1080px){
   .nav-shell{grid-template-columns:auto auto minmax(190px,1fr);gap:12px}
+  .primary-nav>button,.guide-menu-wrap>button{padding:8px 9px}
   .module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:800px){

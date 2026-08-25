@@ -1,8 +1,12 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { EQUIP_HASH, EQUIP_SLOTS, WEAPON_HASH, WEAPON_KINDS, equipSlotById, weaponKindById } from "./gear";
 import { ModalShell } from "./ModalShell";
 import type { WorldKind, WorldSelection } from "./WorldCatalog";
+
+type NavMenu = "equipment" | "weapons" | "guides";
+type ActiveView = number | "items" | "world" | "equipment" | "weapons" | null;
 
 const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCatalog}));
 const WorldCatalog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldCatalog}));
@@ -46,17 +50,20 @@ function cleanUserText(value:string){
 export function GuidePortal(){
   const [moduleData,setModuleData]=useState<Record<number,{html:string;style:string}>>({});
   const [searchIndex,setSearchIndex]=useState<SearchEntry[]|null>(null);
-  const [active,setActive]=useState<number|"items"|"world"|null>(null);
+  const [active,setActive]=useState<ActiveView>(null);
   const [query,setQuery]=useState("");
   const [loadError,setLoadError]=useState(false);
   const [selectedItemId,setSelectedItemId]=useState<number|null>(null);
   const [catalogQuery,setCatalogQuery]=useState("");
+  const [equipmentSlot,setEquipmentSlot]=useState<string|null>(null);
+  const [weaponType,setWeaponType]=useState<string|null>(null);
   const [worldQuery,setWorldQuery]=useState("");
   const [worldSelection,setWorldSelection]=useState<WorldSelection|null>(null);
   const [worldPreview,setWorldPreview]=useState<WorldSelection|null>(null);
   const [externalLink,setExternalLink]=useState<ExternalDestination|null>(null);
-  const [guidesOpen,setGuidesOpen]=useState(false);
+  const [navMenu,setNavMenu]=useState<NavMenu|null>(null);
   const headerRef=useRef<HTMLElement>(null);
+  const navTimer=useRef(0);
   const hostRef=useRef<HTMLDivElement>(null);
   const shadowRef=useRef<ShadowRoot|null>(null);
   const preparedModules=useRef<Record<number,string>>({});
@@ -72,7 +79,9 @@ export function GuidePortal(){
       return id;
     });
     setQuery("");
-    setGuidesOpen(false);
+    setNavMenu(null);
+    setEquipmentSlot(null);
+    setWeaponType(null);
     history.replaceState(null,"",`#modulo-${id}${anchor||""}`);
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
@@ -84,14 +93,48 @@ export function GuidePortal(){
     setSelectedItemId(options.id??null);
     setCatalogQuery(options.query??"");
     setQuery("");
-    setGuidesOpen(false);
+    setNavMenu(null);
+    setEquipmentSlot(null);
+    setWeaponType(null);
     history.replaceState(null,"",options.id?`#objeto-${options.id}`:"#objetos");
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
 
   const selectItem=useCallback((id:number)=>{
     setSelectedItemId(id);
-    history.replaceState(null,"",`#objeto-${id}`);
+    if(active==="equipment"&&equipmentSlot)history.replaceState(null,"",`#equipo-${equipmentSlot}-objeto-${id}`);
+    else if(active==="weapons"&&weaponType)history.replaceState(null,"",`#arma-${weaponType}-objeto-${id}`);
+    else history.replaceState(null,"",`#objeto-${id}`);
+  },[active,equipmentSlot,weaponType]);
+
+  const openEquipment=useCallback((slot:string,id?:number)=>{
+    if(!equipSlotById(slot))return;
+    setWorldPreview(null);
+    setExternalLink(null);
+    setActive("equipment");
+    setEquipmentSlot(slot);
+    setWeaponType(null);
+    setSelectedItemId(id??null);
+    setCatalogQuery("");
+    setQuery("");
+    setNavMenu(null);
+    history.replaceState(null,"",id?`#equipo-${slot}-objeto-${id}`:`#equipo-${slot}`);
+    window.scrollTo({top:0,behavior:"auto"});
+  },[]);
+
+  const openWeapons=useCallback((kind:string,id?:number)=>{
+    if(!weaponKindById(kind))return;
+    setWorldPreview(null);
+    setExternalLink(null);
+    setActive("weapons");
+    setWeaponType(kind);
+    setEquipmentSlot(null);
+    setSelectedItemId(id??null);
+    setCatalogQuery("");
+    setQuery("");
+    setNavMenu(null);
+    history.replaceState(null,"",id?`#arma-${kind}-objeto-${id}`:`#arma-${kind}`);
+    window.scrollTo({top:0,behavior:"auto"});
   },[]);
 
   const openWorld=useCallback((options:{kind?:WorldKind;id?:string;query?:string}={})=>{
@@ -101,7 +144,9 @@ export function GuidePortal(){
     setWorldSelection(options.kind&&options.id?{kind:options.kind,id:options.id}:null);
     setWorldQuery(options.query??"");
     setQuery("");
-    setGuidesOpen(false);
+    setNavMenu(null);
+    setEquipmentSlot(null);
+    setWeaponType(null);
     const prefix=options.kind==="map"?"mapa":options.kind==="monster"?"monstruo":options.kind==="npc"?"npc":options.kind==="reference"?"referencia":"mundo";
     history.replaceState(null,"",options.id?`#${prefix}-${options.id}`:"#mundo");
     window.scrollTo({top:0,behavior:"auto"});
@@ -118,31 +163,39 @@ export function GuidePortal(){
     setExternalLink(null);
     setActive(null);
     setQuery("");
-    setGuidesOpen(false);
+    setNavMenu(null);
+    setEquipmentSlot(null);
+    setWeaponType(null);
     history.replaceState(null,"","#inicio");
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
+
+  const openNavMenu=useCallback((menu:NavMenu)=>{window.clearTimeout(navTimer.current);setNavMenu(menu)},[]);
+  const closeNavMenu=useCallback(()=>{window.clearTimeout(navTimer.current);setNavMenu(null)},[]);
+  const scheduleCloseNavMenu=useCallback(()=>{window.clearTimeout(navTimer.current);navTimer.current=window.setTimeout(()=>setNavMenu(null),160)},[]);
 
   const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setWorldPreview(selection)},[]);
   const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setExternalLink(destination)},[]);
 
   useEffect(()=>{
-    const close=(event:PointerEvent)=>{if(headerRef.current&&!headerRef.current.contains(event.target as Node))setGuidesOpen(false)};
-    const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")setGuidesOpen(false)};
+    const close=(event:PointerEvent)=>{if(headerRef.current&&!headerRef.current.contains(event.target as Node))closeNavMenu()};
+    const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")closeNavMenu()};
     document.addEventListener("pointerdown",close);
     document.addEventListener("keydown",escape);
     return()=>{document.removeEventListener("pointerdown",close);document.removeEventListener("keydown",escape)};
-  },[]);
+  },[closeNavMenu]);
 
   useEffect(()=>{
     const applyHash=()=>{
-      const item=location.hash.match(/^#objeto-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/),world=location.hash.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/);
-      if(item){setSelectedItemId(Number(item[1]));setActive("items")}
-      else if(location.hash==="#objetos"){setSelectedItemId(null);setActive("items")}
-      else if(world){const kind:WorldKind=world[1]==="mapa"?"map":world[1]==="monstruo"?"monster":world[1]==="npc"?"npc":"reference";setWorldSelection({kind,id:world[2]});setActive("world")}
-      else if(location.hash==="#mundo"){setWorldSelection(null);setActive("world")}
-      else if(moduleMatch){pendingAnchor.current=moduleMatch[2]||"";setActive(Number(moduleMatch[1]))}
-      else setActive(null);
+      const item=location.hash.match(/^#objeto-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/),world=location.hash.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/),equipment=location.hash.match(EQUIP_HASH),weapon=location.hash.match(WEAPON_HASH);
+      if(item){setSelectedItemId(Number(item[1]));setEquipmentSlot(null);setWeaponType(null);setActive("items")}
+      else if(location.hash==="#objetos"){setSelectedItemId(null);setEquipmentSlot(null);setWeaponType(null);setActive("items")}
+      else if(equipment){setEquipmentSlot(equipment[1]);setWeaponType(null);setSelectedItemId(equipment[2]?Number(equipment[2]):null);setActive("equipment")}
+      else if(weapon){setWeaponType(weapon[1]);setEquipmentSlot(null);setSelectedItemId(weapon[2]?Number(weapon[2]):null);setActive("weapons")}
+      else if(world){const kind:WorldKind=world[1]==="mapa"?"map":world[1]==="monstruo"?"monster":world[1]==="npc"?"npc":"reference";setWorldSelection({kind,id:world[2]});setEquipmentSlot(null);setWeaponType(null);setActive("world")}
+      else if(location.hash==="#mundo"){setWorldSelection(null);setEquipmentSlot(null);setWeaponType(null);setActive("world")}
+      else if(moduleMatch){pendingAnchor.current=moduleMatch[2]||"";setEquipmentSlot(null);setWeaponType(null);setActive(Number(moduleMatch[1]))}
+      else {setEquipmentSlot(null);setWeaponType(null);setActive(null)}
     };
     applyHash();
     window.addEventListener("hashchange",applyHash);
@@ -199,6 +252,9 @@ export function GuidePortal(){
     return (searchIndex??[]).filter(item=>normalize(`${item.title} ${item.text}`).includes(key)).slice(0,50);
   },[query,searchIndex]);
 
+  const selectedEquip=equipmentSlot?equipSlotById(equipmentSlot):undefined;
+  const selectedWeapon=weaponType?weaponKindById(weaponType):undefined;
+
   return <main className="portal">
     <header className="site-header" ref={headerRef}>
       <div className="nav-shell">
@@ -206,14 +262,16 @@ export function GuidePortal(){
         <nav className="primary-nav" aria-label="Navegación principal">
           <button className={active===null?"active":""} onClick={showLibrary}>Inicio</button>
           <button className={active==="items"?"active":""} onClick={()=>openCatalog()}>Objetos</button>
+          <NavDropdown id="equipment-menu" label="Equipamento" open={navMenu==="equipment"} active={active==="equipment"} onOpen={()=>openNavMenu("equipment")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="Parte del cuerpo" introCopy="Elige dónde se equipa. Los que ocupan varias ranuras aparecen en cada una." className="equip-menu">
+            {EQUIP_SLOTS.map(slot=><button key={slot.id} className={active==="equipment"&&equipmentSlot===slot.id?"active":""} onClick={()=>openEquipment(slot.id)}><span>{slot.icon}</span><span><b>{slot.title}</b><small>{slot.description}</small></span><i aria-hidden="true">→</i></button>)}
+          </NavDropdown>
+          <NavDropdown id="weapons-menu" label="Armas" open={navMenu==="weapons"} active={active==="weapons"} onOpen={()=>openNavMenu("weapons")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="Tipo de arma" introCopy="Espadas, lanzas, arcos y el resto de armas Pre-Renewal." className="weapon-menu">
+            {WEAPON_KINDS.map(kind=><button key={kind.id} className={active==="weapons"&&weaponType===kind.id?"active":""} onClick={()=>openWeapons(kind.id)}><span>{kind.icon}</span><span><b>{kind.title}</b><small>{kind.description}</small></span><i aria-hidden="true">→</i></button>)}
+          </NavDropdown>
           <button className={active==="world"?"active":""} onClick={()=>openWorld()}>Mundo</button>
-          <div className="guide-menu-wrap">
-            <button className={typeof active==="number"?"active":""} onClick={()=>setGuidesOpen(value=>!value)} aria-expanded={guidesOpen} aria-controls="guide-menu">Guías <span aria-hidden="true">⌄</span></button>
-            {guidesOpen&&<div className="guide-menu" id="guide-menu">
-              <div className="guide-menu-intro"><b>¿Qué quieres hacer?</b><span>Elige un tema y abre la guía directamente.</span></div>
-              <div className="guide-menu-grid">{MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>openModule(topic.id)}><span>{topic.icon}</span><span><b>{topic.title}</b><small>{topic.description}</small></span><i aria-hidden="true">→</i></button>)}</div>
-            </div>}
-          </div>
+          <NavDropdown id="guide-menu" label="Guías" open={navMenu==="guides"} active={typeof active==="number"} onOpen={()=>openNavMenu("guides")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="¿Qué quieres hacer?" introCopy="Elige un tema y abre la guía directamente." className="guide-topics-menu">
+            {MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>openModule(topic.id)}><span>{topic.icon}</span><span><b>{topic.title}</b><small>{topic.description}</small></span><i aria-hidden="true">→</i></button>)}
+          </NavDropdown>
         </nav>
         <div className="search-wrap">
           <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en AscencionRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
@@ -224,7 +282,9 @@ export function GuidePortal(){
     <section className="workspace">
       <div className="content">
         {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openWorld={openWorld}/>}
-        {active==="items"&&<Suspense fallback={<SurfaceLoading label="Abriendo el catálogo local…"/>}><ItemCatalog key={catalogQuery} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/></Suspense>}
+        {active==="items"&&<Suspense fallback={<SurfaceLoading label="Abriendo el catálogo local…"/>}><ItemCatalog key={`items-${catalogQuery}`} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/></Suspense>}
+        {active==="equipment"&&selectedEquip&&<Suspense fallback={<SurfaceLoading label="Abriendo el equipamento…"/>}><ItemCatalog key={`equipo-${selectedEquip.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} scope={{kind:"slot",location:selectedEquip.location,eyebrow:"Equipamento",title:selectedEquip.title,description:selectedEquip.description}}/></Suspense>}
+        {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label="Abriendo las armas…"/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
         {active==="world"&&<Suspense fallback={<SurfaceLoading label="Abriendo el atlas local…"/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld}/></Suspense>}
         {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la guía</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando la guía…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
@@ -236,6 +296,16 @@ export function GuidePortal(){
 }
 
 function SurfaceLoading({label}:{label:string}){return <div className="catalog-loading"><div className="loader"/><p>{label}</p></div>}
+
+function NavDropdown({id,label,open,active,onOpen,onClose,onHoverClose,introTitle,introCopy,className="",children}:{id:string;label:string;open:boolean;active:boolean;onOpen:()=>void;onClose:()=>void;onHoverClose:()=>void;introTitle:string;introCopy:string;className?:string;children:ReactNode}){
+  return <div className="guide-menu-wrap" onMouseEnter={onOpen} onMouseLeave={onHoverClose}>
+    <button className={active?"active":""} onClick={()=>open?onClose():onOpen()} aria-expanded={open} aria-controls={id}>{label} <span aria-hidden="true">⌄</span></button>
+    {open&&<div className={`guide-menu ${className}`.trim()} id={id}>
+      <div className="guide-menu-intro"><b>{introTitle}</b><span>{introCopy}</span></div>
+      <div className="guide-menu-grid">{children}</div>
+    </div>}
+  </div>;
+}
 
 function ExternalLinkDialog({destination,onClose}:{destination:ExternalDestination;onClose:()=>void}){
   let host="sitio externo";

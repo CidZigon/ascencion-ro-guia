@@ -44,6 +44,18 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   assert.equal(details.length,6169);
   assert.deepEqual(details.map(item=>item.id),catalog.items.map(item=>item.id));
   assert.ok(details.find(item=>item.id===501&&item.aegisName==="Red_Potion"));
+
+  const sourcesMeta=JSON.parse(await readFile(new URL("../public/data/item-sources-meta.json",import.meta.url),"utf8"));
+  const sourceFiles=(await readdir(new URL("../public/data/item-sources/",import.meta.url))).filter(file=>file.endsWith(".json")).sort();
+  assert.equal(sourceFiles.length,catalog.meta.chunks);
+  assert.ok(sourcesMeta.items>=2000);
+  assert.ok(sourcesMeta.dropLinks>=4000);
+  const potionSources=JSON.parse(await readFile(new URL("../public/data/item-sources/chunk-000.json",import.meta.url),"utf8"));
+  assert.ok((potionSources.items[501]??potionSources.items["501"]).shops.length>0);
+  const cardChunk=catalog.items.find(item=>item.id===4001).chunk;
+  const cardSources=JSON.parse(await readFile(new URL(`../public/data/item-sources/chunk-${String(cardChunk).padStart(3,"0")}.json`,import.meta.url),"utf8"));
+  const poringCard=cardSources.items[4001]??cardSources.items["4001"];
+  assert.equal(poringCard.drops[0].name,"Poring");
 });
 
 test("el índice del mundo resuelve mapas, monstruos, NPC y guías con medios locales",async()=>{
