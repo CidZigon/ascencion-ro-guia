@@ -14,6 +14,19 @@
 .monster-catalog .detail-title{align-items:flex-start}
 .monster-catalog .detail-sigil{width:148px;height:148px;border-radius:18px}
 .monster-catalog .detail-sigil.item-sprite img{width:132px;height:132px}
+.monster-catalog .elemental-section p{margin-bottom:8px}
+.monster-catalog .element-table{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,auto);grid-auto-flow:column;gap:1px;margin:0;padding:0;list-style:none;background:#3e3631}
+.monster-catalog .element-table li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 9px;background:#191719}
+.monster-catalog .element-table span{overflow:hidden;color:#c4bbb2;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.monster-catalog .element-table em{font:700 11px Georgia,serif;font-style:normal;white-space:nowrap}
+.monster-catalog .element-table .ele-flat em{color:#8c827a}
+.monster-catalog .element-table .ele-resist em{color:#8fbf8a}
+.monster-catalog .element-table .ele-weak em{color:#e0a05a}
+.monster-catalog .element-table .ele-absorb{background:#1a2224}
+.monster-catalog .element-table .ele-absorb em{color:#7ec8c4}
+.monster-catalog .element-table .ele-immune{background:#2a1518}
+.monster-catalog .element-table .ele-immune span{color:#e7c4c4}
+.monster-catalog .element-table .ele-immune em{color:#f07171;font-weight:800}
 .catalog-toolbar label{display:grid;gap:5px}
 .catalog-toolbar label>span{color:#9b938c;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
 .catalog-toolbar input,.catalog-toolbar select{width:100%;height:43px;padding:0 12px;border:1px solid #51463e;border-radius:9px;background:#0f0f10;color:#e7e0d8}

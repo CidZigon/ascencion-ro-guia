@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- sprites oficiales pequeños servidos desde la caché local */
 
 import { useEffect, useMemo, useState } from "react";
+import { damageTakenFromElements } from "./attr-fix";
 
 type CatalogMeta = {
   count:number; revision:string; snapshotDate:string; source:string; sourceUrl:string;
@@ -36,6 +37,13 @@ function normalize(value:string){return value.toLowerCase().normalize("NFD").rep
 function stat(value?:number){return value===undefined?"—":value.toLocaleString("es-ES")}
 function dropRate(rate:number){
   return `${(rate/100).toLocaleString("es-ES",{minimumFractionDigits:rate%100===0?0:2,maximumFractionDigits:2})}%`;
+}
+function elementModifierClass(percent:number){
+  if(percent===0)return "ele-immune";
+  if(percent<0)return "ele-absorb";
+  if(percent<100)return "ele-resist";
+  if(percent>100)return "ele-weak";
+  return "ele-flat";
 }
 const RACE_LABELS:Record<string,string>={Formless:"Sin forma",Undead:"No muerto",Brute:"Bruto",Plant:"Planta",Insect:"Insecto",Fish:"Pez",Demon:"Demonio",Demihuman:"Humanoide",Angel:"Ángel",Dragon:"Dragón"};
 const ELEMENT_LABELS:Record<string,string>={Neutral:"Neutral",Water:"Agua",Earth:"Tierra",Fire:"Fuego",Wind:"Viento",Poison:"Veneno",Holy:"Sagrado",Dark:"Oscuro",Ghost:"Fantasma",Undead:"No muerto"};
@@ -108,9 +116,11 @@ export function MonsterCatalog({selectedMonsterId,initialQuery,onSelectMonster,o
 }
 
 function MonsterDetailCard({monster,onOpenItem}:{monster:MonsterDetail;onOpenItem:(id:number)=>void}){
+  const taken=damageTakenFromElements(monster.element,monster.elementLevel);
+  const elementLabel=`${ELEMENT_LABELS[monster.element]??monster.element}${monster.elementLevel?` ${monster.elementLevel}`:""}`;
   return <div className="detail-card">
     <div className="detail-title"><MonsterSprite monster={monster} className="detail-sigil" detail/><div><span>#{monster.id}</span><h2>{monster.name}</h2><code>{monster.aegisName}</code></div></div>
-    <div className="detail-badges"><span>{RACE_LABELS[monster.race]??monster.race}</span><span>{ELEMENT_LABELS[monster.element]??monster.element}{monster.elementLevel?` ${monster.elementLevel}`:""}</span>{monster.size&&<span>{SIZE_LABELS[monster.size]??monster.size}</span>}{monster.mvp&&<span>MVP</span>}</div>
+    <div className="detail-badges"><span>{RACE_LABELS[monster.race]??monster.race}</span><span>{elementLabel}</span>{monster.size&&<span>{SIZE_LABELS[monster.size]??monster.size}</span>}{monster.mvp&&<span>MVP</span>}</div>
     <dl className="stat-grid">
       <div><dt>Nivel</dt><dd>{stat(monster.level)}</dd></div><div><dt>HP</dt><dd>{stat(monster.hp)}</dd></div>
       <div><dt>Base EXP</dt><dd>{stat(monster.baseExp)}</dd></div><div><dt>Job EXP</dt><dd>{stat(monster.jobExp)}</dd></div>
@@ -118,6 +128,13 @@ function MonsterDetailCard({monster,onOpenItem}:{monster:MonsterDetail;onOpenIte
       <div><dt>DEF / MDEF</dt><dd>{stat(monster.defense)} / {stat(monster.magicDefense)}</dd></div>
       <div><dt>Rango</dt><dd>{stat(monster.attackRange)}</dd></div><div><dt>Vel. marcha</dt><dd>{stat(monster.walkSpeed)}</dd></div>
     </dl>
+    {taken&&<section className="detail-section elemental-section">
+      <h3>Fortalezas y debilidades</h3>
+      <p>Daño que recibe como {elementLabel}.</p>
+      <ul className="element-table" aria-label="Daño recibido por cada elemento atacante">
+        {taken.map(row=><li key={row.element} className={elementModifierClass(row.percent)}><span>{ELEMENT_LABELS[row.element]??row.element}</span><em>{row.percent}%</em></li>)}
+      </ul>
+    </section>}
     <section className="detail-section"><h3>Atributos</h3><p>STR {stat(monster.str)} · AGI {stat(monster.agi)} · VIT {stat(monster.vit)} · INT {stat(monster.int)} · DEX {stat(monster.dex)} · LUK {stat(monster.luk)}</p></section>
     <section className="detail-section"><h3>Mapas de aparición</h3>{monster.maps.length?<p>{monster.maps.join(" · ")}</p>:<p className="source-empty">No hay spawns publicados en esta instantánea.</p>}</section>
     <section className="detail-section"><h3>Dropea</h3>{monster.drops.length?<div className="source-list">{monster.drops.map(drop=><button type="button" className="source-row source-link" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`} onClick={()=>onOpenItem(drop.id)}><div><b>{drop.name}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>#{drop.id}</small></div><em>{dropRate(drop.rate)}</em></button>)}</div>:<p className="source-empty">No hay drops asociados en el catálogo local.</p>}</section>

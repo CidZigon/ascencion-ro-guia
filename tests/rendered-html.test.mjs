@@ -84,6 +84,24 @@ test("el catálogo de monstruos cubre el bestiario Pre-Renewal y enlaza drops",a
   const poringDetail=details.find(item=>item.id===1002);
   assert.ok(poringDetail.maps.includes("prt_fild08")||poringDetail.maps.length>0);
   assert.ok(poringDetail.drops.some(drop=>drop.id===909||drop.name==="Jellopy"));
+  assert.equal(poring.element,"Water");
+  assert.equal(poring.elementLevel,1);
+  const whisper=catalog.items.find(item=>item.id===1179);
+  assert.equal(whisper.name,"Whisper");
+  assert.equal(whisper.element,"Ghost");
+  assert.equal(whisper.elementLevel,3);
+  const monsterUi=await readFile(new URL("../app/MonsterCatalog.tsx",import.meta.url),"utf8");
+  assert.match(monsterUi,/Fortalezas y debilidades/);
+  assert.match(monsterUi,/element-table/);
+  const attrFix=await readFile(new URL("../app/attr-fix.ts",import.meta.url),"utf8");
+  const tableMatch=attrFix.match(/const PRE_RE_ATTR:number\[\]\[\]\[\] = (\[[\s\S]*?\n\];)/);
+  assert.ok(tableMatch);
+  const table=Function(`"use strict"; return ${tableMatch[1]}`)();
+  assert.deepEqual(table[0].map(row=>row[1]),[100,25,100,50,175,100,100,100,100,100]);
+  assert.deepEqual(table[2].map(row=>row[8]),[0,100,100,100,100,50,100,100,175,100]);
+  const theme=await readFile(new URL("../app/theme.css",import.meta.url),"utf8");
+  assert.match(theme,/\.monster-catalog \.element-table/);
+  assert.match(theme,/\.ele-immune em\{color:#f07171/);
 
   const portal=await readFile(new URL("../app/GuidePortal.tsx",import.meta.url),"utf8");
   assert.match(portal,/active==="monsters"/);
