@@ -50,11 +50,12 @@ function npcMapAt(html,index){
 }
 
 const itemIndex=JSON.parse(await readFile(new URL("../public/data/items-index.json",import.meta.url),"utf8"));
+const monsterIndex=JSON.parse(await readFile(new URL("../public/data/monsters-index.json",import.meta.url),"utf8"));
 const worldIndex=JSON.parse(await readFile(new URL("../public/data/world-index.json",import.meta.url),"utf8"));
 const itemIds=new Set(itemIndex.items.map(item=>String(item.id)));
+const monsterIds=new Set(monsterIndex.items.map(item=>String(item.id)));
 const worldIds={
   map:new Set(worldIndex.maps.map(entry=>String(entry.id))),
-  monster:new Set(worldIndex.monsters.map(entry=>String(entry.id))),
   npc:new Set(worldIndex.npcs.map(entry=>String(entry.id))),
   reference:new Set(worldIndex.references.map(entry=>String(entry.id))),
 };
@@ -117,9 +118,12 @@ for(const [module,{html,ids}] of modules){
     const localItem=href.match(/^#objeto-(\d+)$/);
     if(localItem){record("item-local",module,href,label,itemIds.has(localItem[1]),href);continue}
 
-    const localWorld=href.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/);
+    const localMonster=href.match(/^#monstruo-(\d+)$/);
+    if(localMonster){record("monster-local",module,href,label,monsterIds.has(localMonster[1]),href);continue}
+
+    const localWorld=href.match(/^#(mapa|npc|referencia)-(.+)$/);
     if(localWorld){
-      const kind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":localWorld[1];
+      const kind=localWorld[1]==="mapa"?"map":localWorld[1];
       record(`${kind}-local`,module,href,label,worldIds[kind].has(localWorld[2]),href);
       continue;
     }
@@ -132,7 +136,7 @@ for(const [module,{html,ids}] of modules){
         const monster=url.searchParams.get("mob_id");
         if(itemId){record("item-local",module,href,label,itemIds.has(itemId),`#objeto-${itemId}`);continue}
         if(map){record("map-local",module,href,label,worldIds.map.has(map),`#mapa-${map}`);continue}
-        if(monster){record("monster-local",module,href,label,worldIds.monster.has(monster),`#monstruo-${monster}`);continue}
+        if(monster){record("monster-local",module,href,label,monsterIds.has(monster),`#monstruo-${monster}`);continue}
       }
       if(url&&/irowiki\.org$/i.test(url.hostname)&&url.pathname.startsWith("/classic/")){
         const raw=url.pathname.split("/").filter(Boolean).at(-1)||"referencia";

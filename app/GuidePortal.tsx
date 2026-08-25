@@ -6,9 +6,10 @@ import { ModalShell } from "./ModalShell";
 import type { WorldKind, WorldSelection } from "./WorldCatalog";
 
 type NavMenu = "equipment" | "weapons" | "guides";
-type ActiveView = number | "items" | "world" | "equipment" | "weapons" | null;
+type ActiveView = number | "items" | "world" | "equipment" | "weapons" | "monsters" | null;
 
 const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCatalog}));
+const MonsterCatalog=lazy(async()=>({default:(await import("./MonsterCatalog")).MonsterCatalog}));
 const WorldCatalog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldCatalog}));
 const WorldReferenceDialog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldReferenceDialog}));
 
@@ -57,6 +58,8 @@ export function GuidePortal(){
   const [catalogQuery,setCatalogQuery]=useState("");
   const [equipmentSlot,setEquipmentSlot]=useState<string|null>(null);
   const [weaponType,setWeaponType]=useState<string|null>(null);
+  const [selectedMonsterId,setSelectedMonsterId]=useState<number|null>(null);
+  const [monsterQuery,setMonsterQuery]=useState("");
   const [worldQuery,setWorldQuery]=useState("");
   const [worldSelection,setWorldSelection]=useState<WorldSelection|null>(null);
   const [worldPreview,setWorldPreview]=useState<WorldSelection|null>(null);
@@ -82,6 +85,7 @@ export function GuidePortal(){
     setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
+    setSelectedMonsterId(null);
     history.replaceState(null,"",`#modulo-${id}${anchor||""}`);
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
@@ -96,6 +100,7 @@ export function GuidePortal(){
     setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
+    setSelectedMonsterId(null);
     history.replaceState(null,"",options.id?`#objeto-${options.id}`:"#objetos");
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
@@ -118,6 +123,7 @@ export function GuidePortal(){
     setCatalogQuery("");
     setQuery("");
     setNavMenu(null);
+    setSelectedMonsterId(null);
     history.replaceState(null,"",id?`#equipo-${slot}-objeto-${id}`:`#equipo-${slot}`);
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
@@ -133,8 +139,28 @@ export function GuidePortal(){
     setCatalogQuery("");
     setQuery("");
     setNavMenu(null);
+    setSelectedMonsterId(null);
     history.replaceState(null,"",id?`#arma-${kind}-objeto-${id}`:`#arma-${kind}`);
     window.scrollTo({top:0,behavior:"auto"});
+  },[]);
+
+  const openMonster=useCallback((options:{id?:number;query?:string}={})=>{
+    setWorldPreview(null);
+    setExternalLink(null);
+    setActive("monsters");
+    setSelectedMonsterId(options.id??null);
+    setMonsterQuery(options.query??"");
+    setQuery("");
+    setNavMenu(null);
+    setEquipmentSlot(null);
+    setWeaponType(null);
+    history.replaceState(null,"",options.id?`#monstruo-${options.id}`:"#monstruos");
+    window.scrollTo({top:0,behavior:"auto"});
+  },[]);
+
+  const selectMonster=useCallback((id:number)=>{
+    setSelectedMonsterId(id);
+    history.replaceState(null,"",`#monstruo-${id}`);
   },[]);
 
   const openWorld=useCallback((options:{kind?:WorldKind;id?:string;query?:string}={})=>{
@@ -147,14 +173,15 @@ export function GuidePortal(){
     setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
-    const prefix=options.kind==="map"?"mapa":options.kind==="monster"?"monstruo":options.kind==="npc"?"npc":options.kind==="reference"?"referencia":"mundo";
+    setSelectedMonsterId(null);
+    const prefix=options.kind==="map"?"mapa":options.kind==="npc"?"npc":options.kind==="reference"?"referencia":"mundo";
     history.replaceState(null,"",options.id?`#${prefix}-${options.id}`:"#mundo");
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
 
   const selectWorld=useCallback((selection:WorldSelection)=>{
     setWorldSelection(selection);
-    const prefix=selection.kind==="map"?"mapa":selection.kind==="monster"?"monstruo":selection.kind==="npc"?"npc":"referencia";
+    const prefix=selection.kind==="map"?"mapa":selection.kind==="npc"?"npc":"referencia";
     history.replaceState(null,"",`#${prefix}-${selection.id}`);
   },[]);
 
@@ -166,6 +193,7 @@ export function GuidePortal(){
     setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
+    setSelectedMonsterId(null);
     history.replaceState(null,"","#inicio");
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
@@ -187,15 +215,17 @@ export function GuidePortal(){
 
   useEffect(()=>{
     const applyHash=()=>{
-      const item=location.hash.match(/^#objeto-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/),world=location.hash.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/),equipment=location.hash.match(EQUIP_HASH),weapon=location.hash.match(WEAPON_HASH);
-      if(item){setSelectedItemId(Number(item[1]));setEquipmentSlot(null);setWeaponType(null);setActive("items")}
-      else if(location.hash==="#objetos"){setSelectedItemId(null);setEquipmentSlot(null);setWeaponType(null);setActive("items")}
-      else if(equipment){setEquipmentSlot(equipment[1]);setWeaponType(null);setSelectedItemId(equipment[2]?Number(equipment[2]):null);setActive("equipment")}
-      else if(weapon){setWeaponType(weapon[1]);setEquipmentSlot(null);setSelectedItemId(weapon[2]?Number(weapon[2]):null);setActive("weapons")}
-      else if(world){const kind:WorldKind=world[1]==="mapa"?"map":world[1]==="monstruo"?"monster":world[1]==="npc"?"npc":"reference";setWorldSelection({kind,id:world[2]});setEquipmentSlot(null);setWeaponType(null);setActive("world")}
-      else if(location.hash==="#mundo"){setWorldSelection(null);setEquipmentSlot(null);setWeaponType(null);setActive("world")}
-      else if(moduleMatch){pendingAnchor.current=moduleMatch[2]||"";setEquipmentSlot(null);setWeaponType(null);setActive(Number(moduleMatch[1]))}
-      else {setEquipmentSlot(null);setWeaponType(null);setActive(null)}
+      const item=location.hash.match(/^#objeto-(\d+)$/),monster=location.hash.match(/^#monstruo-(\d+)$/),moduleMatch=location.hash.match(/^#modulo-(\d+)(#.*)?$/),world=location.hash.match(/^#(mapa|npc|referencia)-(.+)$/),equipment=location.hash.match(EQUIP_HASH),weapon=location.hash.match(WEAPON_HASH);
+      if(item){setSelectedItemId(Number(item[1]));setEquipmentSlot(null);setWeaponType(null);setSelectedMonsterId(null);setActive("items")}
+      else if(location.hash==="#objetos"){setSelectedItemId(null);setEquipmentSlot(null);setWeaponType(null);setSelectedMonsterId(null);setActive("items")}
+      else if(equipment){setEquipmentSlot(equipment[1]);setWeaponType(null);setSelectedItemId(equipment[2]?Number(equipment[2]):null);setSelectedMonsterId(null);setActive("equipment")}
+      else if(weapon){setWeaponType(weapon[1]);setEquipmentSlot(null);setSelectedItemId(weapon[2]?Number(weapon[2]):null);setSelectedMonsterId(null);setActive("weapons")}
+      else if(monster){setSelectedMonsterId(Number(monster[1]));setEquipmentSlot(null);setWeaponType(null);setActive("monsters")}
+      else if(location.hash==="#monstruos"){setSelectedMonsterId(null);setEquipmentSlot(null);setWeaponType(null);setActive("monsters")}
+      else if(world){const kind:WorldKind=world[1]==="mapa"?"map":world[1]==="npc"?"npc":"reference";setWorldSelection({kind,id:world[2]});setEquipmentSlot(null);setWeaponType(null);setSelectedMonsterId(null);setActive("world")}
+      else if(location.hash==="#mundo"){setWorldSelection(null);setEquipmentSlot(null);setWeaponType(null);setSelectedMonsterId(null);setActive("world")}
+      else if(moduleMatch){pendingAnchor.current=moduleMatch[2]||"";setEquipmentSlot(null);setWeaponType(null);setSelectedMonsterId(null);setActive(Number(moduleMatch[1]))}
+      else {setEquipmentSlot(null);setWeaponType(null);setSelectedMonsterId(null);setActive(null)}
     };
     applyHash();
     window.addEventListener("hashchange",applyHash);
@@ -239,11 +269,11 @@ export function GuidePortal(){
       localizeWorldLinks(shadow);
       preparedModules.current[active]=shadow.innerHTML;
     }
-    bindModule(shadow,active,openModule,openCatalog,openWorldPreview,openExternalLink);
+    bindModule(shadow,active,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink);
     const anchor=pendingAnchor.current;
     pendingAnchor.current="";
     if(anchor)setTimeout(()=>scrollInside(shadow,anchor),80);
-  },[active,moduleData,openModule,openCatalog,openWorldPreview,openExternalLink]);
+  },[active,moduleData,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink]);
 
   const results=useMemo(()=>{
     const term=query.trim();
@@ -268,6 +298,7 @@ export function GuidePortal(){
           <NavDropdown id="weapons-menu" label="Armas" open={navMenu==="weapons"} active={active==="weapons"} onOpen={()=>openNavMenu("weapons")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="Tipo de arma" introCopy="Espadas, lanzas, arcos y el resto de armas Pre-Renewal." className="weapon-menu">
             {WEAPON_KINDS.map(kind=><button key={kind.id} className={active==="weapons"&&weaponType===kind.id?"active":""} onClick={()=>openWeapons(kind.id)}><span>{kind.icon}</span><span><b>{kind.title}</b><small>{kind.description}</small></span><i aria-hidden="true">→</i></button>)}
           </NavDropdown>
+          <button className={active==="monsters"?"active":""} onClick={()=>openMonster()}>Monstruos</button>
           <button className={active==="world"?"active":""} onClick={()=>openWorld()}>Mundo</button>
           <NavDropdown id="guide-menu" label="Guías" open={navMenu==="guides"} active={typeof active==="number"} onOpen={()=>openNavMenu("guides")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="¿Qué quieres hacer?" introCopy="Elige un tema y abre la guía directamente." className="guide-topics-menu">
             {MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>openModule(topic.id)}><span>{topic.icon}</span><span><b>{topic.title}</b><small>{topic.description}</small></span><i aria-hidden="true">→</i></button>)}
@@ -275,16 +306,17 @@ export function GuidePortal(){
         </nav>
         <div className="search-wrap">
           <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en AscencionRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
-          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” entre ciudades y mapas</b><small>Planos locales, NPC y quests relacionadas</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
+          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result monster-search-result" onClick={()=>openMonster({query})}><b>♜ Buscar “{query}” entre todos los monstruos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” entre ciudades y mapas</b><small>Planos locales, NPC y quests relacionadas</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
         </div>
       </div>
     </header>
     <section className="workspace">
       <div className="content">
-        {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openWorld={openWorld}/>}
-        {active==="items"&&<Suspense fallback={<SurfaceLoading label="Abriendo el catálogo local…"/>}><ItemCatalog key={`items-${catalogQuery}`} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem}/></Suspense>}
-        {active==="equipment"&&selectedEquip&&<Suspense fallback={<SurfaceLoading label="Abriendo el equipo…"/>}><ItemCatalog key={`equipo-${selectedEquip.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} scope={{kind:"slot",location:selectedEquip.location,eyebrow:"Equipo",title:selectedEquip.title,description:selectedEquip.description}}/></Suspense>}
-        {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label="Abriendo las armas…"/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
+        {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openMonster={openMonster} openWorld={openWorld}/>}
+        {active==="items"&&<Suspense fallback={<SurfaceLoading label="Abriendo el catálogo local…"/>}><ItemCatalog key={`items-${catalogQuery}`} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem} onOpenMonster={openMonster}/></Suspense>}
+        {active==="equipment"&&selectedEquip&&<Suspense fallback={<SurfaceLoading label="Abriendo el equipo…"/>}><ItemCatalog key={`equipo-${selectedEquip.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} scope={{kind:"slot",location:selectedEquip.location,eyebrow:"Equipo",title:selectedEquip.title,description:selectedEquip.description}}/></Suspense>}
+        {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label="Abriendo las armas…"/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
+        {active==="monsters"&&<Suspense fallback={<SurfaceLoading label="Abriendo el bestiario local…"/>}><MonsterCatalog key={`monsters-${monsterQuery}`} selectedMonsterId={selectedMonsterId} initialQuery={monsterQuery} onSelectMonster={selectMonster} onOpenItem={id=>openCatalog({id})}/></Suspense>}
         {active==="world"&&<Suspense fallback={<SurfaceLoading label="Abriendo el atlas local…"/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld}/></Suspense>}
         {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la guía</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando la guía…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
@@ -332,9 +364,9 @@ function NeonCursor(){
   return <span ref={cursorRef} className="neon-cursor" aria-hidden="true"/>;
 }
 
-function Library({openModule,openCatalog,openWorld}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void;openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void}){
+function Library({openModule,openCatalog,openMonster,openWorld}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void;openMonster:(options?:{id?:number;query?:string})=>void;openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void}){
   return <section className="library">
-    <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>Explora ciudades y mapas</b><em>Planos locales con los NPC y las quests vinculadas a cada zona.</em></span><strong>EXPLORAR <span>→</span></strong></button></div>
+    <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser monster-teaser" onClick={()=>openMonster()}><span className="teaser-sigil">♜</span><span><b>Consulta el bestiario local</b><em>Nivel, raza, elemento, mapas de aparición y todo lo que dropean.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>Explora ciudades y mapas</b><em>Planos locales con los NPC y las quests vinculadas a cada zona.</em></span><strong>EXPLORAR <span>→</span></strong></button></div>
     <div className="section-title"><div><h2>Explora por tema</h2><p>Ocho caminos claros, sin códigos ni versiones que aprender.</p></div></div>
     <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><h3>{topic.title}</h3><p>{topic.description}</p><span className="card-open">Explorar <b>→</b></span></button>)}</div>
   </section>
@@ -412,7 +444,7 @@ function localizeWorldLinks(shadow:ShadowRoot){
   });
 }
 
-function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openWorldReference:(selection:WorldSelection)=>void,openExternalLink:(destination:ExternalDestination)=>void){
+function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openMonster:(options?:{id?:number;query?:string})=>void,openWorldReference:(selection:WorldSelection)=>void,openExternalLink:(destination:ExternalDestination)=>void){
   const boundShadow=shadow as ShadowRoot&{_portalClickHandler?:EventListener};
   if(boundShadow._portalClickHandler)boundShadow.removeEventListener("click",boundShadow._portalClickHandler);
   const handleClick:EventListener=(rawEvent)=>{
@@ -427,8 +459,10 @@ function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor
       const href=link.getAttribute("href")||"";
       const localItem=href.match(/^#objeto-(\d+)$/);
       if(localItem){event.preventDefault();openCatalog({id:Number(localItem[1])});return}
-      const localWorld=href.match(/^#(mapa|monstruo|npc|referencia)-(.+)$/);
-      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="monstruo"?"monster":localWorld[1]==="npc"?"npc":"reference";const x=Number(link.dataset.worldX),y=Number(link.dataset.worldY),point=kind==="npc"&&Number.isFinite(x)&&Number.isFinite(y)?{x,y}:undefined;openWorldReference({kind,id:localWorld[2],point});return}
+      const localMonster=href.match(/^#monstruo-(\d+)$/);
+      if(localMonster){event.preventDefault();openMonster({id:Number(localMonster[1])});return}
+      const localWorld=href.match(/^#(mapa|npc|referencia)-(.+)$/);
+      if(localWorld){event.preventDefault();const kind:WorldKind=localWorld[1]==="mapa"?"map":localWorld[1]==="npc"?"npc":"reference";const x=Number(link.dataset.worldX),y=Number(link.dataset.worldY),point=kind==="npc"&&Number.isFinite(x)&&Number.isFinite(y)?{x,y}:undefined;openWorldReference({kind,id:localWorld[2],point});return}
       const crossModule=href.match(/^#module-(\d+)(#.*)?$/);
       if(crossModule){event.preventDefault();openModule(Number(crossModule[1]),crossModule[2]||"");return}
       if(href.startsWith("#")){event.preventDefault();scrollInside(shadow,href);return}
