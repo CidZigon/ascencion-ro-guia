@@ -129,6 +129,8 @@ button{cursor:pointer}
 }
 @media(max-width:540px){
   .brand b{font-size:16px}
+  .primary-nav{gap:0}
+  .primary-nav>button,.guide-menu-wrap>button{padding:5px 6px;font-size:10px}
   .catalog-teaser{grid-template-columns:auto 1fr;padding:20px}
   .database-links{grid-template-columns:1fr}
   .module-grid{grid-template-columns:1fr}

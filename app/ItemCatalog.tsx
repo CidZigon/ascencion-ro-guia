@@ -63,7 +63,7 @@ export type CatalogScope =
 export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,scope}:{selectedItemId:number|null;initialQuery:string;onSelectItem:(id:number)=>void;scope?:CatalogScope}){
   const [catalog,setCatalog]=useState<CatalogPayload|null>(null);
   const [detail,setDetail]=useState<ItemDetail|null>(null);
-  const [sources,setSources]=useState<ItemSources|null>(null);
+  const [sourceResult,setSourceResult]=useState<{itemId:number;sources:ItemSources}|null>(null);
   const [query,setQuery]=useState(initialQuery);
   const [type,setType]=useState("all");
   const [sort,setSort]=useState("id");
@@ -73,12 +73,12 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,scope}:{se
 
   useEffect(()=>{let live=true;loadCatalog().then(data=>{if(live)setCatalog(data)}).catch(()=>{if(live)setError(true)});return()=>{live=false}},[]);
   useEffect(()=>{
-    if(!catalog||selectedItemId===null){setSources(null);return}
+    if(!catalog||selectedItemId===null)return;
     const entry=catalog.items.find(item=>item.id===selectedItemId);
-    if(!entry){setSources(null);return}
+    if(!entry)return;
     let live=true;
     loadChunk(entry.chunk).then(items=>{if(live)setDetail(items.find(item=>item.id===selectedItemId)??null)}).catch(()=>{if(live)setError(true)});
-    loadSources(entry.chunk).then(payload=>{if(live)setSources(payload[selectedItemId]??payload[String(selectedItemId)]??{drops:[],shops:[]})}).catch(()=>{if(live)setSources({drops:[],shops:[]})});
+    loadSources(entry.chunk).then(payload=>{if(live)setSourceResult({itemId:selectedItemId,sources:payload[selectedItemId]??payload[String(selectedItemId)]??{drops:[],shops:[]}})}).catch(()=>{if(live)setSourceResult({itemId:selectedItemId,sources:{drops:[],shops:[]}})});
     return()=>{live=false};
   },[catalog,selectedItemId]);
 
@@ -96,6 +96,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,scope}:{se
     return result.sort((left,right)=>sort==="name"?left.name.localeCompare(right.name):sort==="type"?left.type.localeCompare(right.type)||left.id-right.id:left.id-right.id);
   },[catalog,query,type,refineable,sort,scope]);
   const activeDetail=detail?.id===selectedItemId?detail:null;
+  const activeSources=sourceResult?.itemId===selectedItemId?sourceResult.sources:null;
 
   if(error)return <section className="catalog-fatal"><h1>Catálogo no disponible</h1><p>No se pudo abrir la copia local. Intenta recargar la página.</p></section>;
   if(!catalog)return <section className="catalog-loading"><div className="loader"/><p>Abriendo la base local de objetos…</p></section>;
@@ -125,7 +126,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,scope}:{se
         {!filtered.length&&<div className="catalog-empty"><b>No encontramos ese objeto.</b><span>Prueba por ID, nombre en inglés o nombre Aegis.</span></div>}
         {limit<filtered.length&&<button className="load-more" onClick={()=>setLimit(value=>value+80)}>Mostrar 80 más</button>}
       </div>
-      <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>Selecciona un objeto</h2><p>Su ficha se abre desde esta lista o desde cualquier enlace dentro de las guías.</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>Cargando ficha…</p></div>:<ItemDetailCard item={activeDetail} sources={sources}/>}</aside>
+      <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>Selecciona un objeto</h2><p>Su ficha se abre desde esta lista o desde cualquier enlace dentro de las guías.</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>Cargando ficha…</p></div>:<ItemDetailCard item={activeDetail} sources={activeSources}/>}</aside>
     </div>
   </section>;
 }
