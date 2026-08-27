@@ -102,6 +102,16 @@ test("el catálogo de monstruos cubre el bestiario Pre-Renewal y enlaza drops",a
   const theme=await readFile(new URL("../app/theme.css",import.meta.url),"utf8");
   assert.match(theme,/\.monster-catalog \.element-table/);
   assert.match(theme,/\.ele-immune em\{color:#f07171/);
+  assert.match(
+    theme,
+    /\.catalog-toolbar,\.catalog-toolbar\.monster-toolbar,\.world-toolbar\{grid-template-columns:1fr 1fr\}/,
+  );
+  assert.match(
+    theme,
+    /\.catalog-toolbar,\.catalog-toolbar\.monster-toolbar,\.world-toolbar\{grid-template-columns:1fr\}/,
+  );
+  const globals=await readFile(new URL("../app/globals.css",import.meta.url),"utf8");
+  assert.match(globals,/@media\(max-width:480px\)\{\.brand>span:last-child\{display:none\}\}/);
 
   const portal=await readFile(new URL("../app/GuidePortal.tsx",import.meta.url),"utf8");
   assert.match(portal,/active==="monsters"/);

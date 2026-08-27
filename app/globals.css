@@ -140,4 +140,5 @@ button{cursor:pointer}
   .guide-menu-intro{display:block}
   .guide-menu-intro span{display:block;margin-top:2px}
 }
+@media(max-width:480px){.brand>span:last-child{display:none}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.module-card,.neon-cursor{transition:none}.loader{animation:none}}
