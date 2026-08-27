@@ -1,5 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
+import {
+  DESCRIPTION_REVISION,
+  DESCRIPTION_SNAPSHOT_DATE,
+  DESCRIPTION_SOURCE,
+  DESCRIPTION_SOURCE_URL,
+  loadItemDescriptions,
+} from "./build-item-descriptions.mjs";
 
 const SOURCE_DIR = new URL("../data/rathena/", import.meta.url);
 const OUTPUT_DIR = new URL("../public/data/items/", import.meta.url);
@@ -10,6 +17,7 @@ const SOURCE_FILES = ["item_db_equip.yml", "item_db_usable.yml", "item_db_etc.ym
 const CHUNK_SIZE = 400;
 let itemSprites = {};
 try{itemSprites=JSON.parse(await readFile(new URL("../public/data/item-sprites.json",import.meta.url),"utf8")).sprites??{}}catch{/* El catálogo funciona aun antes de crear la caché visual. */}
+const itemDescriptions = await loadItemDescriptions();
 
 function scalar(value) {
   const clean = value.trim();
@@ -120,6 +128,7 @@ function detail(item) {
     script: item.Script,
     equipScript: item.EquipScript,
     unEquipScript: item.UnEquipScript,
+    description: itemDescriptions.get(item.Id),
     sourceFile: item._source,
   };
 }
@@ -179,9 +188,16 @@ const catalog = {
     files: SOURCE_FILES.map((file) => basename(file)),
     chunks: Math.ceil(items.length / CHUNK_SIZE),
     typeCounts,
+    descriptions: {
+      source: DESCRIPTION_SOURCE,
+      sourceUrl: DESCRIPTION_SOURCE_URL,
+      revision: DESCRIPTION_REVISION,
+      snapshotDate: DESCRIPTION_SNAPSHOT_DATE,
+      matched: items.filter((item) => item.description).length,
+    },
   },
   items: indexItems,
 };
 
 await writeFile(INDEX_PATH, JSON.stringify(catalog), "utf8");
-console.log(`Catálogo generado: ${items.length} objetos en ${catalog.meta.chunks} bloques.`);
+console.log(`Catálogo generado: ${items.length} objetos en ${catalog.meta.chunks} bloques (${catalog.meta.descriptions.matched} con descripción).`);

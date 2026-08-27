@@ -45,7 +45,22 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   }
   assert.equal(details.length,6169);
   assert.deepEqual(details.map(item=>item.id),catalog.items.map(item=>item.id));
-  assert.ok(details.find(item=>item.id===501&&item.aegisName==="Red_Potion"));
+  const redPotion=details.find(item=>item.id===501&&item.aegisName==="Red_Potion");
+  assert.ok(redPotion);
+  assert.match(redPotion.description,/grinded Red Herbs/i);
+  assert.match(redPotion.description,/45\s*-\s*65/);
+  const poringCardDetail=details.find(item=>item.id===4001);
+  assert.match(poringCardDetail.description,/Luk \+2/);
+  assert.match(poringCardDetail.description,/Perfect Dodge \+1/);
+  assert.ok(catalog.meta.descriptions.matched>=4500);
+  assert.equal(catalog.meta.descriptions.revision,"66cdfec631603fda6a90ba4bbe26ab07b5204c84");
+
+  const itemUi=await readFile(new URL("../app/ItemCatalog.tsx",import.meta.url),"utf8");
+  assert.match(itemUi,/<h3>Descripción<\/h3>/);
+  assert.match(itemUi,/item-description/);
+  assert.doesNotMatch(itemUi,/Efecto \/ uso/);
+  const theme=await readFile(new URL("../app/theme.css",import.meta.url),"utf8");
+  assert.match(theme,/\.detail-section \.item-description\{[^}]*white-space:pre-wrap/s);
 
   const sourcesMeta=JSON.parse(await readFile(new URL("../public/data/item-sources-meta.json",import.meta.url),"utf8"));
   const sourceFiles=(await readdir(new URL("../public/data/item-sources/",import.meta.url))).filter(file=>file.endsWith(".json")).sort();
@@ -225,6 +240,8 @@ test("las ocho secciones contienen sólo texto final orientado al jugador",async
   }
   const pkg=JSON.parse(await readFile(new URL("../package.json",import.meta.url),"utf8"));
   assert.match(pkg.scripts["data:modules"],/finalize-guide-content\.mjs/);
+  assert.match(pkg.scripts["data:descriptions"],/build-item-descriptions\.mjs/);
+  assert.match(pkg.scripts["data:build"],/build-item-descriptions\.mjs/);
 });
 
 test("Endless Tower muestra un sprite local en cada tarjeta de monstruo",async()=>{

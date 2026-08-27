@@ -71,6 +71,7 @@
 .detail-section{padding:14px 0;border-bottom:1px solid #332e2a}
 .detail-section h3{margin:0 0 5px;color:#cbb891;font:700 11px Georgia,serif;text-transform:uppercase;letter-spacing:.06em}
 .detail-section p{margin:0;color:#aaa198;font-size:11px}
+.detail-section .item-description{white-space:pre-wrap;line-height:1.55;color:#cfc6bb}
 .detail-section details{margin-top:6px;border:1px solid #403832;border-radius:8px;background:#0f0f10}
 .detail-section summary{padding:8px 10px;color:#c9b58c;font-size:10px;cursor:pointer}
 .detail-section pre{max-height:260px;overflow:auto;margin:0;padding:11px;border-top:1px solid #352f2b;background:#0a0a0b;color:#aaa69f;font:10px/1.55 Consolas,monospace;white-space:pre-wrap;word-break:break-word}

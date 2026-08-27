@@ -15,7 +15,7 @@ type ItemIndex = {
 type ItemDetail = ItemIndex & {
   magicAttack?:number; range?:number; weaponLevel?:number; armorLevel?:number; equipLevelMax?:number;
   gradable?:boolean; view?:number; gender?:string; jobs:string[]; classes:string[]; flags?:Record<string,unknown>;
-  trade?:Record<string,unknown>; script?:string; equipScript?:string; unEquipScript?:string; sourceFile:string;
+  trade?:Record<string,unknown>; script?:string; equipScript?:string; unEquipScript?:string; description?:string; sourceFile:string;
 };
 type CatalogPayload = { meta:CatalogMeta; items:ItemIndex[] };
 
@@ -132,7 +132,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
 }
 
 function ItemDetailCard({item,sources,onOpenMonster}:{item:ItemDetail;sources:ItemSources|null;onOpenMonster:(options:{id:number})=>void}){
-  const scripts=[['Efecto / uso',item.script],['Al equipar',item.equipScript],['Al desequipar',item.unEquipScript]].filter((entry):entry is [string,string]=>Boolean(entry[1]));
+  const scripts=[['Al equipar',item.equipScript],['Al desequipar',item.unEquipScript]].filter((entry):entry is [string,string]=>Boolean(entry[1]));
   const drops=sources?.drops??[];
   const shops=sources?.shops??[];
   return <div className="detail-card">
@@ -144,6 +144,7 @@ function ItemDetailCard({item,sources,onOpenMonster}:{item:ItemDetail;sources:It
       <div><dt>ATK</dt><dd>{item.attack??"—"}</dd></div><div><dt>MATK</dt><dd>{item.magicAttack??"—"}</dd></div>
       <div><dt>DEF</dt><dd>{item.defense??"—"}</dd></div><div><dt>Slots</dt><dd>{item.slots??"—"}</dd></div>
     </dl>
+    <section className="detail-section"><h3>Descripción</h3>{item.description?<p className="item-description" lang="en">{item.description}</p>:<p className="source-empty">Esta instantánea no incluye una descripción de cliente para este objeto.</p>}</section>
     <section className="detail-section"><h3>Lo dropean</h3>{sources===null?<p className="source-empty">Buscando monstruos…</p>:drops.length?<div className="source-list">{drops.map(drop=><button type="button" className="source-row source-link" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`} onClick={()=>onOpenMonster({id:drop.id})}><div><b>{drop.name}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>{drop.maps.length?drop.maps.join(" · "):"Mapa no publicado en esta instantánea"}</small></div><em>{dropRate(drop.rate)}</em></button>)}</div>:<p className="source-empty">Ningún monstruo de la base Pre-Renewal lo deja caer.</p>}</section>
     <section className="detail-section"><h3>Dónde se compra</h3>{sources===null?<p className="source-empty">Buscando tiendas…</p>:shops.length?<div className="source-list">{shops.map(shop=><article className="source-row" key={`${shop.map}-${shop.x}-${shop.y}-${shop.name}`}><div><b>{shop.name}</b><small>{shop.map} {shop.x},{shop.y}{shop.cash?" · Cash":""}</small></div><em>{shop.price<0?zeny(item.buy):shop.cash?`${shop.price} C`:zeny(shop.price)}</em></article>)}</div>:<p className="source-empty">Ninguna tienda NPC lo vende en esta instantánea.</p>}</section>
     <section className="detail-section"><h3>Ubicación de equipo</h3><p>{list(item.locations)}</p></section>
