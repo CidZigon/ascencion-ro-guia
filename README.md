@@ -59,6 +59,20 @@ Los datos y sprites actuales ya están incluidos, así que no hace falta ejecuta
 
 Los comandos `data:*-sprites` descargan recursos y requieren conexión a Internet.
 
+## Versión publicada
+
+[https://cidzigon.github.io/](https://cidzigon.github.io/)
+
+El sitio es completamente estático: todos los componentes son de cliente y los datos se piden a archivos de `public/`. Cada push a `main` lo regenera y lo publica solo.
+
+Para generarlo a mano:
+
+```powershell
+pnpm run build
+pnpm run export:static
+npx serve sitio-estatico
+```
+
 ## Cómo contribuir
 
 Lee [CONTRIBUTING.md](CONTRIBUTING.md).

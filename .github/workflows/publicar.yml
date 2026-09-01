@@ -1,0 +1,60 @@
+name: Publicar sitio
+
+# Cada push a main regenera el sitio estático y lo publica en
+# https://cidzigon.github.io/ (repositorio CidZigon/CidZigon.github.io).
+#
+# Requiere el secreto PAGES_TOKEN: un token de acceso personal con permiso
+# de escritura (Contents: Read and write) sobre CidZigon.github.io.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Evita que dos publicaciones se pisen si haces varios push seguidos.
+concurrency:
+  group: publicar-sitio
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    name: Compilar y publicar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Comprobaciones
+        run: |
+          pnpm run lint
+          pnpm test
+
+      - name: Generar el sitio estático
+        run: pnpm run export:static
+
+      - name: Publicar en CidZigon.github.io
+        env:
+          PAGES_TOKEN: ${{ secrets.PAGES_TOKEN }}
+        run: |
+          if [ -z "$PAGES_TOKEN" ]; then
+            echo "::error::Falta el secreto PAGES_TOKEN. Creálo en Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          cd sitio-estatico
+          git init -b main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publicar AscencionRO (${GITHUB_SHA:0:7})"
+          git push --force --quiet \
+            "https://x-access-token:${PAGES_TOKEN}@github.com/CidZigon/CidZigon.github.io.git" main
+          echo "Publicado en https://cidzigon.github.io/"

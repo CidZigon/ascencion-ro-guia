@@ -10,6 +10,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
+    "export:static": "node scripts/build-static-site.mjs",
     "data:build": "node scripts/split-content-bundle.mjs && node scripts/finalize-guide-content.mjs && node scripts/build-item-descriptions.mjs && node scripts/build-item-catalog.mjs && node scripts/build-item-sources.mjs && node scripts/build-monster-catalog.mjs && node scripts/build-world-catalog.mjs",
     "data:catalog": "node scripts/build-item-descriptions.mjs && node scripts/build-item-catalog.mjs",
     "data:descriptions": "node scripts/build-item-descriptions.mjs",
