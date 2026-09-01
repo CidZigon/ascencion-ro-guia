@@ -227,12 +227,17 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
 
   const modules=await readdir(new URL("../public/data/modules/",import.meta.url));
   assert.equal(modules.filter(file=>file.endsWith(".html")).length,8);
-  let itemLinks=0;
+  let itemCards=0;
   for(const file of modules.filter(file=>file.endsWith(".html"))){
     const html=await readFile(new URL(`../public/data/modules/${file}`,import.meta.url),"utf8");
-    itemLinks+=(html.match(/ratemyserver\.net[^"']*[?&]item_id=\d+/gi)??[]).length;
+    itemCards+=(html.match(/id="item-\d+"/g)??[]).length;
   }
-  assert.ok(itemLinks>=290);
+  assert.ok(itemCards>=290);
+  const equipmentHtml=await readFile(new URL("../public/data/modules/module-6.html",import.meta.url),"utf8");
+  assert.doesNotMatch(equipmentHtml,/rAthena DB \+ RMS ID/);
+  assert.doesNotMatch(equipmentHtml,/class="rms-direct"/);
+  assert.doesNotMatch(equipmentHtml,/class="source-direct"/);
+  assert.equal((equipmentHtml.match(/class="item-name-sprite"/g)??[]).length,290);
 });
 
 test("las ocho secciones contienen sólo texto final orientado al jugador",async()=>{
@@ -279,8 +284,8 @@ test("Endless Tower muestra un sprite local en cada tarjeta de monstruo",async()
 test("la auditoría exhaustiva resuelve localmente cada enlace",async()=>{
   const report=JSON.parse(await readFile(new URL("../public/data/module-link-audit.json",import.meta.url),"utf8"));
   assert.equal(report.summary.modules,8);
-  assert.equal(report.summary.total,2897);
-  assert.equal(report.summary.resolved,2897);
+  assert.equal(report.summary.total,2257);
+  assert.equal(report.summary.resolved,2257);
   assert.equal(report.summary.unresolved,0);
   assert.equal(report.summary.externalOccurrences,0);
   assert.equal(report.summary.uniqueExternal,0);

@@ -1,5 +1,20 @@
 import { readFile, writeFile } from "node:fs/promises";
 
+// Mismas traducciones que usa el catálogo de Monstruos (app/i18n.ts) — para que
+// Endless Tower muestre raza/elemento/tamaño con el mismo texto en vez de una
+// traducción manual aparte que se desincroniza (ej. "Amorfo" vs "Sin forma").
+const RACE_ES = { Formless: "Sin forma", Undead: "No muerto", Brute: "Bruto", Plant: "Planta", Insect: "Insecto", Fish: "Pez", Demon: "Demonio", Demihuman: "Humanoide", Angel: "Ángel", Dragon: "Dragón" };
+const ELEMENT_ES = { Neutral: "Neutral", Water: "Agua", Earth: "Tierra", Fire: "Fuego", Wind: "Viento", Poison: "Veneno", Holy: "Sagrado", Dark: "Oscuro", Ghost: "Fantasma", Undead: "No muerto" };
+const SIZE_ES = { Small: "Pequeño", Medium: "Mediano", Large: "Grande" };
+const monstersById = await (async () => {
+  try {
+    const catalog = JSON.parse(await readFile(new URL("../public/data/monsters-index.json", import.meta.url), "utf8"));
+    return new Map(catalog.items.map(m => [m.id, m]));
+  } catch {
+    return new Map(); // Se regenera después en data:build; sin datos, la sección 7 conserva su texto original.
+  }
+})();
+
 const moduleNames = new Map([
   [1, "Progresión y EXP"],
   [2, "Accesos y dungeons"],
@@ -89,11 +104,122 @@ function cleanTextNodes(html) {
   return output.replace(/<x-finalize-block data-index="(\d+)"><\/x-finalize-block>/g, (_match, index) => protectedBlocks[Number(index)]);
 }
 
+/* Las tarjetas de Endless Tower traían raza/elemento/tamaño escritos a mano,
+   con traducciones que se desincronizaron del catálogo de Monstruos (ej.
+   "Amorfo"/"Bruto-Animal"/"Semihumano" en vez de "Sin forma"/"Bruto"/
+   "Humanoide"). Se reemplazan por los mismos datos y el mismo texto que ya
+   usa el catálogo, por ID. Si un ID no está en el catálogo (variante de
+   evento ya filtrada del bestiario), se deja la tarjeta como estaba. */
+/* La tabla-resumen de bosses por piso repite las mismas razas con la misma
+   terminología desincronizada, pero ahí no hay un ID por celda para resolver
+   por catálogo (varios bosses comparten fila) — se corrige el texto suelto. */
+function fixEndlessTowerRaceLabels(html) {
+  return html
+    .replaceAll("Amorfo", "Sin forma")
+    .replaceAll("Bruto/Animal", "Bruto")
+    .replaceAll("Semihumano", "Humanoide")
+    .replaceAll("No-muerto", "No muerto");
+}
+
+function fixEndlessTowerMonsterMeta(html) {
+  return html.replace(/<div class="mobmeta">[\s\S]*?<span class="id">ID (\d+)<\/span><\/div>/g, (match, idText) => {
+    const monster = monstersById.get(Number(idText));
+    if (!monster) return match;
+    const race = RACE_ES[monster.race] ?? monster.race;
+    const element = `${ELEMENT_ES[monster.element] ?? monster.element}${monster.elementLevel ? ` ${monster.elementLevel}` : ""}`;
+    const size = monster.size ? SIZE_ES[monster.size] ?? monster.size : null;
+    return `<div class="mobmeta"><span>${element}</span><span>${race}</span>${size ? `<span>${size}</span>` : ""}<span class="id">ID ${idText}</span></div>`;
+  });
+}
+
+/* Cada fila de la tabla de Cute Pets ya trae el "Mob ID" y los IDs de los
+   ítems asociados (taming item, comida, accesorio) porque una mascota Pre-Re
+   es directamente ese monstruo domesticado. Se agregan los sprites que ya
+   existen en la caché local, sin depender de nada nuevo — y solo dentro de
+   las filas de esa tabla, para no tocar otros "ID" del resto de la guía. */
+/* Cada guía abre con una cuadrícula de estadísticas numéricas ("290 ítems
+   únicos", "99 pisos auditados"...) que no ayuda a decidir qué hacer, solo
+   repite un conteo. Se identifica por su forma: tarjetas con un número/dato
+   corto en negrita y una etiqueta corta, sin más contenido dentro. Las
+   tarjetas con explicaciones más largas (con <p>) no coinciden y se
+   conservan, porque esas sí son contenido explicativo. */
+function removeSummaryStatGrids(html) {
+  return html.replace(/<div class="grid">(?:\s*<div class="card"><b(?: class="big")?>[^<]*<\/b>[^<]*<\/div>)+\s*<\/div>\s*/g, "");
+}
+
+function addPetSprites(html) {
+  return html.replace(/<tr class="petrow searchable"[\s\S]*?<\/tr>/g, row => {
+    let fixed = row.replace(/<span class="id">Mob ID (\d+)<\/span>/, (match, id) => {
+      return `<img class="pet-sprite" src="/world/sprites/${id}.gif" alt="" loading="lazy" onerror="this.style.display='none'"/>${match}`;
+    });
+    fixed = fixed.replace(/>([A-Za-z][^<]*?) <span class="id">ID (\d+)<\/span>/g, (match, label, id) => {
+      return `>${label} <img class="pet-item-sprite" src="/world/items/${id}.gif" alt="" loading="lazy" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='/world/items/${id}.png'}else{this.style.display='none'}"/><span class="id">ID ${id}</span>`;
+    });
+    return fixed;
+  });
+}
+
 function addEndlessTowerSprites(html) {
   return html.replace(/<div class="mobcard"><div class="mobname"><b>([^<]+)<\/b>([\s\S]*?)<\/div><div class="mobmeta">([\s\S]*?)<span class="id">ID\s+(\d+)<\/span>([\s\S]*?)<\/div><\/div>/g, (_match, name, nameTail, metaStart, id, metaEnd) => {
     const label = stripTags(name).replaceAll('"', "&quot;");
     return `<div class="mobcard"><img class="mob-sprite" src="/world/sprites/${id}.gif" alt="Sprite de ${label}" loading="lazy" width="72" height="72"/><div class="mobcard-copy"><div class="mobname"><b>${name}</b>${nameTail}</div><div class="mobmeta">${metaStart}<span class="id">ID ${id}</span>${metaEnd}</div></div></div>`;
   });
+}
+
+/* Solo Equipo y fabricación quedó con notas de control de calidad interno
+   (insignia de procedencia de datos y enlaces de cita a fuentes externas) en
+   cada uno de sus 290 ítems — no aportan nada a un jugador y ahora el propio
+   catálogo de Objetos cubre esa información mejor. */
+function removeEquipmentProvenanceNotes(html) {
+  return html
+    .replace(/<span class="ibadge rms">[^<]*<\/span>/g, "")
+    .replace(/<div class="item-links">[\s\S]*?<\/div>/g, "")
+    .replace(/<div class="route-links">[\s\S]*?<\/div>/g, "");
+}
+
+function addEquipmentSprites(html) {
+  return html.replace(/<div class="item-name">#(\d+) · ([^<]*)<\/div>/g, (_match, id, label) => {
+    return `<div class="item-name"><img class="item-name-sprite" src="/world/items/${id}.gif" alt="" loading="lazy" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='/world/items/${id}.png'}else{this.style.display='none'}"/>#${id} · ${label}</div>`;
+  });
+}
+
+/* Progresión y EXP enlaza 31 monstruos por nombre (a RateMyServer, localizado
+   luego a la ficha interna por GuidePortal) pero nunca muestra su sprite en
+   la propia tabla — hay que abrir la ficha para verlo. Se agrega un ícono
+   junto al nombre, igual que ya tienen los catálogos de Objetos y Monstruos. */
+function addMonsterLinkSprites(html) {
+  return html.replace(/(<a class="moblink"[^>]*href="[^"]*mob_id=(\d+)[^"]*"[^>]*>)/g, (_match, tag, id) => {
+    return `${tag}<img class="moblink-sprite" src="/world/sprites/${id}.gif" alt="" loading="lazy" onerror="this.style.display='none'"/>`;
+  });
+}
+
+/* Fecha de compilación del contenido — un dato de gestión editorial, no algo
+   que un jugador necesite para decidir si le conviene una quest. */
+function removeContentDateBadge(html) {
+  return html.replace(/<div class="badge">\d{2} [A-ZÁÉÍÓÚ]{3} \d{4}<\/div>\s*/g, "");
+}
+
+/* GuidePortal.tsx localiza en tiempo de ejecución los enlaces a RateMyServer
+   (mapas, mobs) para que abran la ficha propia del sitio en vez de salir a
+   una pestaña externa — pero el texto visible de varias guías se escribió
+   antes de esa localización y todavía promete "abrir RMS". Se corrige para
+   que el texto describa lo que realmente pasa al hacer clic. */
+function fixStaleRmsClaims(html) {
+  return html
+    .replaceAll(" · RMS map", "")
+    .replace(/Toca el nombre del mob para abrir su ficha de RMS\./, "Toca el nombre del mob para abrir su ficha local.")
+    .replace(/📍 ubicación → RateMyServer Pre-Re/, "📍 ubicación → mapa local");
+}
+
+/* Esta nota de Compañeros hablaba en primera persona del plural ("nuestro
+   servidor") como si el lector fuera parte del equipo que administra
+   AscencionRO, y el reemplazo anterior nunca coincidía porque el texto real
+   parte en dos por una etiqueta <b> intermedia. Se corrige el HTML completo. */
+function fixCompanionClientNote(html) {
+  return html.replace(
+    /<p><b>Para nuestro servidor Pre-Renewal:<\/b> si usamos un cliente moderno, podemos conservar mecánicas Pre-Re y habilitar esta QoL\. Si usamos un cliente realmente antiguo, la AI Lua clásica no puede auto-feed; usar macros externos sería automatización de terceros\.<\/p>/,
+    "<p><b>Compatibilidad de cliente:</b> con un cliente moderno pueden conservarse las mecánicas Pre-Renewal y habilitar auto-feed. En clientes antiguos, la AI Lua clásica no puede alimentar automáticamente; las macros externas se consideran automatización de terceros.</p>",
+  );
 }
 
 function removeMetaElements(html) {
@@ -132,7 +258,6 @@ function applyPlayerFacingRewrites(html) {
     ["Auditoría rAthena actual:", "Ubicaciones disponibles:"],
     ["En nuestro servidor habrá que revisar/restaurar esa entrada si queremos los tres guilds accesibles.", "La variante Sword puede no estar disponible; consulta los servicios habilitados en AscencionRO antes de reunir Loyalty para ese gremio."],
     ["Para nuestro proyecto lo considero útil para QA en cuentas de prueba y carga del servidor, no como sustituto del AI nativo de companions.", "No sustituye la AI nativa de los companions y su uso debe respetar las reglas de AscencionRO."],
-    ["Para nuestro servidor Pre-Renewal: si usamos un cliente moderno, podemos conservar mecánicas Pre-Re y habilitar esta QoL. Si usamos un cliente realmente antiguo, la AI Lua clásica no puede auto-feed; usar macros externos sería automatización de terceros.", "Con un cliente moderno pueden conservarse las mecánicas Pre-Renewal y habilitar auto-feed. En clientes antiguos, la AI Lua clásica no puede alimentar automáticamente; las macros externas se consideran automatización de terceros."],
     ["Se incluye aquí porque su <b>acceso sí está restringido por una quest/instancia</b>. La estrategia piso por piso se reservará para contenido avanzado; Módulo 2 solo necesita enseñarte a entrar correctamente.", "Su <b>acceso está restringido por una quest/instancia</b>. Esta sección explica cómo entrar correctamente; la estrategia piso por piso está disponible en Endless Tower."],
     ["Esta quest se incluye aquí porque es un requisito real de", "Esta quest es un requisito de"],
     ["No es una quest permanente, pero sí una barrera real de acceso y por eso se conserva en Módulo 2.", "No es una quest permanente: funciona como una barrera real de acceso."],
@@ -152,7 +277,8 @@ function applyPlayerFacingRewrites(html) {
   for (const [from, to] of replacements) output = output.replaceAll(from, to);
   output = output
     .replace(/<p>La estrategia del dungeon no se desarrolla aquí:[\s\S]*?<\/p>/gi, "")
-    .replace(/<div class=["']warn-note["']><b>Contenido deliberadamente fuera:<\/b>[\s\S]*?<\/div>/gi, "");
+    .replace(/<div class=["']warn-note["']><b>Contenido deliberadamente fuera:<\/b>[\s\S]*?<\/div>/gi, "")
+    .replace(/cada ficha usa el ID exacto del item DB Pre-Renewal de rAthena\s+y enlaza al mismo ID en RateMyServer Pre-Re\.\s+Esto evita confundir/, "cada ficha usa el ID exacto del item DB Pre-Renewal de rAthena, visible junto a su nombre. Esto evita confundir");
   return output;
 }
 
@@ -165,7 +291,14 @@ function finalizeModule(html, id) {
   output = output.replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/i, headings.get(id));
   output = removeMetaElements(output);
   output = cleanTextNodes(output);
-  if (id === 7) output = addEndlessTowerSprites(output);
+  output = removeContentDateBadge(output);
+  output = fixStaleRmsClaims(output);
+  output = fixCompanionClientNote(output);
+  output = removeSummaryStatGrids(output);
+  if (id === 1) output = addMonsterLinkSprites(output);
+  if (id === 6) { output = removeEquipmentProvenanceNotes(output); output = addEquipmentSprites(output); }
+  if (id === 7) { output = fixEndlessTowerRaceLabels(output); output = fixEndlessTowerMonsterMeta(output); output = addEndlessTowerSprites(output); }
+  if (id === 8) output = addPetSprites(output);
   return output;
 }
 

@@ -29,10 +29,19 @@ function addPoint(list,label,kind="reference",limit=36){
   if(list.length<limit)list.push({x,y,label:label.replace(/^📍\s*/,""),kind});
 }
 function safeContext(value){return /<|[a-z-]+="/i.test(value)?"":value}
+/* .slice(0,N) puro corta a mitad de palabra ("...permite utilizar la entrad").
+   Se recorta al último espacio dentro del límite para terminar en una palabra
+   completa, y se marca con "…" que sí se trata de un fragmento parcial. */
+function truncateAtWord(value,max){
+  if(value.length<=max)return value;
+  const cut=value.slice(0,max);
+  const lastSpace=cut.lastIndexOf(" ");
+  return `${lastSpace>max*0.6?cut.slice(0,lastSpace):cut}…`;
+}
 function contextAround(html,index){
   const containers=[["<tr","</tr>"],["<p","</p>"],["<details","</details>"]];
-  for(const [open,close] of containers){const start=html.lastIndexOf(open,index),end=html.indexOf(close,index);if(start>=0&&end>index&&end-start<6500)return text(html.slice(start,end+close.length)).slice(0,360)}
-  return text(html.slice(Math.max(0,index-240),index+520)).slice(0,360);
+  for(const [open,close] of containers){const start=html.lastIndexOf(open,index),end=html.indexOf(close,index);if(start>=0&&end>index&&end-start<6500)return truncateAtWord(text(html.slice(start,end+close.length)),360)}
+  return truncateAtWord(text(html.slice(Math.max(0,index-240),index+520)),360);
 }
 function slug(value){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 function referenceInfo(value){

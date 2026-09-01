@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-09-01T17:35:47.628Z",
+  "generatedAt": "2026-09-01T20:05:46.825Z",
   "summary": {
     "modules": 8,
-    "total": 2897,
-    "resolved": 2897,
+    "total": 2257,
+    "resolved": 2257,
     "unresolved": 0,
-    "localOccurrences": 2897,
+    "localOccurrences": 2257,
     "externalOccurrences": 0,
     "uniqueExternal": 0,
     "categories": {
@@ -13,8 +13,8 @@
       "npc-local": 572,
       "map-local": 959,
       "monster-local": 31,
-      "reference-local": 774,
-      "item-local": 298
+      "reference-local": 424,
+      "item-local": 8
     }
   },
   "external": [],
