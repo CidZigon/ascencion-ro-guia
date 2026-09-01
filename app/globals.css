@@ -30,7 +30,7 @@ button{cursor:pointer}
 .content{min-height:calc(100vh - 74px)}
 
 .site-header{position:sticky;top:0;z-index:80;padding:12px 22px;border-bottom:1px solid #4b4038;background:#0d0e10e8;backdrop-filter:blur(22px)}
-.nav-shell{position:relative;max-width:1320px;min-height:48px;margin:auto;display:grid;grid-template-columns:auto auto minmax(220px,420px);gap:28px;align-items:center}
+.nav-shell{position:relative;max-width:1320px;min-height:48px;margin:auto;display:grid;grid-template-columns:auto auto minmax(200px,420px) auto;gap:20px;align-items:center}
 .brand{display:flex;align-items:center;gap:10px;padding:0;text-align:left;border:0;background:none;color:var(--text)}
 .brand-mark{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--gold);border-radius:12px;background:linear-gradient(145deg,#35233b,#171418);color:var(--gold);font:700 21px Georgia,serif;box-shadow:0 0 24px #76589444}
 .brand b,.brand small{display:block}
@@ -106,13 +106,13 @@ button{cursor:pointer}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 @media(max-width:1080px){
-  .nav-shell{grid-template-columns:auto auto minmax(190px,1fr);gap:12px}
+  .nav-shell{grid-template-columns:auto auto minmax(170px,1fr) auto;gap:12px}
   .primary-nav>button,.guide-menu-wrap>button{padding:8px 9px}
   .module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:800px){
   .site-header{padding:9px 12px}
-  .nav-shell{grid-template-columns:auto 1fr;gap:8px}
+  .nav-shell{grid-template-columns:auto 1fr auto;gap:8px}
   .brand small{display:none}
   .brand-mark{width:36px;height:36px}
   .primary-nav{justify-self:end}
@@ -142,3 +142,24 @@ button{cursor:pointer}
 }
 @media(max-width:480px){.brand>span:last-child{display:none}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.module-card,.neon-cursor{transition:none}.loader{animation:none}}
+
+/* ---- Selector de idioma ---- */
+.lang-switch{display:inline-flex;padding:2px;border:1px solid #51463e;border-radius:999px;background:#131214}
+.lang-switch button{
+  min-width:38px;padding:5px 10px;border:0;border-radius:999px;background:transparent;color:#8f8780;
+  font-size:10px;font-weight:900;letter-spacing:.08em;cursor:pointer;
+  transition:background .12s ease,color .12s ease;
+}
+.lang-switch button:hover{color:#ded6cc}
+.lang-switch button.active{background:#34263a;color:#f0d7aa;box-shadow:inset 0 0 0 1px #d2b07166}
+.lang-switch button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(max-width:640px){.lang-switch button{min-width:34px;padding:5px 8px}}
+
+/* Aviso de que los módulos de guía siguen solo en español */
+.guide-notice{
+  display:grid;gap:4px;margin:0 0 18px;padding:14px 18px;
+  border:1px solid #6a5330;border-left:3px solid var(--gold);border-radius:0 10px 10px 0;
+  background:#1d1a17;
+}
+.guide-notice b{color:#f0d7aa;font-size:13px}
+.guide-notice span{color:#b0a79e;font-size:12px;line-height:1.5}

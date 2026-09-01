@@ -56,7 +56,10 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   assert.equal(catalog.meta.descriptions.revision,"66cdfec631603fda6a90ba4bbe26ab07b5204c84");
 
   const itemUi=await readFile(new URL("../app/ItemCatalog.tsx",import.meta.url),"utf8");
-  assert.match(itemUi,/<h3>Descripción<\/h3>/);
+  const strings=await readFile(new URL("../app/i18n.ts",import.meta.url),"utf8");
+  assert.match(strings,/description: "Descripción"/);
+  assert.match(strings,/description: "Description"/);
+  assert.match(itemUi,/<h3>\{t\.catalog\.description\}<\/h3>/);
   assert.match(itemUi,/item-description/);
   assert.doesNotMatch(itemUi,/Efecto \/ uso/);
   const theme=await readFile(new URL("../app/theme.css",import.meta.url),"utf8");
@@ -106,7 +109,10 @@ test("el catálogo de monstruos cubre el bestiario Pre-Renewal y enlaza drops",a
   assert.equal(whisper.element,"Ghost");
   assert.equal(whisper.elementLevel,3);
   const monsterUi=await readFile(new URL("../app/MonsterCatalog.tsx",import.meta.url),"utf8");
-  assert.match(monsterUi,/Fortalezas y debilidades/);
+  const monsterStrings=await readFile(new URL("../app/i18n.ts",import.meta.url),"utf8");
+  assert.match(monsterStrings,/strengths: "Fortalezas y debilidades"/);
+  assert.match(monsterStrings,/strengths: "Strengths and weaknesses"/);
+  assert.match(monsterUi,/\{t\.monsters\.strengths\}/);
   assert.match(monsterUi,/element-table/);
   const attrFix=await readFile(new URL("../app/attr-fix.ts",import.meta.url),"utf8");
   const tableMatch=attrFix.match(/const PRE_RE_ATTR:number\[\]\[\]\[\] = (\[[\s\S]*?\n\];)/);
@@ -193,15 +199,22 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.doesNotMatch(portal,/window\.open/);
 
   const atlas=await readFile(new URL("../app/WorldCatalog.tsx",import.meta.url),"utf8");
-  assert.match(atlas,/Regiones y mapas de Midgard/);
+  const atlasStrings=await readFile(new URL("../app/i18n.ts",import.meta.url),"utf8");
+  assert.match(atlasStrings,/heroTitle: "Regiones y mapas de Midgard"/);
+  assert.match(atlasStrings,/heroTitle: "Regions and maps of Midgard"/);
+  assert.match(atlas,/\{t\.world\.heroTitle\}/);
   assert.match(atlas,/name:"Prontera".*prefixes:\["prt_","iz_"/s);
   assert.match(atlas,/name:"Geffen".*prefixes:\["gef_","gl_"/s);
   assert.match(atlas,/name:"Payon".*prefixes:\["pay_"/s);
   assert.match(atlas,/world-region-group/);
   assert.match(atlas,/scrollIntoView/);
   assert.doesNotMatch(atlas,/Mostrar 80 mapas más/);
-  assert.match(atlas,/NPC registrados en este mapa/);
-  assert.match(atlas,/Quests y referencias relacionadas/);
+  assert.match(atlasStrings,/npcsHere: "NPC registrados en este mapa"/);
+  assert.match(atlasStrings,/npcsHere: "NPCs on record for this map"/);
+  assert.match(atlas,/\{t\.world\.npcsHere\}/);
+  assert.match(atlasStrings,/questsHere: "Quests y referencias relacionadas"/);
+  assert.match(atlasStrings,/questsHere: "Related quests and references"/);
+  assert.match(atlas,/\{t\.world\.questsHere\}/);
   assert.match(atlas,/findEntry\(payload,current\)/);
   assert.doesNotMatch(atlas,/option value="monster"/);
   assert.doesNotMatch(atlas,/function worldEntries/);
@@ -270,4 +283,32 @@ test("la auditoría exhaustiva resuelve localmente cada enlace",async()=>{
   assert.equal(report.summary.externalOccurrences,0);
   assert.equal(report.summary.uniqueExternal,0);
   assert.equal(report.external.length,0);
+});
+
+test("el selector de idioma ofrece los dos idiomas y el diccionario está completo",async()=>{
+  const strings=await readFile(new URL("../app/i18n.ts",import.meta.url),"utf8");
+  const portal=await readFile(new URL("../app/GuidePortal.tsx",import.meta.url),"utf8");
+
+  // El botón existe y ofrece las dos opciones.
+  assert.match(portal,/className="lang-switch"/);
+  assert.match(portal,/switchLang\("es"\)/);
+  assert.match(portal,/switchLang\("en"\)/);
+
+  // El idioma se lee de un store externo, no de estado sincronizado en un efecto.
+  assert.match(portal,/useSyncExternalStore\(subscribeLang,getLang,getServerLang\)/);
+
+  // Los dos bloques del diccionario declaran las mismas claves de primer nivel.
+  const claves=lang=>{
+    const inicio=strings.indexOf(`  ${lang}: {`);
+    assert.ok(inicio>0,`falta el bloque ${lang}`);
+    const trozo=strings.slice(inicio,strings.indexOf("\n  },",inicio));
+    return [...trozo.matchAll(/^ {4}([A-Za-z]+):/gm)].map(m=>m[1]).sort();
+  };
+  assert.deepEqual(claves("es"),claves("en"));
+
+  // Ningún catálogo se queda sin diccionario.
+  for(const archivo of ["ItemCatalog","MonsterCatalog","WorldCatalog"]){
+    const fuente=await readFile(new URL(`../app/${archivo}.tsx`,import.meta.url),"utf8");
+    assert.match(fuente,/t:Dict/,`${archivo} no recibe el diccionario`);
+  }
 });
