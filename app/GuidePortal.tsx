@@ -1,11 +1,11 @@
 "use client";
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { EQUIP_HASH, EQUIP_SLOTS, WEAPON_HASH, WEAPON_KINDS, equipSlotById, weaponKindById } from "./gear";
+import { EQUIP_HASH, WEAPON_HASH, equipSlotById, weaponKindById } from "./gear";
 import { ModalShell } from "./ModalShell";
 import type { WorldKind, WorldSelection } from "./WorldCatalog";
 
-type NavMenu = "equipment" | "weapons" | "guides";
+type NavMenu = "guides";
 type ActiveView = number | "items" | "world" | "equipment" | "weapons" | "monsters" | null;
 
 const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCatalog}));
@@ -111,38 +111,6 @@ export function GuidePortal(){
     else if(active==="weapons"&&weaponType)history.replaceState(null,"",`#arma-${weaponType}-objeto-${id}`);
     else history.replaceState(null,"",`#objeto-${id}`);
   },[active,equipmentSlot,weaponType]);
-
-  const openEquipment=useCallback((slot:string,id?:number)=>{
-    if(!equipSlotById(slot))return;
-    setWorldPreview(null);
-    setExternalLink(null);
-    setActive("equipment");
-    setEquipmentSlot(slot);
-    setWeaponType(null);
-    setSelectedItemId(id??null);
-    setCatalogQuery("");
-    setQuery("");
-    setNavMenu(null);
-    setSelectedMonsterId(null);
-    history.replaceState(null,"",id?`#equipo-${slot}-objeto-${id}`:`#equipo-${slot}`);
-    window.scrollTo({top:0,behavior:"auto"});
-  },[]);
-
-  const openWeapons=useCallback((kind:string,id?:number)=>{
-    if(!weaponKindById(kind))return;
-    setWorldPreview(null);
-    setExternalLink(null);
-    setActive("weapons");
-    setWeaponType(kind);
-    setEquipmentSlot(null);
-    setSelectedItemId(id??null);
-    setCatalogQuery("");
-    setQuery("");
-    setNavMenu(null);
-    setSelectedMonsterId(null);
-    history.replaceState(null,"",id?`#arma-${kind}-objeto-${id}`:`#arma-${kind}`);
-    window.scrollTo({top:0,behavior:"auto"});
-  },[]);
 
   const openMonster=useCallback((options:{id?:number;query?:string}={})=>{
     setWorldPreview(null);
@@ -292,12 +260,6 @@ export function GuidePortal(){
         <nav className="primary-nav" aria-label="Navegación principal">
           <button className={active===null?"active":""} onClick={showLibrary}>Inicio</button>
           <button className={active==="items"?"active":""} onClick={()=>openCatalog()}>Objetos</button>
-          <NavDropdown id="equipment-menu" label="Equipo" open={navMenu==="equipment"} active={active==="equipment"} onOpen={()=>openNavMenu("equipment")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="Parte del cuerpo" introCopy="Elige dónde se equipa. Los que ocupan varias ranuras aparecen en cada una." className="equip-menu">
-            {EQUIP_SLOTS.map(slot=><button key={slot.id} className={active==="equipment"&&equipmentSlot===slot.id?"active":""} onClick={()=>openEquipment(slot.id)}><span>{slot.icon}</span><span><b>{slot.title}</b><small>{slot.description}</small></span><i aria-hidden="true">→</i></button>)}
-          </NavDropdown>
-          <NavDropdown id="weapons-menu" label="Armas" open={navMenu==="weapons"} active={active==="weapons"} onOpen={()=>openNavMenu("weapons")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="Tipo de arma" introCopy="Espadas, lanzas, arcos y el resto de armas Pre-Renewal." className="weapon-menu">
-            {WEAPON_KINDS.map(kind=><button key={kind.id} className={active==="weapons"&&weaponType===kind.id?"active":""} onClick={()=>openWeapons(kind.id)}><span>{kind.icon}</span><span><b>{kind.title}</b><small>{kind.description}</small></span><i aria-hidden="true">→</i></button>)}
-          </NavDropdown>
           <button className={active==="monsters"?"active":""} onClick={()=>openMonster()}>Monstruos</button>
           <button className={active==="world"?"active":""} onClick={()=>openWorld()}>Mundo</button>
           <NavDropdown id="guide-menu" label="Guías" open={navMenu==="guides"} active={typeof active==="number"} onOpen={()=>openNavMenu("guides")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="¿Qué quieres hacer?" introCopy="Elige un tema y abre la guía directamente." className="guide-topics-menu">
