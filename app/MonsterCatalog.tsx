@@ -36,8 +36,13 @@ function loadChunk(chunk:number){
 }
 function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function stat(value?:number){return value===undefined?"—":value.toLocaleString("es-ES")}
+/* rAthena expone las tasas de drop a 1x; AscencionRO corre a 10x. El excedente
+   por encima de 100% no puede dropear varias veces en un solo evento, así que
+   se recorta ahí. */
+const SERVER_DROP_MULTIPLIER=10;
 function dropRate(rate:number){
-  return `${(rate/100).toLocaleString("es-ES",{minimumFractionDigits:rate%100===0?0:2,maximumFractionDigits:2})}%`;
+  const scaled=Math.min(rate*SERVER_DROP_MULTIPLIER,10000);
+  return `${(scaled/100).toLocaleString("es-ES",{minimumFractionDigits:scaled%100===0?0:2,maximumFractionDigits:2})}%`;
 }
 function elementModifierClass(percent:number){
   if(percent===0)return "ele-immune";

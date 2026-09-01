@@ -25,10 +25,10 @@ test("renderiza la biblioteca limpia y el acceso al catálogo local",async()=>{
 test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   const catalog=JSON.parse(await readFile(new URL("../public/data/items-index.json",import.meta.url),"utf8"));
   const files=(await readdir(new URL("../public/data/items/",import.meta.url))).filter(file=>file.endsWith(".json")).sort();
-  assert.equal(catalog.meta.count,6169);
-  assert.equal(catalog.items.length,6169);
+  assert.equal(catalog.meta.count,5632);
+  assert.equal(catalog.items.length,5632);
   assert.equal(files.length,catalog.meta.chunks);
-  assert.equal(new Set(catalog.items.map(item=>item.id)).size,6169);
+  assert.equal(new Set(catalog.items.map(item=>item.id)).size,5632);
   assert.ok(catalog.items.every(item=>/^\/world\/items\/\d+\.(?:gif|png)$/.test(item.sprite)));
 
   const sprites=JSON.parse(await readFile(new URL("../public/data/item-sprites.json",import.meta.url),"utf8"));
@@ -43,7 +43,7 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
     const chunk=JSON.parse(await readFile(new URL(`../public/data/items/${file}`,import.meta.url),"utf8"));
     details.push(...chunk.items);
   }
-  assert.equal(details.length,6169);
+  assert.equal(details.length,5632);
   assert.deepEqual(details.map(item=>item.id),catalog.items.map(item=>item.id));
   const redPotion=details.find(item=>item.id===501&&item.aegisName==="Red_Potion");
   assert.ok(redPotion);
@@ -82,10 +82,10 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
 test("el catálogo de monstruos cubre el bestiario Pre-Renewal y enlaza drops",async()=>{
   const catalog=JSON.parse(await readFile(new URL("../public/data/monsters-index.json",import.meta.url),"utf8"));
   const files=(await readdir(new URL("../public/data/monsters/",import.meta.url))).filter(file=>file.endsWith(".json")).sort();
-  assert.equal(catalog.meta.count,1004);
-  assert.equal(catalog.items.length,1004);
+  assert.equal(catalog.meta.count,750);
+  assert.equal(catalog.items.length,750);
   assert.equal(files.length,catalog.meta.chunks);
-  assert.equal(new Set(catalog.items.map(item=>item.id)).size,1004);
+  assert.equal(new Set(catalog.items.map(item=>item.id)).size,750);
   const poring=catalog.items.find(item=>item.id===1002);
   assert.equal(poring.name,"Poring");
   assert.equal(poring.aegisName,"PORING");
@@ -98,7 +98,7 @@ test("el catálogo de monstruos cubre el bestiario Pre-Renewal y enlaza drops",a
     const chunk=JSON.parse(await readFile(new URL(`../public/data/monsters/${file}`,import.meta.url),"utf8"));
     details.push(...chunk.items);
   }
-  assert.equal(details.length,1004);
+  assert.equal(details.length,750);
   const poringDetail=details.find(item=>item.id===1002);
   assert.ok(poringDetail.maps.includes("prt_fild08")||poringDetail.maps.length>0);
   assert.ok(poringDetail.drops.some(drop=>drop.id===909||drop.name==="Jellopy"));
@@ -140,7 +140,9 @@ test("el catálogo de monstruos cubre el bestiario Pre-Renewal y enlaza drops",a
   assert.match(portal,/onOpenMonster=\{openMonster\}/);
   const items=await readFile(new URL("../app/ItemCatalog.tsx",import.meta.url),"utf8");
   assert.match(items,/onOpenMonster\(\{id:drop\.id\}\)/);
-  assert.match(items,/source-row source-link/);
+  assert.match(items,/onPreviewMonster\(drop\.id,drop\.name,drop\.maps,drop\.mvp\)/);
+  assert.match(items,/source-row drop-row/);
+  assert.match(items,/\/world\/sprites\/\$\{id\}\.gif/);
 });
 
 test("el índice del mundo resuelve mapas, monstruos, NPC y guías con medios locales",async()=>{

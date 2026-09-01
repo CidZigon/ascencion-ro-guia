@@ -26,6 +26,7 @@ function loadWorld(){
   worldPromise??=fetch("/data/world-index.json").then(response=>{if(!response.ok)throw new Error("world");return response.json()});
   return worldPromise;
 }
+
 function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function uniqueStrings(values:string[]){const seen=new Set<string>();return values.filter(value=>{const key=normalize(value.trim());if(!key||seen.has(key))return false;seen.add(key);return true})}
 function escapeRegExp(value:string){return value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
@@ -161,6 +162,36 @@ export function WorldReferenceDialog({selection,onClose,t}:{selection:WorldSelec
   const selected=payload?findEntry(payload,current):null;
   return <ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={onClose}>
     {error?<div className="world-dialog-message"><b>{t.world.dialogError}</b><span>{t.world.dialogErrorHint}</span></div>:!payload?<div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div>:selected?<WorldDetail key={`${selected.kind}-${selected.id}`} entry={selected} maps={payload.maps} onSelect={setCurrent} selectedPoint={current.point} t={t}/>:<div className="world-dialog-message"><b>{t.world.notFound}</b><span>{t.world.notFoundHint}</span></div>}
+  </ModalShell>;
+}
+
+export function MonsterSpawnDialog({monsterId,monsterName,mvp,maps,onClose,t}:{monsterId:number;monsterName:string;mvp?:boolean;maps:string[];onClose:()=>void;t:Dict}){
+  const [world,setWorld]=useState<WorldPayload|null>(null);
+  const [active,setActive]=useState<string|null>(maps[0]??null);
+
+  // Los mapas de aparición vienen del bestiario completo, no del catálogo
+  // curado de Mundo (que solo cubre lo mencionado en las guías). Por eso la
+  // imagen se pide directamente por convención de ruta — cache-spawn-map-media.mjs
+  // la cachea para casi todos los mapas — y solo se consulta world-index.json
+  // para el nombre amistoso cuando el mapa también aparece ahí.
+  useEffect(()=>{let live=true;loadWorld().then(data=>{if(live)setWorld(data)}).catch(()=>{});return()=>{live=false}},[]);
+
+  // Varios monstruos de rAthena comparten el mismo nombre visible con AegisName
+  // e ID distintos (variantes de instancia, guild dungeon, episodio, etc.), así
+  // que el ID va siempre en el título para no confundirlos entre sí.
+  const title=`#${monsterId} · ${monsterName}${mvp?" · MVP":""}`;
+  return <ModalShell eyebrow={kindLabel(t,"monster")} title={title} onClose={onClose}>
+    <div className="world-detail-card">
+      {!maps.length?<section className="monster-locations"><h3>{t.world.spawnTitle}</h3><p className="atlas-empty-note">{t.world.noSpawnMaps}</p></section>
+        :<section className="monster-locations">
+          <h3>{t.world.spawnTitle} · {maps.length}</h3>
+          <div className="spawn-map"><MapBoard code={active??""} image={active?`/world/maps/${active}.gif`:null} points={[]} showCoordinateList={false} t={t}/></div>
+          <div className="spawn-list">{maps.map(code=>{
+            const entry=world?.maps.find(map=>map.code.toLowerCase()===code.toLowerCase());
+            return <button key={code} type="button" className={active===code?"active":""} onClick={()=>setActive(code)}><b>{code}</b>{entry&&<span>{mapDisplayName(entry)}</span>}</button>;
+          })}</div>
+        </section>}
+    </div>
   </ModalShell>;
 }
 

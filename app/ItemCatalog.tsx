@@ -16,8 +16,8 @@ type ItemIndex = {
 };
 type ItemDetail = ItemIndex & {
   magicAttack?:number; range?:number; weaponLevel?:number; armorLevel?:number; equipLevelMax?:number;
-  gradable?:boolean; view?:number; gender?:string; jobs:string[]; classes:string[]; flags?:Record<string,unknown>;
-  trade?:Record<string,unknown>; script?:string; equipScript?:string; unEquipScript?:string; description?:string; sourceFile:string;
+  gradable?:boolean; view?:number; gender?:string; jobs:string[]; classes:string[];
+  script?:string; equipScript?:string; unEquipScript?:string; description?:string; sourceFile:string;
 };
 type CatalogPayload = { meta:CatalogMeta; items:ItemIndex[] };
 
@@ -45,8 +45,13 @@ function loadSources(chunk:number){
 function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function zeny(value?:number){return value===undefined?"—":`${new Intl.NumberFormat("es-ES").format(value)} z`}
 function weight(value?:number){return value===undefined?"—":`${(value/10).toLocaleString("es-ES",{maximumFractionDigits:1})}`}
+/* rAthena expone las tasas de drop a 1x; AscencionRO corre a 10x. El excedente
+   por encima de 100% no puede dropear varias veces en un solo evento, así que
+   se recorta ahí. */
+const SERVER_DROP_MULTIPLIER=10;
 function dropRate(rate:number){
-  return `${(rate/100).toLocaleString("es-ES",{minimumFractionDigits:rate%100===0?0:2,maximumFractionDigits:2})}%`;
+  const scaled=Math.min(rate*SERVER_DROP_MULTIPLIER,10000);
+  return `${(scaled/100).toLocaleString("es-ES",{minimumFractionDigits:scaled%100===0?0:2,maximumFractionDigits:2})}%`;
 }
 const TYPE_SIGILS:Record<string,string>={Healing:"✚",Delayconsume:"◷",Usable:"✦",Etc:"◆",Weapon:"⚔",Ammo:"➶",Armor:"⬟",Card:"▣",Petegg:"◉",Petarmor:"♢",Cash:"✧"};
 const typeLabel=(t:Dict,type:string)=>(t.types as Record<string,string>)[type]??type;
@@ -84,7 +89,7 @@ export type CatalogScope =
   | { kind:"slot"; location:string; eyebrow:string; title:string; description:string }
   | { kind:"weapon"; subType:string; eyebrow:string; title:string; description:string };
 
-export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMonster,scope,t}:{selectedItemId:number|null;initialQuery:string;onSelectItem:(id:number)=>void;onOpenMonster:(options:{id:number})=>void;scope?:CatalogScope;t:Dict}){
+export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMonster,onPreviewMonster,scope,t}:{selectedItemId:number|null;initialQuery:string;onSelectItem:(id:number)=>void;onOpenMonster:(options:{id:number})=>void;onPreviewMonster:(id:number,name:string,maps:string[],mvp?:boolean)=>void;scope?:CatalogScope;t:Dict}){
   const [catalog,setCatalog]=useState<CatalogPayload|null>(null);
   const [detail,setDetail]=useState<ItemDetail|null>(null);
   const [sourceResult,setSourceResult]=useState<{itemId:number;sources:ItemSources}|null>(null);
@@ -249,7 +254,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
         {!filtered.length&&<div className="catalog-empty"><b>{t.catalog.emptyTitle}</b><span>{t.catalog.emptyHint}</span></div>}
         {limit<filtered.length&&<button className="load-more" onClick={()=>setLimit(value=>value+80)}>{t.catalog.more}</button>}
       </div>
-      <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>{t.catalog.pickTitle}</h2><p>{t.catalog.pickCopy}</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>{t.catalog.loadingCard}</p></div>:<ItemDetailCard item={activeDetail} sources={activeSources} onOpenMonster={onOpenMonster} t={t}/>}</aside>
+      <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>{t.catalog.pickTitle}</h2><p>{t.catalog.pickCopy}</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>{t.catalog.loadingCard}</p></div>:<ItemDetailCard item={activeDetail} sources={activeSources} onOpenMonster={onOpenMonster} onPreviewMonster={onPreviewMonster} t={t}/>}</aside>
     </div>
   </section>;
 }
@@ -267,10 +272,27 @@ function itemLine(t:Dict,item:ItemIndex,category:Category){
   return parts.join(" · ");
 }
 
-function ItemDetailCard({item,sources,onOpenMonster,t}:{item:ItemDetail;sources:ItemSources|null;onOpenMonster:(options:{id:number})=>void;t:Dict}){
+/* La misma tienda (ej. "Weapon Dealer") suele repetirse en varias ciudades al
+   mismo precio. Se agrupa por nombre+precio para no listar la misma fila una
+   vez por ciudad; si el precio cambia entre ciudades, queda como fila aparte. */
+function groupShops(shops:ItemSources["shops"]){
+  const groups=new Map<string,{name:string;maps:string[];price:number;cash?:boolean}>();
+  for(const shop of shops){
+    const key=`${shop.name}|${shop.cash?"c":"z"}|${shop.price}`;
+    const group=groups.get(key);
+    if(group){if(!group.maps.includes(shop.map))group.maps.push(shop.map)}
+    else groups.set(key,{name:shop.name,maps:[shop.map],price:shop.price,cash:shop.cash});
+  }
+  return [...groups.values()];
+}
+
+function ItemDetailCard({item,sources,onOpenMonster,onPreviewMonster,t}:{item:ItemDetail;sources:ItemSources|null;onOpenMonster:(options:{id:number})=>void;onPreviewMonster:(id:number,name:string,maps:string[],mvp?:boolean)=>void;t:Dict}){
   const scripts=[[t.catalog.onEquip,item.equipScript],[t.catalog.onUnequip,item.unEquipScript]].filter((entry):entry is [string,string]=>Boolean(entry[1]));
-  const drops=sources?.drops??[];
-  const shops=sources?.shops??[];
+  // Un monstruo sin mapa de aparición conocido casi siempre es una variante de
+  // instancia/evento que reutiliza el nombre de otro monstruo real (mismo caso
+  // que Angeling o Nightmare); mostrarlo aquí solo confunde sobre dónde cazar.
+  const drops=(sources?.drops??[]).filter(drop=>drop.maps.length>0);
+  const shops=groupShops(sources?.shops??[]);
   return <div className="detail-card">
     <div className="detail-title"><ItemSprite item={item} className="detail-sigil" detail/><div><span>#{item.id}</span><h2>{item.name}</h2><code>{item.aegisName}</code></div></div>
     <div className="detail-badges"><span>{typeLabel(t,item.type)}</span>{item.subType&&<span>{item.subType}</span>}{item.refineable&&<span>{t.catalog.refineable}</span>}</div>
@@ -281,13 +303,16 @@ function ItemDetailCard({item,sources,onOpenMonster,t}:{item:ItemDetail;sources:
       <div><dt>DEF</dt><dd>{item.defense??"—"}</dd></div><div><dt>{t.catalog.slots}</dt><dd>{item.slots??"—"}</dd></div>
     </dl>
     <section className="detail-section"><h3>{t.catalog.description}</h3>{item.description?<p className="item-description" lang="en">{item.description}</p>:<p className="source-empty">{t.catalog.noDescription}</p>}</section>
-    <section className="detail-section"><h3>{t.catalog.droppedBy}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingMonsters}</p>:drops.length?<div className="source-list">{drops.map(drop=><button type="button" className="source-row source-link" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`} onClick={()=>onOpenMonster({id:drop.id})}><div><b>{drop.name}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>{drop.maps.length?drop.maps.join(" · "):t.catalog.noMap}</small></div><em>{dropRate(drop.rate)}</em></button>)}</div>:<p className="source-empty">{t.catalog.noDrops}</p>}</section>
-    <section className="detail-section"><h3>{t.catalog.soldAt}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingShops}</p>:shops.length?<div className="source-list">{shops.map(shop=><article className="source-row" key={`${shop.map}-${shop.x}-${shop.y}-${shop.name}`}><div><b>{shop.name}</b><small>{shop.map} {shop.x},{shop.y}{shop.cash?" · Cash":""}</small></div><em>{shop.price<0?zeny(item.buy):shop.cash?`${shop.price} C`:zeny(shop.price)}</em></article>)}</div>:<p className="source-empty">{t.catalog.noShops}</p>}</section>
+    <section className="detail-section"><h3>{t.catalog.droppedBy}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingMonsters}</p>:drops.length?<div className="source-list">{drops.map(drop=><div className="source-row drop-row" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`}>
+      <button type="button" className="item-sigil drop-sprite" onClick={()=>onPreviewMonster(drop.id,drop.name,drop.maps,drop.mvp)} title={t.catalog.viewSpawns} aria-label={`${t.catalog.viewSpawns}: #${drop.id} ${drop.name}`}><DropSprite id={drop.id} name={drop.name} mvp={drop.mvp}/></button>
+      <button type="button" className="drop-info" onClick={()=>onOpenMonster({id:drop.id})}><b>#{drop.id}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>{drop.name}</small></button>
+      <em>{dropRate(drop.rate)}</em>
+    </div>)}</div>:<p className="source-empty">{t.catalog.noDrops}</p>}</section>
+    <section className="detail-section"><h3>{t.catalog.soldAt}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingShops}</p>:shops.length?<div className="source-list">{shops.map(shop=><article className="source-row" key={`${shop.name}-${shop.price}-${shop.cash?"c":"z"}`}><div><b>{shop.name}</b><small>{shop.maps.join(" · ")}{shop.cash?" · Cash":""}</small></div><em>{shop.price<0?zeny(item.buy):shop.cash?`${shop.price} C`:zeny(shop.price)}</em></article>)}</div>:<p className="source-empty">{t.catalog.noShops}</p>}</section>
     <section className="detail-section"><h3>{t.catalog.equipLocation}</h3><p>{labelList(t,item.locations)}</p></section>
     <section className="detail-section"><h3>{t.catalog.jobs}</h3><p>{labelList(t,item.jobs)}</p></section>
     {item.classes.length>0&&<section className="detail-section"><h3>{t.catalog.classes}</h3><p>{labelList(t,item.classes)}</p></section>}
     {scripts.length>0&&<section className="detail-section"><h3>{t.catalog.mechanics}</h3>{scripts.map(([label,script])=><details key={label}><summary>{label}</summary><pre>{script}</pre></details>)}</section>}
-    {(item.trade||item.flags)&&<section className="detail-section"><details><summary>{t.catalog.restrictions}</summary><pre>{JSON.stringify({flags:item.flags,trade:item.trade},null,2)}</pre></details></section>}
   </div>;
 }
 
@@ -295,4 +320,12 @@ function ItemSprite({item,className,detail=false}:{item:ItemIndex;className:stri
   const fallback=TYPE_SIGILS[item.type]??"◆";
   if(!item.sprite)return <span className={className}>{fallback}</span>;
   return <span className={`${className} item-sprite`}><img src={item.sprite} alt={detail?`Sprite: ${item.name}`:""} loading={detail?"eager":"lazy"} onError={event=>event.currentTarget.parentElement?.classList.add("sprite-broken")}/><i aria-hidden="true">{fallback}</i></span>;
+}
+
+/* Sprite del monstruo dentro de la fila «Lo dropean». Sigue la misma convención
+   de rutas que public/data/monsters-index.json (/world/sprites/{id}.gif) sin
+   tener que cargar el índice de monstruos solo para esto. */
+function DropSprite({id,name,mvp}:{id:number;name:string;mvp?:boolean}){
+  const fallback=mvp?"♛":"♜";
+  return <span className="item-sprite"><img src={`/world/sprites/${id}.gif`} alt={`Sprite de ${name}`} loading="lazy" onError={event=>event.currentTarget.parentElement?.classList.add("sprite-broken")}/><i aria-hidden="true">{fallback}</i></span>;
 }

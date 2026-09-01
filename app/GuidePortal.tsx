@@ -13,6 +13,7 @@ const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCa
 const MonsterCatalog=lazy(async()=>({default:(await import("./MonsterCatalog")).MonsterCatalog}));
 const WorldCatalog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldCatalog}));
 const WorldReferenceDialog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldReferenceDialog}));
+const MonsterSpawnDialog=lazy(async()=>({default:(await import("./WorldCatalog")).MonsterSpawnDialog}));
 
 let moduleStylePromise:Promise<string>|null=null;
 function loadModuleStyle(){
@@ -64,6 +65,7 @@ export function GuidePortal(){
   const [worldQuery,setWorldQuery]=useState("");
   const [worldSelection,setWorldSelection]=useState<WorldSelection|null>(null);
   const [worldPreview,setWorldPreview]=useState<WorldSelection|null>(null);
+  const [monsterSpawnPreview,setMonsterSpawnPreview]=useState<{id:number;name:string;mvp?:boolean;maps:string[]}|null>(null);
   const [externalLink,setExternalLink]=useState<ExternalDestination|null>(null);
   const [navMenu,setNavMenu]=useState<NavMenu|null>(null);
   const headerRef=useRef<HTMLElement>(null);
@@ -178,6 +180,7 @@ export function GuidePortal(){
 
   const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setWorldPreview(selection)},[]);
   const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setExternalLink(destination)},[]);
+  const previewMonster=useCallback((id:number,name:string,maps:string[],mvp?:boolean)=>{setExternalLink(null);setWorldPreview(null);setMonsterSpawnPreview({id,name,mvp,maps})},[]);
 
   useEffect(()=>{
     const close=(event:PointerEvent)=>{if(headerRef.current&&!headerRef.current.contains(event.target as Node))closeNavMenu()};
@@ -285,15 +288,16 @@ export function GuidePortal(){
     <section className="workspace">
       <div className="content">
         {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openMonster={openMonster} openWorld={openWorld} t={t}/>}
-        {active==="items"&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`items-${catalogQuery}`} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem} onOpenMonster={openMonster} t={t}/></Suspense>}
-        {active==="equipment"&&selectedEquip&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`equipo-${selectedEquip.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} t={t} scope={{kind:"slot",location:selectedEquip.location,eyebrow:"Equipo",title:selectedEquip.title,description:selectedEquip.description}}/></Suspense>}
-        {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} t={t} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
+        {active==="items"&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`items-${catalogQuery}`} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t}/></Suspense>}
+        {active==="equipment"&&selectedEquip&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`equipo-${selectedEquip.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t} scope={{kind:"slot",location:selectedEquip.location,eyebrow:"Equipo",title:selectedEquip.title,description:selectedEquip.description}}/></Suspense>}
+        {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
         {active==="monsters"&&<Suspense fallback={<SurfaceLoading label={t.loading.monsters}/>}><MonsterCatalog key={`monsters-${monsterQuery}`} selectedMonsterId={selectedMonsterId} initialQuery={monsterQuery} onSelectMonster={selectMonster} onOpenItem={id=>openCatalog({id})} t={t}/></Suspense>}
         {active==="world"&&<Suspense fallback={<SurfaceLoading label={t.loading.world}/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld} t={t}/></Suspense>}
         {typeof active==="number"&&<section className="module-view">{lang==="en"&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
     {worldPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)} t={t}/></Suspense>}
+    {monsterSpawnPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setMonsterSpawnPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><MonsterSpawnDialog key={`spawn-${monsterSpawnPreview.id}`} monsterId={monsterSpawnPreview.id} monsterName={monsterSpawnPreview.name} mvp={monsterSpawnPreview.mvp} maps={monsterSpawnPreview.maps} onClose={()=>setMonsterSpawnPreview(null)} t={t}/></Suspense>}
     {externalLink&&<ExternalLinkDialog destination={externalLink} onClose={()=>setExternalLink(null)}/>}
     <NeonCursor/>
   </main>;

@@ -155,8 +155,6 @@ try {
   }
 
   const monsters = [];
-  const raceCounts = {};
-  const elementCounts = {};
   for (const monster of parsed) {
     const maps = sortMaps(mapsByMob.get(monster.id) ?? []);
     const drops = monster.drops
@@ -170,8 +168,6 @@ try {
     const mvp = Boolean(monster.MvpExp) || drops.some(drop => drop.mvp);
     const race = monster.Race || "Formless";
     const element = monster.Element || "Neutral";
-    raceCounts[race] = (raceCounts[race] ?? 0) + 1;
-    elementCounts[element] = (elementCounts[element] ?? 0) + 1;
     monsters.push({
       id: monster.id,
       aegisName: monster.AegisName ?? "",
@@ -205,12 +201,26 @@ try {
     });
   }
 
-  monsters.sort((left, right) => left.id - right.id);
+  // rAthena reutiliza el mismo mob_db para objetos y guardianes de WoE, mobs de
+  // eventos de temporada y duplicados exclusivos de instancia/quest (prefijos
+  // G_, EM_, EVENT_, R_, etc.). Sin drops ni un spawn de campo real no son
+  // monstruos que un jugador vaya a buscar en la enciclopedia.
+  const playable = monsters.filter(monster => monster.drops.length > 0 || monster.maps.length > 0);
+  playable.sort((left, right) => left.id - right.id);
+  const raceCounts = {};
+  const elementCounts = {};
+  for (const monster of playable) {
+    raceCounts[monster.race] = (raceCounts[monster.race] ?? 0) + 1;
+    elementCounts[monster.element] = (elementCounts[monster.element] ?? 0) + 1;
+  }
   await mkdir(OUTPUT_DIR, { recursive: true });
+  for (const file of await readdir(OUTPUT_DIR)) {
+    if (/^chunk-\d+\.json$/.test(file)) await rm(new URL(file, OUTPUT_DIR));
+  }
   const indexItems = [];
-  for (let start = 0; start < monsters.length; start += CHUNK_SIZE) {
+  for (let start = 0; start < playable.length; start += CHUNK_SIZE) {
     const chunkNumber = start / CHUNK_SIZE;
-    const chunkItems = monsters.slice(start, start + CHUNK_SIZE);
+    const chunkItems = playable.slice(start, start + CHUNK_SIZE);
     await writeFile(new URL(`chunk-${String(chunkNumber).padStart(3, "0")}.json`, OUTPUT_DIR), JSON.stringify({ items: chunkItems }), "utf8");
     for (const monster of chunkItems) {
       indexItems.push({
@@ -235,19 +245,19 @@ try {
   await writeFile(CATALOG_PATH, JSON.stringify({
     meta: {
       title: "AscencionRO · Monstruos Pre-Renewal",
-      count: monsters.length,
+      count: playable.length,
       revision: REVISION,
       snapshotDate: SNAPSHOT_DATE,
       source: "rAthena db/pre-re/mob_db.yml + npc spawn scripts",
       sourceUrl: `https://github.com/rathena/rathena/tree/${REVISION}/db/pre-re`,
-      chunks: Math.ceil(monsters.length / CHUNK_SIZE),
+      chunks: Math.ceil(playable.length / CHUNK_SIZE),
       raceCounts,
       elementCounts,
     },
     items: indexItems,
   }), "utf8");
 
-  console.log(`Catálogo de monstruos: ${monsters.length} fichas en ${Math.ceil(monsters.length / CHUNK_SIZE)} bloques.`);
+  console.log(`Catálogo de monstruos: ${playable.length} fichas en ${Math.ceil(playable.length / CHUNK_SIZE)} bloques (${monsters.length - playable.length} sin drop ni spawn de campo descartados).`);
 } finally {
   await rm(workDir, { recursive: true, force: true });
 }
