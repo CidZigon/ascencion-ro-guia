@@ -276,7 +276,8 @@ export function GuidePortal(){
           <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={t.search.placeholder} aria-label={t.search.aria}/>{query&&<button onClick={()=>setQuery("")} aria-label={t.search.clear}>×</button>}</div>
           {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ {t.search.inItems(query)}</b><small>{t.search.inItemsHint}</small></button><button className="search-result monster-search-result" onClick={()=>openMonster({query})}><b>♜ {t.search.inMonsters(query)}</b><small>{t.search.inItemsHint}</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ {t.search.inWorld(query)}</b><small>{t.search.inWorldHint}</small></button><div className="search-label">{searchIndex===null?t.search.searching:results.length?t.search.results(results.length):t.search.empty}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{t.modules[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
         </div>
-        <div className="lang-switch" role="group" aria-label={t.langSwitch.label}>
+        <div className="lang-switch" role="group" aria-label={t.langSwitch.label} data-lang={lang}>
+          <span className="lang-switch-thumb" aria-hidden="true"/>
           <button type="button" className={lang==="es"?"active":""} aria-pressed={lang==="es"} onClick={()=>switchLang("es")} title={t.langSwitch.toEs} lang="es">ES</button>
           <button type="button" className={lang==="en"?"active":""} aria-pressed={lang==="en"} onClick={()=>switchLang("en")} title={t.langSwitch.toEn} lang="en">EN</button>
         </div>

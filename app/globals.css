@@ -144,16 +144,23 @@ button{cursor:pointer}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.module-card,.neon-cursor{transition:none}.loader{animation:none}}
 
 /* ---- Selector de idioma ---- */
-.lang-switch{display:inline-flex;padding:2px;border:1px solid #51463e;border-radius:999px;background:#131214}
+.lang-switch{position:relative;display:inline-flex;padding:2px;border:1px solid #51463e;border-radius:999px;background:#131214}
+.lang-switch-thumb{
+  position:absolute;top:2px;left:2px;width:calc(50% - 2px);height:calc(100% - 4px);
+  border-radius:999px;background:#34263a;box-shadow:inset 0 0 0 1px #d2b07166;
+  transition:transform .2s cubic-bezier(.4,0,.2,1);
+}
+.lang-switch[data-lang="en"] .lang-switch-thumb{transform:translateX(100%)}
 .lang-switch button{
-  min-width:38px;padding:5px 10px;border:0;border-radius:999px;background:transparent;color:#8f8780;
+  position:relative;z-index:1;min-width:30px;padding:4px 8px;border:0;border-radius:999px;background:transparent;color:#8f8780;
   font-size:10px;font-weight:900;letter-spacing:.08em;cursor:pointer;
-  transition:background .12s ease,color .12s ease;
+  transition:color .12s ease;
 }
 .lang-switch button:hover{color:#ded6cc}
-.lang-switch button.active{background:#34263a;color:#f0d7aa;box-shadow:inset 0 0 0 1px #d2b07166}
+.lang-switch button.active{color:#f0d7aa}
 .lang-switch button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-@media(max-width:640px){.lang-switch button{min-width:34px;padding:5px 8px}}
+@media(max-width:640px){.lang-switch button{min-width:26px;padding:4px 6px}}
+@media(prefers-reduced-motion:reduce){.lang-switch-thumb{transition:none}}
 
 /* Aviso de que los módulos de guía siguen solo en español */
 .guide-notice{
