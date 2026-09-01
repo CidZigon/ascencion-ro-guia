@@ -25,7 +25,9 @@ Enciclopedia en español para Ragnarok Online **Pre-Renewal** (servidor Ascencio
 ## Estado y dirección
 
 - El proyecto nació como una plantilla de OpenAI Sites. Ese andamiaje (autenticación de ChatGPT, D1/Drizzle, ejemplos) ya se retiró; si encuentras restos, se pueden quitar.
-- **Objetivo pendiente: desplegar en una instancia EC2.** Hoy el build apunta a Cloudflare Workers. Migrar implica pasar al build de Node (`vinext build` + `vinext start`) y retirar `worker/`, `@cloudflare/vite-plugin` y `wrangler`. Es un cambio de runtime, no un borrado de archivos: no lo hagas por partes ni sin avisar.
+- **El sitio se publica como estático** en https://cidzigon.github.io/ desde el repositorio `CidZigon/CidZigon.github.io`. Lo genera `scripts/build-static-site.mjs` y lo sube el workflow `.github/workflows/publicar.yml` en cada push a `main`.
+- El build sigue produciendo un worker de Cloudflare, pero **solo se usa para prerenderizar la portada**. No hay servidor en producción, así que no hacen falta EC2, S3 ni Cloudflare. Si algún día se necesita servidor de verdad, eso sí sería un cambio de runtime: hablarlo antes.
+- El siguiente paso natural, si el sitio deja de ser solo pruebas, es un dominio propio apuntando a GitHub Pages. Las rutas de los datos son absolutas (`/world/items/501.gif`, más de 13.000), así que **el sitio tiene que servirse desde la raíz de un dominio**, nunca desde un subdirectorio.
 
 ## Estilo
 
