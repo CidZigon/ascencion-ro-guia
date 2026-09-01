@@ -1,7 +1,8 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, type ReactNode, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { EQUIP_HASH, WEAPON_HASH, equipSlotById, weaponKindById } from "./gear";
+import { STRINGS, getLang, getServerLang, setLang, subscribeLang, type Dict, type Lang } from "./i18n";
 import { ModalShell } from "./ModalShell";
 import type { WorldKind, WorldSelection } from "./WorldCatalog";
 
@@ -166,6 +167,11 @@ export function GuidePortal(){
     window.scrollTo({top:0,behavior:"auto"});
   },[]);
 
+  const lang=useSyncExternalStore(subscribeLang,getLang,getServerLang);
+  useEffect(()=>{document.documentElement.lang=lang},[lang]);
+  const switchLang=useCallback((next:Lang)=>setLang(next),[]);
+  const t=STRINGS[lang];
+
   const openNavMenu=useCallback((menu:NavMenu)=>{window.clearTimeout(navTimer.current);setNavMenu(menu)},[]);
   const closeNavMenu=useCallback(()=>{window.clearTimeout(navTimer.current);setNavMenu(null)},[]);
   const scheduleCloseNavMenu=useCallback(()=>{window.clearTimeout(navTimer.current);navTimer.current=window.setTimeout(()=>setNavMenu(null),160)},[]);
@@ -256,34 +262,38 @@ export function GuidePortal(){
   return <main className="portal">
     <header className="site-header" ref={headerRef}>
       <div className="nav-shell">
-        <button className="brand" onClick={showLibrary} aria-label="Ir al inicio de AscencionRO"><span className="brand-mark">A</span><span><b>AscencionRO</b><small>Guía Pre-Renewal</small></span></button>
+        <button className="brand" onClick={showLibrary} aria-label={t.goHome}><span className="brand-mark">A</span><span><b>AscencionRO</b><small>{t.tagline}</small></span></button>
         <nav className="primary-nav" aria-label="Navegación principal">
-          <button className={active===null?"active":""} onClick={showLibrary}>Inicio</button>
-          <button className={active==="items"?"active":""} onClick={()=>openCatalog()}>Objetos</button>
-          <button className={active==="monsters"?"active":""} onClick={()=>openMonster()}>Monstruos</button>
-          <button className={active==="world"?"active":""} onClick={()=>openWorld()}>Mundo</button>
-          <NavDropdown id="guide-menu" label="Guías" open={navMenu==="guides"} active={typeof active==="number"} onOpen={()=>openNavMenu("guides")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle="¿Qué quieres hacer?" introCopy="Elige un tema y abre la guía directamente." className="guide-topics-menu">
-            {MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>openModule(topic.id)}><span>{topic.icon}</span><span><b>{topic.title}</b><small>{topic.description}</small></span><i aria-hidden="true">→</i></button>)}
+          <button className={active===null?"active":""} onClick={showLibrary}>{t.nav.home}</button>
+          <button className={active==="items"?"active":""} onClick={()=>openCatalog()}>{t.nav.items}</button>
+          <button className={active==="monsters"?"active":""} onClick={()=>openMonster()}>{t.nav.monsters}</button>
+          <button className={active==="world"?"active":""} onClick={()=>openWorld()}>{t.nav.world}</button>
+          <NavDropdown id="guide-menu" label={t.nav.guides} open={navMenu==="guides"} active={typeof active==="number"} onOpen={()=>openNavMenu("guides")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle={t.guidesMenu.title} introCopy={t.guidesMenu.copy} className="guide-topics-menu">
+            {MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>openModule(topic.id)}><span>{topic.icon}</span><span><b>{t.modules[topic.id-1].title}</b><small>{t.modules[topic.id-1].description}</small></span><i aria-hidden="true">→</i></button>)}
           </NavDropdown>
         </nav>
         <div className="search-wrap">
-          <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar en AscencionRO…" aria-label="Buscar en toda la guía y el catálogo"/>{query&&<button onClick={()=>setQuery("")} aria-label="Limpiar búsqueda">×</button>}</div>
-          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ Buscar “{query}” entre todos los objetos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result monster-search-result" onClick={()=>openMonster({query})}><b>♜ Buscar “{query}” entre todos los monstruos</b><small>Por nombre, Aegis o ID</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ Buscar “{query}” entre ciudades y mapas</b><small>Planos locales, NPC y quests relacionadas</small></button><div className="search-label">{searchIndex===null?"BUSCANDO…":results.length?`${results.length} RESULTADOS EN LAS GUÍAS`:"SIN RESULTADOS EN LAS GUÍAS"}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{MODULES[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
+          <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={t.search.placeholder} aria-label={t.search.aria}/>{query&&<button onClick={()=>setQuery("")} aria-label={t.search.clear}>×</button>}</div>
+          {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ {t.search.inItems(query)}</b><small>{t.search.inItemsHint}</small></button><button className="search-result monster-search-result" onClick={()=>openMonster({query})}><b>♜ {t.search.inMonsters(query)}</b><small>{t.search.inItemsHint}</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ {t.search.inWorld(query)}</b><small>{t.search.inWorldHint}</small></button><div className="search-label">{searchIndex===null?t.search.searching:results.length?t.search.results(results.length):t.search.empty}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{t.modules[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
+        </div>
+        <div className="lang-switch" role="group" aria-label={t.langSwitch.label}>
+          <button type="button" className={lang==="es"?"active":""} aria-pressed={lang==="es"} onClick={()=>switchLang("es")} title={t.langSwitch.toEs} lang="es">ES</button>
+          <button type="button" className={lang==="en"?"active":""} aria-pressed={lang==="en"} onClick={()=>switchLang("en")} title={t.langSwitch.toEn} lang="en">EN</button>
         </div>
       </div>
     </header>
     <section className="workspace">
       <div className="content">
-        {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openMonster={openMonster} openWorld={openWorld}/>}
-        {active==="items"&&<Suspense fallback={<SurfaceLoading label="Abriendo el catálogo local…"/>}><ItemCatalog key={`items-${catalogQuery}`} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem} onOpenMonster={openMonster}/></Suspense>}
-        {active==="equipment"&&selectedEquip&&<Suspense fallback={<SurfaceLoading label="Abriendo el equipo…"/>}><ItemCatalog key={`equipo-${selectedEquip.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} scope={{kind:"slot",location:selectedEquip.location,eyebrow:"Equipo",title:selectedEquip.title,description:selectedEquip.description}}/></Suspense>}
-        {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label="Abriendo las armas…"/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
-        {active==="monsters"&&<Suspense fallback={<SurfaceLoading label="Abriendo el bestiario local…"/>}><MonsterCatalog key={`monsters-${monsterQuery}`} selectedMonsterId={selectedMonsterId} initialQuery={monsterQuery} onSelectMonster={selectMonster} onOpenItem={id=>openCatalog({id})}/></Suspense>}
-        {active==="world"&&<Suspense fallback={<SurfaceLoading label="Abriendo el atlas local…"/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld}/></Suspense>}
-        {typeof active==="number"&&<section className="module-view">{loadError?<div className="fatal"><h2>No se pudo cargar la guía</h2><p>Intenta recargar la página.</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>Preparando la guía…</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
+        {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openMonster={openMonster} openWorld={openWorld} t={t}/>}
+        {active==="items"&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`items-${catalogQuery}`} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem} onOpenMonster={openMonster} t={t}/></Suspense>}
+        {active==="equipment"&&selectedEquip&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`equipo-${selectedEquip.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} t={t} scope={{kind:"slot",location:selectedEquip.location,eyebrow:"Equipo",title:selectedEquip.title,description:selectedEquip.description}}/></Suspense>}
+        {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} t={t} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
+        {active==="monsters"&&<Suspense fallback={<SurfaceLoading label={t.loading.monsters}/>}><MonsterCatalog key={`monsters-${monsterQuery}`} selectedMonsterId={selectedMonsterId} initialQuery={monsterQuery} onSelectMonster={selectMonster} onOpenItem={id=>openCatalog({id})} t={t}/></Suspense>}
+        {active==="world"&&<Suspense fallback={<SurfaceLoading label={t.loading.world}/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld} t={t}/></Suspense>}
+        {typeof active==="number"&&<section className="module-view">{lang==="en"&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
-    {worldPreview&&<Suspense fallback={<ModalShell eyebrow="Referencia rápida" title="Consulta sin salir de la guía" onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>Buscando en el índice local…</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)}/></Suspense>}
+    {worldPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)} t={t}/></Suspense>}
     {externalLink&&<ExternalLinkDialog destination={externalLink} onClose={()=>setExternalLink(null)}/>}
     <NeonCursor/>
   </main>;
@@ -305,7 +315,7 @@ function ExternalLinkDialog({destination,onClose}:{destination:ExternalDestinati
   let host="sitio externo";
   try{host=new URL(destination.href).hostname.replace(/^www\./,"")}catch{/* El destino ya fue validado al crear el enlace. */}
   return <ModalShell eyebrow="Recurso externo" title="Este contenido está fuera de AscencionRO" className="external-dialog" onClose={onClose}>
-    <div className="external-link-card"><span className="external-link-sigil" aria-hidden="true">↗</span><div><h2>{destination.label||"Abrir recurso complementario"}</h2><code>{host}</code><p>Este enlace no tiene una ficha local equivalente. Puedes regresar a la guía sin perder tu posición o abrir el recurso en una pestaña nueva.</p></div><div className="external-link-actions"><button onClick={onClose}>Regresar a la guía</button><a href={destination.href} target="_blank" rel="noopener noreferrer" onClick={onClose}>Proceder al sitio externo <span>↗</span></a></div></div>
+    <div className="external-link-card"><span className="external-link-sigil" aria-hidden="true">↗</span><div><h2>{destination.label||"Abrir recurso complementario"}</h2><code>{host}</code><p>{t.guide.externalCopy}</p></div><div className="external-link-actions"><button onClick={onClose}>{t.guide.back}</button><a href={destination.href} target="_blank" rel="noopener noreferrer" onClick={onClose}>{t.guide.proceed} <span>↗</span></a></div></div>
   </ModalShell>;
 }
 
@@ -326,11 +336,11 @@ function NeonCursor(){
   return <span ref={cursorRef} className="neon-cursor" aria-hidden="true"/>;
 }
 
-function Library({openModule,openCatalog,openMonster,openWorld}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void;openMonster:(options?:{id?:number;query?:string})=>void;openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void}){
+function Library({openModule,openCatalog,openMonster,openWorld,t}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void;openMonster:(options?:{id?:number;query?:string})=>void;openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void;t:Dict}){
   return <section className="library">
-    <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>Busca objetos al instante</b><em>Nombre, Aegis, ID, equipo, precios, scripts y restricciones.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser monster-teaser" onClick={()=>openMonster()}><span className="teaser-sigil">♜</span><span><b>Consulta el bestiario local</b><em>Nivel, raza, elemento, mapas de aparición y todo lo que dropean.</em></span><strong>EXPLORAR <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>Explora ciudades y mapas</b><em>Planos locales con los NPC y las quests vinculadas a cada zona.</em></span><strong>EXPLORAR <span>→</span></strong></button></div>
-    <div className="section-title"><div><h2>Explora por tema</h2><p>Ocho caminos claros, sin códigos ni versiones que aprender.</p></div></div>
-    <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><h3>{topic.title}</h3><p>{topic.description}</p><span className="card-open">Explorar <b>→</b></span></button>)}</div>
+    <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>{t.library.items.title}</b><em>{t.library.items.copy}</em></span><strong>{t.library.explore} <span>→</span></strong></button><button className="catalog-teaser monster-teaser" onClick={()=>openMonster()}><span className="teaser-sigil">♜</span><span><b>{t.library.monsters.title}</b><em>{t.library.monsters.copy}</em></span><strong>{t.library.explore} <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>{t.library.world.title}</b><em>{t.library.world.copy}</em></span><strong>{t.library.explore} <span>→</span></strong></button></div>
+    <div className="section-title"><div><h2>{t.library.byTopic}</h2><p>{t.library.byTopicCopy}</p></div></div>
+    <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><h3>{t.modules[topic.id-1].title}</h3><p>{t.modules[topic.id-1].description}</p><span className="card-open">{t.library.open} <b>→</b></span></button>)}</div>
   </section>
 }
 

@@ -1,4 +1,5 @@
 "use client";
+import type { Dict } from "./i18n";
 /* eslint-disable @next/next/no-img-element -- sprites GIF animados y mapas estáticos ya optimizados en la caché local */
 
 import { useEffect, useMemo, useState } from "react";
@@ -29,9 +30,9 @@ function normalize(value:string){return value.toLowerCase().normalize("NFD").rep
 function uniqueStrings(values:string[]){const seen=new Set<string>();return values.filter(value=>{const key=normalize(value.trim());if(!key||seen.has(key))return false;seen.add(key);return true})}
 function escapeRegExp(value:string){return value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
 
-const LABELS:Record<WorldKind,string>={map:"Mapa",monster:"Monstruo",npc:"NPC",reference:"Guía local"};
+const kindLabel=(t:Dict,kind:WorldKind)=>(t.world.kinds as Record<string,string>)[kind]??kind;
 const ICONS:Record<WorldKind,string>={map:"⌖",monster:"♜",npc:"♙",reference:"◇"};
-const TOPICS=["","Progresión y EXP","Accesos y dungeons","Historias y lore","Aventuras regionales","Jobs y habilidades","Equipo y fabricación","Endless Tower","Compañeros"];
+
 const CITY_NAMES:Record<string,string>={
   prontera:"Prontera",izlude:"Izlude",geffen:"Geffen",payon:"Payon",alberta:"Alberta",morocc:"Morroc",aldebaran:"Al De Baran",yuno:"Juno",einbroch:"Einbroch",einbech:"Einbech",lighthalzen:"Lighthalzen",hugel:"Hugel",rachel:"Rachel",veins:"Veins",comodo:"Comodo",umbala:"Umbala",niflheim:"Niflheim",amatsu:"Amatsu",ayothaya:"Ayothaya",gonryun:"Gonryun",louyang:"Louyang",moscovia:"Moscovia",
 };
@@ -51,6 +52,9 @@ const REGIONS:WorldRegion[]=[
   {id:"instances",name:"Instancias y contenido especial",description:"Mapas privados, torres y escenarios de quest",icon:"⌁",codes:["e_tower","orcs_mem","area-3038","job_star","monk_test","que_job01","que_ng","que_thor","valkyrie"],special:"instance"},
   {id:"other",name:"Otros territorios",description:"Mapas sin una capital regional directa",icon:"⌖",special:"other"},
 ];
+
+type RegionText={name:string;description:string};
+const regionText=(t:Dict,id:string):RegionText=>(t.world.regions as Record<string,RegionText>)[id]??{name:id,description:""};
 
 function isCity(map:MapEntry){return Boolean(CITY_NAMES[map.id])}
 function mapRegion(map:MapEntry){
@@ -84,7 +88,7 @@ function resolveMap(payload:WorldPayload,selection:WorldSelection|null){
   return reference?payload.maps.find(map=>map.contexts.some(context=>normalize(context).includes(normalize(reference.name))))??null:null;
 }
 
-export function WorldCatalog({selection,initialQuery,onSelect}:{selection:WorldSelection|null;initialQuery:string;onSelect:(selection:WorldSelection)=>void}){
+export function WorldCatalog({selection,initialQuery,onSelect,t}:{selection:WorldSelection|null;initialQuery:string;onSelect:(selection:WorldSelection)=>void;t:Dict}){
   const [payload,setPayload]=useState<WorldPayload|null>(null);
   const [query,setQuery]=useState(initialQuery);
   const [region,setRegion]=useState("all");
@@ -104,8 +108,8 @@ export function WorldCatalog({selection,initialQuery,onSelect}:{selection:WorldS
   },[payload,query,region]);
   const selected=payload?resolveMap(payload,selection):null;
 
-  if(error)return <section className="catalog-fatal"><h1>Atlas no disponible</h1><p>No se pudo abrir el índice local. Intenta recargar.</p></section>;
-  if(!payload)return <section className="catalog-loading"><div className="loader"/><p>Preparando los mapas de Midgard…</p></section>;
+  if(error)return <section className="catalog-fatal"><h1>{t.world.fatalTitle}</h1><p>{t.world.fatalCopy}</p></section>;
+  if(!payload)return <section className="catalog-loading"><div className="loader"/><p>{t.world.opening}</p></section>;
 
   const regionCounts=new Map(REGIONS.map(item=>[item.id,payload.maps.filter(map=>mapRegion(map).id===item.id).length]));
   const groups=REGIONS.map(item=>({region:item,maps:filtered.filter(map=>mapRegion(map).id===item.id)})).filter(group=>group.maps.length);
@@ -114,20 +118,20 @@ export function WorldCatalog({selection,initialQuery,onSelect}:{selection:WorldS
     if(window.matchMedia("(max-width: 800px)").matches)setTimeout(()=>document.querySelector(".world-detail")?.scrollIntoView({behavior:"smooth",block:"start"}),30);
   };
   return <section className="world-catalog">
-    <header className="catalog-hero world-hero"><div><small>Atlas local de AscencionRO</small><h1>Regiones y mapas de Midgard</h1><p>Cada ciudad reúne sus campos, interiores y dungeons. Abre un mapa para consultar su plano, los NPC registrados y las quests relacionadas sin perder tu lugar en el recorrido.</p></div></header>
-    <section className="world-city-section" aria-labelledby="region-title"><div className="world-section-heading"><div><small>RECORRIDO POR ZONAS</small><h2 id="region-title">Regiones</h2></div><span>{REGIONS.filter(item=>(regionCounts.get(item.id)??0)>0).length} disponibles</span></div><div className="world-city-strip"><button className={region==="all"?"active":""} onClick={()=>setRegion("all")}><span>✦</span><b>Todas</b><small>{payload.counts.maps} mapas</small></button>{REGIONS.filter(item=>(regionCounts.get(item.id)??0)>0).map(item=><button key={item.id} className={region===item.id?"active":""} onClick={()=>setRegion(item.id)}><span>{item.icon}</span><b>{item.name}</b><small>{regionCounts.get(item.id)} mapas</small></button>)}</div></section>
+    <header className="catalog-hero world-hero"><div><small>{t.world.eyebrow}</small><h1>{t.world.heroTitle}</h1><p>{t.world.heroCopy}</p></div></header>
+    <section className="world-city-section" aria-labelledby="region-title"><div className="world-section-heading"><div><small>{t.world.zonesEyebrow}</small><h2 id="region-title">{t.world.zonesTitle}</h2></div><span>{REGIONS.filter(item=>(regionCounts.get(item.id)??0)>0).length} {t.world.available}</span></div><div className="world-city-strip"><button className={region==="all"?"active":""} onClick={()=>setRegion("all")}><span>✦</span><b>{t.world.allShort}</b><small>{payload.counts.maps} {t.world.maps}</small></button>{REGIONS.filter(item=>(regionCounts.get(item.id)??0)>0).map(item=><button key={item.id} className={region===item.id?"active":""} onClick={()=>setRegion(item.id)}><span>{item.icon}</span><b>{regionText(t,item.id).name}</b><small>{regionCounts.get(item.id)} {t.world.maps}</small></button>)}</div></section>
     <div className="world-toolbar">
-      <label><span>Buscar mapa, ciudad, NPC o quest</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="prt_fild08, Prontera, Langry…"/></label>
-      <label><span>Región</span><select value={region} onChange={event=>setRegion(event.target.value)}><option value="all">Todas las regiones · {payload.counts.maps}</option>{REGIONS.filter(item=>(regionCounts.get(item.id)??0)>0).map(item=><option key={item.id} value={item.id}>{item.name} · {regionCounts.get(item.id)}</option>)}</select></label>
+      <label><span>{t.world.searchLabel}</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="prt_fild08, Prontera, Langry…"/></label>
+      <label><span>{t.world.region}</span><select value={region} onChange={event=>setRegion(event.target.value)}><option value="all">{t.world.allRegions} · {payload.counts.maps}</option>{REGIONS.filter(item=>(regionCounts.get(item.id)??0)>0).map(item=><option key={item.id} value={item.id}>{regionText(t,item.id).name} · {regionCounts.get(item.id)}</option>)}</select></label>
     </div>
     <div className="world-body">
-      <div className="world-results"><div className="catalog-status"><b>{filtered.length.toLocaleString("es-ES")}</b> mapas en {groups.length} {groups.length===1?"región":"regiones"}</div>{groups.length?<div className="world-region-list">{groups.map(group=><section className="world-region-group" key={group.region.id}><header className="world-region-heading"><div><small>REGIÓN</small><h2>{group.region.name}</h2><p>{group.region.description}</p></div><span>{group.maps.length} mapas</span></header><div className="world-map-list">{group.maps.map(map=><button key={map.id} className={selected?.id===map.id?"world-map-card selected":"world-map-card"} onClick={()=>selectMap(map)}><span className="world-map-thumb">{map.image?<img src={map.image} alt="" loading="lazy"/>:<i>⌖</i>}</span><span className="world-map-summary"><small>{isCity(map)?"CIUDAD":"MAPA"}</small><b>{map.code}</b><em>{mapDisplayName(map)}</em><span><i>♙</i> {npcsByMap.get(map.id)??0} NPC <i>◇</i> {map.contexts.length} referencias</span></span><strong>→</strong></button>)}</div></section>)}</div>:<div className="catalog-empty"><b>No encontramos ese mapa.</b><span>Prueba con su código, ciudad, NPC o el nombre de una quest.</span></div>}</div>
-      <aside className="world-detail">{selected?<WorldAtlasDetail key={selected.id} map={selected} payload={payload}/>:<div className="detail-placeholder"><span>⌖</span><h2>Selecciona una ciudad o mapa</h2><p>Aquí aparecerán el plano local, los NPC con sus sprites y las quests o referencias vinculadas.</p></div>}</aside>
+      <div className="world-results"><div className="catalog-status"><b>{filtered.length.toLocaleString("es-ES")}</b> {t.world.maps} · {groups.length} {t.world.mapsIn(groups.length)}</div>{groups.length?<div className="world-region-list">{groups.map(group=><section className="world-region-group" key={group.region.id}><header className="world-region-heading"><div><small>{t.world.regionEyebrow}</small><h2>{regionText(t,group.region.id).name}</h2><p>{regionText(t,group.region.id).description}</p></div><span>{group.maps.length} {t.world.maps}</span></header><div className="world-map-list">{group.maps.map(map=><button key={map.id} className={selected?.id===map.id?"world-map-card selected":"world-map-card"} onClick={()=>selectMap(map)}><span className="world-map-thumb">{map.image?<img src={map.image} alt="" loading="lazy"/>:<i>⌖</i>}</span><span className="world-map-summary"><small>{isCity(map)?t.world.city:t.world.map}</small><b>{map.code}</b><em>{mapDisplayName(map)}</em><span><i>♙</i> {npcsByMap.get(map.id)??0} {t.world.npcShort} <i>◇</i> {map.contexts.length} {t.world.references}</span></span><strong>→</strong></button>)}</div></section>)}</div>:<div className="catalog-empty"><b>{t.world.emptyTitle}</b><span>{t.world.emptyHint}</span></div>}</div>
+      <aside className="world-detail">{selected?<WorldAtlasDetail key={selected.id} map={selected} payload={payload} t={t}/>:<div className="detail-placeholder"><span>⌖</span><h2>{t.world.pickTitle}</h2><p>{t.world.pickCopy}</p></div>}</aside>
     </div>
   </section>;
 }
 
-function WorldAtlasDetail({map,payload}:{map:MapEntry;payload:WorldPayload}){
+function WorldAtlasDetail({map,payload,t}:{map:MapEntry;payload:WorldPayload;t:Dict}){
   const npcs=payload.npcs.filter(npc=>npc.map===map.id).sort((a,b)=>a.name.localeCompare(b.name));
   const pinsByCoordinate=new Map<string,WorldPoint>();
   for(const point of map.points){if(point.kind==="reference"&&point.x>=0&&point.y>=0&&isMeaningfulMapReference(point.label,map.code))pinsByCoordinate.set(`${point.x}-${point.y}`,point)}
@@ -138,16 +142,16 @@ function WorldAtlasDetail({map,payload}:{map:MapEntry;payload:WorldPayload}){
   ]).filter(note=>isMeaningfulMapReference(note,""));
   return <div className="world-detail-card world-atlas-detail">
     <div className="world-detail-title"><span>⌖</span><div><small>{isCity(map)?"Ciudad":"Mapa de Midgard"}</small><h2>{map.code}</h2><code>{mapDisplayName(map)}</code></div></div>
-    <section className="map-section"><div className="atlas-map-heading"><h3>Mapa local</h3><span>{npcs.length} NPC · {notes.length} referencias</span></div><MapBoard code={map.code} image={map.image} points={[...pinsByCoordinate.values()]} showCoordinateList={false}/></section>
-    <section><div className="atlas-map-heading"><h3>NPC registrados en este mapa</h3><span>{npcs.length}</span></div>{npcs.length?<div className="map-npc-grid">{npcs.map(npc=>{const point=primaryNpcPoints(npc)[0];return <article key={npc.id}><span className="map-npc-sprite">{npc.sprite?<img src={npc.sprite} alt={`Sprite de ${npc.name}`} loading="lazy"/>:<i>♙</i>}</span><div><b>{npc.name}</b><small>{point?`${point.x}, ${point.y}`:"Ubicación sin coordenada publicada"}</small>{npc.spriteApproximate&&<em>Sprite representativo</em>}</div></article>})}</div>:<p className="atlas-empty-note">Aún no hay NPC vinculados a este mapa en las guías.</p>}</section>
-    <section><div className="atlas-map-heading"><h3>Quests y referencias relacionadas</h3><span>{notes.length}</span></div>{notes.length?<div className="map-reference-list">{notes.map((note,index)=><article key={`${normalize(note)}-${index}`}><span>◇</span><p>{note}</p></article>)}</div>:<p className="atlas-empty-note">Este mapa está disponible, pero todavía no tiene una quest o referencia asociada.</p>}</section>
+    <section className="map-section"><div className="atlas-map-heading"><h3>{t.world.localMap}</h3><span>{npcs.length} {t.world.npcShort} · {notes.length} {t.world.references}</span></div><MapBoard code={map.code} image={map.image} points={[...pinsByCoordinate.values()]} showCoordinateList={false} t={t}/></section>
+    <section><div className="atlas-map-heading"><h3>{t.world.npcsHere}</h3><span>{npcs.length}</span></div>{npcs.length?<div className="map-npc-grid">{npcs.map(npc=>{const point=primaryNpcPoints(npc)[0];return <article key={npc.id}><span className="map-npc-sprite">{npc.sprite?<img src={npc.sprite} alt={`Sprite de ${npc.name}`} loading="lazy"/>:<i>♙</i>}</span><div><b>{npc.name}</b><small>{point?`${point.x}, ${point.y}`:t.world.noCoordinate}</small>{npc.spriteApproximate&&<em>{t.world.representativeSprite}</em>}</div></article>})}</div>:<p className="atlas-empty-note">{t.world.noNpcs}</p>}</section>
+    <section><div className="atlas-map-heading"><h3>{t.world.questsHere}</h3><span>{notes.length}</span></div>{notes.length?<div className="map-reference-list">{notes.map((note,index)=><article key={`${normalize(note)}-${index}`}><span>◇</span><p>{note}</p></article>)}</div>:<p className="atlas-empty-note">{t.world.noQuests}</p>}</section>
   </div>;
 }
 
 function cleanMapReference(label:string,code:string){return label.replace(/📍/g,"").replace(new RegExp(`\\b${escapeRegExp(code)}\\b`,"gi"),"").replace(/\bRMS map\b/gi,"").replace(/^[\s·—,-]+|[\s·—,-]+$/g,"").replace(/\s{2,}/g," ").trim()}
 function isMeaningfulMapReference(label:string,code:string){return /[a-záéíóúñ]/i.test(cleanMapReference(label,code))}
 
-export function WorldReferenceDialog({selection,onClose}:{selection:WorldSelection;onClose:()=>void}){
+export function WorldReferenceDialog({selection,onClose,t}:{selection:WorldSelection;onClose:()=>void;t:Dict}){
   const [payload,setPayload]=useState<WorldPayload|null>(null);
   const [current,setCurrent]=useState(selection);
   const [error,setError]=useState(false);
@@ -155,13 +159,13 @@ export function WorldReferenceDialog({selection,onClose}:{selection:WorldSelecti
   useEffect(()=>{let live=true;loadWorld().then(data=>{if(live)setPayload(data)}).catch(()=>{if(live)setError(true)});return()=>{live=false}},[]);
 
   const selected=payload?findEntry(payload,current):null;
-  return <ModalShell eyebrow="Referencia rápida" title="Consulta sin salir de la guía" onClose={onClose}>
-    {error?<div className="world-dialog-message"><b>No se pudo abrir esta referencia.</b><span>Intenta cerrar la ventana y abrirla de nuevo.</span></div>:!payload?<div className="world-dialog-message"><div className="loader"/><span>Buscando en el índice local…</span></div>:selected?<WorldDetail key={`${selected.kind}-${selected.id}`} entry={selected} maps={payload.maps} onSelect={setCurrent} selectedPoint={current.point}/>:<div className="world-dialog-message"><b>Referencia no encontrada.</b><span>El enlace existe en la guía, pero aún no tiene una ficha local asociada.</span></div>}
+  return <ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={onClose}>
+    {error?<div className="world-dialog-message"><b>{t.world.dialogError}</b><span>{t.world.dialogErrorHint}</span></div>:!payload?<div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div>:selected?<WorldDetail key={`${selected.kind}-${selected.id}`} entry={selected} maps={payload.maps} onSelect={setCurrent} selectedPoint={current.point} t={t}/>:<div className="world-dialog-message"><b>{t.world.notFound}</b><span>{t.world.notFoundHint}</span></div>}
   </ModalShell>;
 }
 
 function entryName(entry:Entry){return entry.kind==="map"?mapDisplayName(entry):entry.name}
-function WorldDetail({entry,maps,onSelect,selectedPoint}:{entry:Entry;maps:MapEntry[];onSelect:(selection:WorldSelection)=>void;selectedPoint?:{x:number;y:number}}){
+function WorldDetail({entry,maps,onSelect,selectedPoint,t}:{entry:Entry;maps:MapEntry[];onSelect:(selection:WorldSelection)=>void;selectedPoint?:{x:number;y:number};t:Dict}){
   const map=entry.kind==="map"?entry:entry.kind==="npc"&&entry.map?maps.find(item=>item.id===entry.map)??null:null;
   const points=entry.kind==="map"?entry.points:entry.kind==="npc"?primaryNpcPoints(entry,selectedPoint):[];
   const lines=entry.kind==="map"?entry.labels:entry.kind==="npc"?entry.locations.slice(0,1):[];
@@ -169,12 +173,12 @@ function WorldDetail({entry,maps,onSelect,selectedPoint}:{entry:Entry;maps:MapEn
   const portrait=(entry.kind==="monster"||entry.kind==="npc")?entry.sprite:null;
   const portraitName=(entry.kind==="monster"||entry.kind==="npc")?entry.name:"";
   return <div className="world-detail-card">
-    <div className="world-detail-title"><span className={portrait?"sprite-detail":""}>{portrait?<img src={portrait} alt={`Sprite de ${portraitName}`}/>:ICONS[entry.kind]}</span><div><small>{LABELS[entry.kind]}</small><h2>{entryName(entry)}</h2><code>{entry.kind==="map"?entry.code:entry.kind==="monster"?`ID ${entry.id}`:entry.kind==="npc"?entry.map||"Sin mapa indicado":"Referencia integrada"}</code>{entry.kind==="npc"&&entry.spriteApproximate&&<em className="sprite-reference-note">Representación visual del rol; el sprite exacto no está publicado.</em>}</div></div>
-    {entry.kind==="monster"&&<MonsterLocations key={entry.id} monster={entry} maps={maps} onSelect={onSelect}/>}
-    {map&&<section className="map-section"><h3>{entry.kind==="npc"?"Ubicación en el mapa":"Mapa y coordenadas"}</h3><MapBoard code={map.code} image={image} points={points}/></section>}
-    {lines.length>0&&<section><h3>Ubicaciones mencionadas</h3><ul>{lines.map(line=><li key={line}>{line}</li>)}</ul></section>}
-    {entry.kind==="reference"&&entry.topics.length>0&&<section><h3>Integrada en</h3><div className="topic-chips">{entry.topics.map(topic=><span key={topic}>{TOPICS[topic]||`Tema ${topic}`}</span>)}</div></section>}
-    <section><h3>{entry.kind==="reference"?"Contenido disponible en AscencionRO":"Aparece en las guías"}</h3><div className="context-list">{entry.contexts.length?entry.contexts.map((context,index)=><p key={`${context}-${index}`}>{context}</p>):<p>La referencia está indexada localmente, pero no tiene una nota adicional.</p>}</div></section>
+    <div className="world-detail-title"><span className={portrait?"sprite-detail":""}>{portrait?<img src={portrait} alt={`Sprite de ${portraitName}`}/>:ICONS[entry.kind]}</span><div><small>{kindLabel(t,entry.kind)}</small><h2>{entryName(entry)}</h2><code>{entry.kind==="map"?entry.code:entry.kind==="monster"?`ID ${entry.id}`:entry.kind==="npc"?entry.map||t.world.noMapGiven:t.world.integratedReference}</code>{entry.kind==="npc"&&entry.spriteApproximate&&<em className="sprite-reference-note">{t.world.approximateSprite}</em>}</div></div>
+    {entry.kind==="monster"&&<MonsterLocations key={entry.id} monster={entry} maps={maps} onSelect={onSelect} t={t}/>}
+    {map&&<section className="map-section"><h3>{entry.kind==="npc"?t.world.npcLocation:t.world.mapAndCoords}</h3><MapBoard code={map.code} image={image} points={points} t={t}/></section>}
+    {lines.length>0&&<section><h3>{t.world.mentionedPlaces}</h3><ul>{lines.map(line=><li key={line}>{line}</li>)}</ul></section>}
+    {entry.kind==="reference"&&entry.topics.length>0&&<section><h3>{t.world.integratedIn}</h3><div className="topic-chips">{entry.topics.map(topic=><span key={topic}>{t.topics[topic]||t.world.topicNumber(topic)}</span>)}</div></section>}
+    <section><h3>{entry.kind==="reference"?t.world.availableHere:t.world.appearsIn}</h3><div className="context-list">{entry.contexts.length?entry.contexts.map((context,index)=><p key={`${context}-${index}`}>{context}</p>):<p>{t.world.noNote}</p>}</div></section>
   </div>;
 }
 function primaryNpcPoints(entry:NpcEntry,selectedPoint?:{x:number;y:number}){
@@ -184,21 +188,21 @@ function primaryNpcPoints(entry:NpcEntry,selectedPoint?:{x:number;y:number}){
   const preferred=unique.find(point=>stated.some(location=>location.x===point.x&&location.y===point.y))??unique[0];
   return preferred?[preferred]:[];
 }
-function MonsterLocations({monster,maps,onSelect}:{monster:Extract<Entry,{kind:"monster"}>;maps:MapEntry[];onSelect:(selection:WorldSelection)=>void}){
+function MonsterLocations({monster,maps,onSelect,t}:{monster:Extract<Entry,{kind:"monster"}>;maps:MapEntry[];onSelect:(selection:WorldSelection)=>void;t:Dict}){
   const [active,setActive]=useState(monster.locations[0]?.map||"");
   const location=monster.locations.find(item=>item.map===active)||monster.locations[0];
   const map=location?maps.find(item=>item.id===location.map)??null:null;
-  return <section className="monster-locations"><h3>Mapas de aparición · {monster.locations.length}</h3>{location&&map&&<div className="spawn-map"><MapBoard code={map.code} image={map.image} points={[]} showCoordinateList={false}/><button onClick={()=>onSelect({kind:"map",id:map.id})}>Abrir ficha del mapa <span>→</span></button></div>}<div className="spawn-list">{monster.locations.length?monster.locations.map(item=><button className={item.map===location?.map?"active":""} key={item.map} onClick={()=>setActive(item.map)}><b>{item.map}</b><span>{item.name}</span><small>{item.spawn.replace(item.map,"").replace(/[()]/g,"").trim()||"Aparición especial"}</small></button>):<p>No hay mapas de aparición publicados para este enemigo.</p>}</div></section>;
+  return <section className="monster-locations"><h3>{t.world.spawnTitle} · {monster.locations.length}</h3>{location&&map&&<div className="spawn-map"><MapBoard code={map.code} image={map.image} points={[]} showCoordinateList={false} t={t}/><button onClick={()=>onSelect({kind:"map",id:map.id})}>{t.world.openMapCard} <span>→</span></button></div>}<div className="spawn-list">{monster.locations.length?monster.locations.map(item=><button className={item.map===location?.map?"active":""} key={item.map} onClick={()=>setActive(item.map)}><b>{item.map}</b><span>{item.name}</span><small>{item.spawn.replace(item.map,"").replace(/[()]/g,"").trim()||t.world.specialSpawn}</small></button>):<p>{t.world.noSpawnMaps}</p>}</div></section>;
 }
-function MapBoard({code,image,points,showCoordinateList=true}:{code:string;image:string|null;points:WorldPoint[];showCoordinateList?:boolean}){
+function MapBoard({code,image,points,showCoordinateList=true,t}:{code:string;image:string|null;points:WorldPoint[];showCoordinateList?:boolean;t:Dict}){
   const [broken,setBroken]=useState(false);
   const max=Math.max(400,...points.flatMap(point=>[point.x,point.y]));
   return <div className="map-view">
     <div className="map-canvas">
-      {image&&!broken?<img src={image} alt={`Mapa de ${code}`} onError={()=>setBroken(true)}/>:<div className="map-fallback"><span>⌖</span><b>{code}</b><small>Plano local por coordenadas</small></div>}
+      {image&&!broken?<img src={image} alt={t.world.mapOf(code)} onError={()=>setBroken(true)}/>:<div className="map-fallback"><span>⌖</span><b>{code}</b><small>{t.world.coordinatePlan}</small></div>}
       <div className="map-grid" aria-hidden="true"/>
       {points.map((point,index)=><span className={point.kind==="npc"?"map-pin npc-pin":"map-pin"} key={`${point.x}-${point.y}-${point.kind}-${index}`} style={{left:`${Math.min(98,Math.max(2,point.x/max*100))}%`,bottom:`${Math.min(98,Math.max(2,point.y/max*100))}%`}} title={point.label}><i>{index+1}</i></span>)}
     </div>
-    {showCoordinateList&&<div className="map-coordinate-list">{points.length?points.map((point,index)=><span key={`${point.label}-${index}`}><i>{index+1}</i><b>{point.x}, {point.y}</b><em>{point.label}</em></span>):<p>Esta referencia no publica coordenadas exactas; el mapa sigue disponible para identificar la zona.</p>}</div>}
+    {showCoordinateList&&<div className="map-coordinate-list">{points.length?points.map((point,index)=><span key={`${point.label}-${index}`}><i>{index+1}</i><b>{point.x}, {point.y}</b><em>{point.label}</em></span>):<p>{t.world.noExactCoordinates}</p>}</div>}
   </div>;
 }
