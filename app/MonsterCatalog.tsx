@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Dict } from "./i18n";
 import { damageTakenFromElements } from "./attr-fix";
+import { ReportIssueLink } from "./report-issue";
 
 type CatalogMeta = {
   count:number; revision:string; snapshotDate:string; source:string; sourceUrl:string;
@@ -12,7 +13,7 @@ type CatalogMeta = {
 type MonsterIndex = {
   id:number; name:string; aegisName:string; sprite?:string; level?:number; hp?:number;
   baseExp?:number; jobExp?:number;
-  race:string; element:string; elementLevel?:number; size?:string; mvp?:boolean;
+  race:string; element:string; elementLevel?:number; size?:string; mvp?:boolean; miniboss?:boolean;
   maps:number; drops:number; chunk:number;
 };
 type MonsterDrop = { id:number; name:string; rate:number; mvp?:boolean };
@@ -46,12 +47,15 @@ function dropRate(rate:number){
   const scaled=Math.min(rate*SERVER_DROP_MULTIPLIER,10000);
   return `${(scaled/100).toLocaleString("es-ES",{minimumFractionDigits:scaled%100===0?0:2,maximumFractionDigits:2})}%`;
 }
-function efficiency(item:MonsterIndex){return item.baseExp&&item.hp?item.baseExp/item.hp:-1}
-function reportIssueUrl(kind:string,id:number,name:string){
-  const title=encodeURIComponent(`[dato] ${kind} #${id} ${name}`);
-  const body=encodeURIComponent(`Describe qué está mal en esta ficha:\n\n\n---\nURL: ${window.location.href}`);
-  return `https://github.com/CidZigon/ascencion-ro-guia/issues/new?title=${title}&body=${body}`;
-}
+/* Tres criterios de "mejor rendimiento", todos EXP por punto de HP (a más
+   HP, más golpes/tiempo cuesta cada muerte, así que HP es el costo real de
+   farmear). "Óptimo" sencillamente suma ambas EXP; los otros dos sirven para
+   quien está subiendo solo base o solo job. */
+function efficiencyBase(item:MonsterIndex){return item.baseExp&&item.hp?item.baseExp/item.hp:-1}
+function efficiencyJob(item:MonsterIndex){return item.jobExp&&item.hp?item.jobExp/item.hp:-1}
+function efficiencyCombined(item:MonsterIndex){return item.hp?((item.baseExp??0)+(item.jobExp??0))/item.hp:-1}
+const EFFICIENCY_SORTS={efficiency:efficiencyCombined,"efficiency-base":efficiencyBase,"efficiency-job":efficiencyJob} as const;
+function isEfficiencySortKey(value:string):value is keyof typeof EFFICIENCY_SORTS{return value in EFFICIENCY_SORTS}
 function elementModifierClass(percent:number){
   if(percent===0)return "ele-immune";
   if(percent<0)return "ele-absorb";
@@ -98,13 +102,16 @@ export function MonsterCatalog({selectedMonsterId,initialQuery,onSelectMonster,o
     return result.sort((left,right)=>{
       if(sort==="name")return left.name.localeCompare(right.name);
       if(sort==="level")return (left.level??0)-(right.level??0)||left.id-right.id;
-      if(sort==="efficiency")return efficiency(right)-efficiency(left)||left.id-right.id;
+      if(isEfficiencySortKey(sort)){const score=EFFICIENCY_SORTS[sort];return score(right)-score(left)||left.id-right.id}
       return left.id-right.id;
     });
   },[catalog,query,race,element,mvpOnly,sort]);
   const activeDetail=detail?.id===selectedMonsterId?detail:null;
-  const isEfficiencySort=sort==="efficiency";
-  const shown=isEfficiencySort?filtered.slice(0,20):filtered.slice(0,limit);
+  const isEfficiencySort=isEfficiencySortKey(sort);
+  // El farmeo real evita MVP y mini boss (Class: Boss en rAthena) porque no
+  // son algo que la mayoría de jugadores repita en serie; el top se calcula
+  // solo sobre monstruos de campo normales.
+  const shown=isEfficiencySort?filtered.filter(item=>!item.mvp&&!item.miniboss).slice(0,50):filtered.slice(0,limit);
 
   if(error)return <section className="catalog-fatal"><h1>{t.monsters.fatalTitle}</h1><p>{t.monsters.fatalCopy}</p></section>;
   if(!catalog)return <section className="catalog-loading"><div className="loader"/><p>{t.monsters.opening}</p></section>;
@@ -117,12 +124,12 @@ export function MonsterCatalog({selectedMonsterId,initialQuery,onSelectMonster,o
       <label className="catalog-search"><span>{t.monsters.searchLabel}</span><input value={query} onChange={event=>{setQuery(event.target.value);setLimit(80)}} placeholder={t.monsters.searchPlaceholder}/></label>
       <label><span>{t.monsters.race}</span><select value={race} onChange={event=>{setRace(event.target.value);setLimit(80)}}><option value="all">{t.monsters.allRaces}</option>{races.map(([name,count])=><option key={name} value={name}>{raceLabel(t,name)} · {count}</option>)}</select></label>
       <label><span>{t.monsters.element}</span><select value={element} onChange={event=>{setElement(event.target.value);setLimit(80)}}><option value="all">{t.monsters.allElements}</option>{elements.map(([name,count])=><option key={name} value={name}>{elementLabel(t,name)} · {count}</option>)}</select></label>
-      <label><span>{t.monsters.sort}</span><select value={sort} onChange={event=>setSort(event.target.value)}><option value="id">{t.monsters.sortId}</option><option value="name">{t.monsters.sortName}</option><option value="level">{t.monsters.sortLevel}</option><option value="efficiency">{t.monsters.sortEfficiency}</option></select></label>
+      <label><span>{t.monsters.sort}</span><select value={sort} onChange={event=>setSort(event.target.value)}><option value="id">{t.monsters.sortId}</option><option value="name">{t.monsters.sortName}</option><option value="level">{t.monsters.sortLevel}</option><option value="efficiency">{t.monsters.sortEfficiency}</option><option value="efficiency-base">{t.monsters.sortEfficiencyBase}</option><option value="efficiency-job">{t.monsters.sortEfficiencyJob}</option></select></label>
       <button className={mvpOnly?"catalog-toggle active":"catalog-toggle"} onClick={()=>{setMvpOnly(value=>!value);setLimit(80)}} aria-pressed={mvpOnly}>MVP</button>
     </div>
     <div className="catalog-body">
       <div className="catalog-results">
-        <div className="catalog-status">{isEfficiencySort?<b>{t.monsters.topEfficiencyTitle(shown.length)}</b>:<><b>{filtered.length.toLocaleString("es-ES")}</b> coincidencias</>}</div>
+        <div className="catalog-status">{isEfficiencySort?<b>{sort==="efficiency-base"?t.monsters.topEfficiencyTitleBase(shown.length):sort==="efficiency-job"?t.monsters.topEfficiencyTitleJob(shown.length):t.monsters.topEfficiencyTitle(shown.length)}</b>:<><b>{filtered.length.toLocaleString("es-ES")}</b> coincidencias</>}</div>
         <div className="item-list">{shown.map(item=><button key={item.id} className={selectedMonsterId===item.id?"item-row selected":"item-row"} onClick={()=>onSelectMonster(item.id)}>
           <MonsterSprite monster={item} className="item-sigil"/>
           <span className="item-main"><b>{item.name}{item.mvp&&<span className="mvp">MVP</span>}</b><small>{t.monsters.levelShort} {item.level??"—"} · {raceLabel(t,item.race)} · {elementLabel(t,item.element)}{item.elementLevel?` ${item.elementLevel}`:""}</small></span>
@@ -169,7 +176,7 @@ function MonsterDetailCard({monster,onOpenItem,onPreviewMonster,t}:{monster:Mons
       </button>)}</div>
     :<p className="source-empty">{t.monsters.noSpawns}</p>}</section>
     <section className="detail-section"><h3>{t.monsters.drops}</h3>{monster.drops.length?<div className="source-list">{monster.drops.map(drop=><button type="button" className="source-row source-link" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`} onClick={()=>onOpenItem(drop.id)}><div><b>{drop.name}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>#{drop.id}</small></div><em>{dropRate(drop.rate)}</em></button>)}</div>:<p className="source-empty">{t.monsters.noDrops}</p>}</section>
-    <a className="report-issue-link" href={reportIssueUrl("Monstruo",monster.id,monster.name)} target="_blank" rel="noreferrer">{t.monsters.reportIssue}</a>
+    <ReportIssueLink kind="Monstruo" id={monster.id} name={monster.name} label={t.monsters.reportIssue}/>
   </div>;
 }
 

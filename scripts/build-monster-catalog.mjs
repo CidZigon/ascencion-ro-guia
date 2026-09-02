@@ -179,6 +179,10 @@ try {
       .filter(Boolean)
       .sort((left, right) => Number(Boolean(right.mvp)) - Number(Boolean(left.mvp)) || right.rate - left.rate || left.name.localeCompare(right.name));
     const mvp = Boolean(monster.MvpExp) || drops.some(drop => drop.mvp);
+    // "Mini boss": monstruos con Class: Boss en rAthena (agresivos, inmunes a
+    // status) que no son MVP verdaderos. Se excluyen del filtro de mejor
+    // rendimiento para no mezclarlos con el farmeo normal de campo.
+    const miniboss = monster.Class === "Boss" && !mvp;
     const race = monster.Race || "Formless";
     const element = monster.Element || "Neutral";
     monsters.push({
@@ -209,6 +213,7 @@ try {
       walkSpeed: monster.WalkSpeed,
       className: monster.Class,
       mvp,
+      miniboss,
       maps,
       drops,
     });
@@ -250,6 +255,7 @@ try {
         elementLevel: monster.elementLevel,
         size: monster.size,
         mvp: monster.mvp || undefined,
+        miniboss: monster.miniboss || undefined,
         maps: monster.maps.length,
         drops: monster.drops.length,
         chunk: chunkNumber,

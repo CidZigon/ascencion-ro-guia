@@ -5,6 +5,7 @@ import type { Dict } from "./i18n";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ModalShell } from "./ModalShell";
+import { ReportIssueLink } from "./report-issue";
 
 export type WorldKind="map"|"monster"|"npc"|"reference";
 export type WorldSelection={kind:WorldKind;id:string;point?:{x:number;y:number}};
@@ -161,6 +162,7 @@ function WorldAtlasDetail({map,payload,t}:{map:MapEntry;payload:WorldPayload;t:D
     <section className="map-section"><div className="atlas-map-heading"><h3>{t.world.localMap}</h3><span>{npcs.length} {t.world.npcShort} · {notes.length} {t.world.references}</span></div><MapBoard key={map.code} code={map.code} image={map.image} points={[...pinsByCoordinate.values()]} showCoordinateList={false} t={t}/></section>
     <section><div className="atlas-map-heading"><h3>{t.world.npcsHere}</h3><span>{npcs.length}</span></div>{npcs.length?<div className="map-npc-grid">{npcs.map(npc=>{const point=primaryNpcPoints(npc)[0];const number=npcPinNumber(npc);return <article key={npc.id}><span className="map-npc-sprite">{npc.sprite?<img src={npc.sprite} alt={`Sprite de ${npc.name}`} loading="lazy"/>:<i>♙</i>}</span><div><b>{number&&<i className="pin-badge">{number}</i>}{npc.name}</b><small>{point?`${point.x}, ${point.y}`:t.world.noCoordinate}</small>{npc.spriteApproximate&&<em>{t.world.representativeSprite}</em>}</div></article>})}</div>:<p className="atlas-empty-note">{t.world.noNpcs}</p>}</section>
     <section><div className="atlas-map-heading"><h3>{t.world.questsHere}</h3><span>{notes.length}</span></div>{notes.length?<div className="map-reference-list">{notes.map((note,index)=><article key={`${normalize(note.text)}-${index}`}>{note.number?<i className="pin-badge">{note.number}</i>:<span>◇</span>}<p>{note.text}</p></article>)}</div>:<p className="atlas-empty-note">{t.world.noQuests}</p>}</section>
+    <ReportIssueLink kind="Mapa" id={map.code} name={mapDisplayName(map)} label={t.world.reportIssue}/>
   </div>;
 }
 
@@ -225,6 +227,7 @@ function WorldDetail({entry,maps,onSelect,selectedPoint,t}:{entry:Entry;maps:Map
     {lines.length>0&&<section><h3>{t.world.mentionedPlaces}</h3><ul>{lines.map(line=><li key={line}>{line}</li>)}</ul></section>}
     {entry.kind==="reference"&&entry.topics.length>0&&<section><h3>{t.world.integratedIn}</h3><div className="topic-chips">{entry.topics.map(topic=><span key={topic}>{t.topics[topic]||t.world.topicNumber(topic)}</span>)}</div></section>}
     <section><h3>{entry.kind==="reference"?t.world.availableHere:t.world.appearsIn}</h3><div className="context-list">{entry.contexts.length?entry.contexts.map((context,index)=><p key={`${context}-${index}`}>{context}</p>):<p>{t.world.noNote}</p>}</div></section>
+    <ReportIssueLink kind={kindLabel(t,entry.kind)} id={entry.id} name={entryName(entry)} label={t.world.reportIssue}/>
   </div>;
 }
 function primaryNpcPoints(entry:NpcEntry,selectedPoint?:{x:number;y:number}){

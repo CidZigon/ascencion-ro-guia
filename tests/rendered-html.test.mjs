@@ -62,8 +62,11 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   assert.match(itemUi,/<h3>\{t\.catalog\.description\}<\/h3>/);
   assert.match(itemUi,/item-description/);
   assert.doesNotMatch(itemUi,/Efecto \/ uso/);
+  assert.match(itemUi,/function ItemDescription/);
+  assert.match(itemUi,/desc-bonus/);
   const theme=await readFile(new URL("../app/theme.css",import.meta.url),"utf8");
-  assert.match(theme,/\.detail-section \.item-description\{[^}]*white-space:pre-wrap/s);
+  assert.match(theme,/\.desc-bonus\{/);
+  assert.match(theme,/\.desc-meta\{/);
 
   const sourcesMeta=JSON.parse(await readFile(new URL("../public/data/item-sources-meta.json",import.meta.url),"utf8"));
   const sourceFiles=(await readdir(new URL("../public/data/item-sources/",import.meta.url))).filter(file=>file.endsWith(".json")).sort();

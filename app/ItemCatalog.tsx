@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { EQUIP_SLOTS, WEAPON_KINDS } from "./gear";
 import type { Dict } from "./i18n";
+import { ReportIssueLink } from "./report-issue";
 
 type CatalogMeta = {
   count:number; revision:string; snapshotDate:string; source:string; sourceUrl:string;
@@ -59,14 +60,57 @@ const locationLabel=(t:Dict,location:string)=>(t.locations as Record<string,stri
 const weaponLabel=(t:Dict,subType?:string)=>subType?(t.weapons as Record<string,string>)[subType]??subType:"";
 function labelList(t:Dict,value?:string[]){return value?.length?value.map(entry=>locationLabel(t,entry)).join(", "):t.catalog.anyLocation}
 
+/* Las descripciones vienen tal cual del cliente (iteminfo.lua, en inglés):
+   líneas separadas por \n, con bonos cortos ("Luk +2"), líneas de meta
+   ("Class: Card") y, en sets de cartas, texto narrativo más largo. Se
+   clasifica línea por línea para resaltar los bonos sin tocar el resto. */
+type DescLine =
+  |{kind:"meta";label:string;value:string}
+  |{kind:"bonus";text:string}
+  |{kind:"heading";text:string}
+  |{kind:"text";text:string};
+const DESC_META_KEYS=["Class","Compound on","Weight","Jobs","Weapon Level","Armor Level","Required Level"];
+const BONUS_LINE=/^[A-Za-z][A-Za-z0-9 ()'./-]*\s[+-]\d+(?:\.\d+)?%?$/;
+function classifyDescLine(raw:string):DescLine{
+  const line=raw.trim();
+  const metaKey=DESC_META_KEYS.find(key=>line.startsWith(`${key}:`));
+  if(metaKey)return{kind:"meta",label:metaKey,value:line.slice(metaKey.length+1).trim()};
+  if(/^\[.+\]$/.test(line))return{kind:"heading",text:line.slice(1,-1)};
+  if(BONUS_LINE.test(line))return{kind:"bonus",text:line};
+  return{kind:"text",text:line};
+}
+function parseItemDescription(raw:string):DescLine[][]{
+  return raw.split(/\n{2,}/).map(block=>block.split("\n").map(classifyDescLine).filter(line=>line.kind!=="text"||line.text.length>0));
+}
+function ItemDescription({text}:{text:string}){
+  return <div className="item-description" lang="en">{parseItemDescription(text).map((lines,blockIndex)=>{
+    const rendered:JSX.Element[]=[];
+    let bonusBuffer:string[]=[];
+    const flushBonus=(key:string)=>{
+      if(!bonusBuffer.length)return;
+      rendered.push(<div className="desc-bonus-row" key={key}>{bonusBuffer.map((bonus,index)=><span className="desc-bonus" key={index}>{bonus}</span>)}</div>);
+      bonusBuffer=[];
+    };
+    lines.forEach((line,lineIndex)=>{
+      if(line.kind==="bonus"){bonusBuffer.push(line.text);return}
+      flushBonus(`b${lineIndex}`);
+      if(line.kind==="meta")rendered.push(<div className="desc-meta" key={lineIndex}><b>{line.label}</b><span>{line.value}</span></div>);
+      else if(line.kind==="heading")rendered.push(<h4 className="desc-heading" key={lineIndex}>{line.text}</h4>);
+      else rendered.push(<p className="desc-text" key={lineIndex}>{line.text}</p>);
+    });
+    flushBonus("tail");
+    return <div className="desc-block" key={blockIndex}>{rendered}</div>;
+  })}</div>;
+}
+
 /* Categorías visibles del catálogo. Cada una agrupa uno o varios tipos de rAthena;
    son las que sustituyen a los antiguos menús «Equipo» y «Armas». */
-type Category = { id:string; sigil:string; types:string[]|null; facets:"slot"|"weapon"|null };
+type Category = { id:string; sigil:string; types:string[]|null; facets:"slot"|"weapon"|"cardSlot"|null };
 const CATEGORIES:Category[]=[
   {id:"all",         sigil:"◈", types:null,                                facets:null},
   {id:"equipo",      sigil:"⬟", types:["Armor"],                           facets:"slot"},
   {id:"armas",       sigil:"⚔", types:["Weapon"],                          facets:"weapon"},
-  {id:"cartas",      sigil:"▣", types:["Card"],                            facets:null},
+  {id:"cartas",      sigil:"▣", types:["Card"],                            facets:"cardSlot"},
   {id:"consumibles", sigil:"✚", types:["Healing","Usable","Delayconsume"], facets:null},
   {id:"materiales",  sigil:"◆", types:["Etc"],                             facets:null},
   {id:"municion",    sigil:"➶", types:["Ammo"],                            facets:null},
@@ -74,6 +118,12 @@ const CATEGORIES:Category[]=[
   {id:"cash",        sigil:"✧", types:["Cash"],                            facets:null},
 ];
 const categoryById=(id:string)=>CATEGORIES.find(entry=>entry.id===id)??CATEGORIES[0];
+
+/* Las cartas de arma usan Right_Hand como ubicación, una ranura que no existe
+   en el equipo normal (las armas tienen su propio filtro por tipo). Se agrega
+   solo para el filtro de cartas, sin tocar EQUIP_SLOTS que también usa la
+   categoría de Equipo. */
+const CARD_SLOTS=[...EQUIP_SLOTS,{id:"arma",location:"Right_Hand",icon:"⚔",title:"Arma",description:"Cartas para compuestas en armas de cualquier tipo."}];
 const categoryLabel=(t:Dict,id:string)=>(t.categories as Record<string,string>)[id]??id;
 
 /* Tramos de nivel mínimo. Cubren el recorrido real de un personaje Pre-Renewal. */
@@ -120,6 +170,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
   const inFacet=useMemo(()=>(item:ItemIndex)=>{
     if(!facet)return true;
     if(activeCategory.facets==="slot")return item.type!=="Card"&&Boolean(item.locations?.includes(facet));
+    if(activeCategory.facets==="cardSlot")return Boolean(item.locations?.includes(facet));
     if(activeCategory.facets==="weapon")return item.subType===facet;
     return true;
   },[facet,activeCategory]);
@@ -146,6 +197,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
     for(const item of searched){
       if(!inCategory(item))continue;
       if(activeCategory.facets==="slot"){if(item.type==="Card")continue;for(const location of item.locations??[])counts[location]=(counts[location]??0)+1}
+      else if(activeCategory.facets==="cardSlot"){for(const location of item.locations??[])counts[location]=(counts[location]??0)+1}
       else if(item.subType)counts[item.subType]=(counts[item.subType]??0)+1;
     }
     return counts;
@@ -170,7 +222,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
 
   const activeDetail=detail?.id===selectedItemId?detail:null;
   const activeSources=sourceResult?.itemId===selectedItemId?sourceResult.sources:null;
-  const showGear=activeCategory.facets!==null;
+  const showGear=activeCategory.facets==="slot"||activeCategory.facets==="weapon";
   const anyFilter=category!=="all"||facet!==null||slotFilter!==null||levelBand!==null||refineable||query.trim()!=="";
 
   const pickCategory=(id:string)=>{setCategory(id);setFacet(null);setSlotFilter(null);setLevelBand(null);setLimit(80)};
@@ -180,7 +232,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
   if(error)return <section className="catalog-fatal"><h1>{t.catalog.fatalTitle}</h1><p>{t.catalog.fatalCopy}</p></section>;
   if(!catalog)return <section className="catalog-loading"><div className="loader"/><p>{t.catalog.opening}</p></section>;
 
-  const facetLabel=facet?(activeCategory.facets==="slot"?locationLabel(t,facet):weaponLabel(t,facet)):null;
+  const facetLabel=facet?((activeCategory.facets==="slot"||activeCategory.facets==="cardSlot")?locationLabel(t,facet):weaponLabel(t,facet)):null;
   const heroTitle=facetLabel??(category==="all"?t.catalog.heroTitle:categoryLabel(t,category));
   const heroCopy=category==="all"
     ?t.catalog.heroCopy(catalog.meta.count.toLocaleString("es-ES"))
@@ -208,9 +260,9 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
         })}</div>
       </div>
 
-      {activeCategory.facets==="slot"&&<div className="filter-row">
+      {(activeCategory.facets==="slot"||activeCategory.facets==="cardSlot")&&<div className="filter-row">
         <span className="filter-label">{t.catalog.filterSlot}</span>
-        <div className="chip-set">{EQUIP_SLOTS.map(slot=>{
+        <div className="chip-set">{(activeCategory.facets==="cardSlot"?CARD_SLOTS:EQUIP_SLOTS).map(slot=>{
           const total=facetCounts[slot.location]??0;
           return <button key={slot.id} type="button" className={facet===slot.location?"filter-chip active":"filter-chip"} disabled={total===0} aria-pressed={facet===slot.location} onClick={()=>pickFacet(slot.location)}>
             <i aria-hidden="true">{slot.icon}</i>{locationLabel(t,slot.location)}<em>{total}</em>
@@ -262,7 +314,7 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
 /* Segunda línea de cada fila: los datos con los que se decide sin abrir la ficha. */
 function itemLine(t:Dict,item:ItemIndex,category:Category){
   const parts:string[]=[];
-  if(category.facets==="slot")parts.push(item.locations?.length?item.locations.map(entry=>locationLabel(t,entry)).join(" · "):t.catalog.equipment);
+  if(category.facets==="slot"||category.facets==="cardSlot")parts.push(item.locations?.length?item.locations.map(entry=>locationLabel(t,entry)).join(" · "):t.catalog.equipment);
   else if(category.facets==="weapon")parts.push(weaponLabel(t,item.subType)||t.catalog.weapon);
   else parts.push(`${typeLabel(t,item.type)}${item.subType?` · ${item.subType}`:""}`);
   if(item.attack)parts.push(`ATK ${item.attack}`);
@@ -302,7 +354,7 @@ function ItemDetailCard({item,sources,onOpenMonster,onPreviewMonster,t}:{item:It
       <div><dt>ATK</dt><dd>{item.attack??"—"}</dd></div><div><dt>MATK</dt><dd>{item.magicAttack??"—"}</dd></div>
       <div><dt>DEF</dt><dd>{item.defense??"—"}</dd></div><div><dt>{t.catalog.slots}</dt><dd>{item.slots??"—"}</dd></div>
     </dl>
-    <section className="detail-section"><h3>{t.catalog.description}</h3>{item.description?<p className="item-description" lang="en">{item.description}</p>:<p className="source-empty">{t.catalog.noDescription}</p>}</section>
+    <section className="detail-section"><h3>{t.catalog.description}</h3>{item.description?<ItemDescription text={item.description}/>:<p className="source-empty">{t.catalog.noDescription}</p>}</section>
     <section className="detail-section"><h3>{t.catalog.droppedBy}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingMonsters}</p>:drops.length?<div className="source-list">{drops.map(drop=><div className="source-row drop-row" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`}>
       <button type="button" className="item-sigil drop-sprite" onClick={()=>onPreviewMonster(drop.id,drop.name,drop.maps,drop.mvp)} title={t.catalog.viewSpawns} aria-label={`${t.catalog.viewSpawns}: #${drop.id} ${drop.name}`}><DropSprite id={drop.id} name={drop.name} mvp={drop.mvp}/></button>
       <button type="button" className="drop-info" onClick={()=>onOpenMonster({id:drop.id})}><b>#{drop.id}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>{drop.name}</small></button>
@@ -313,6 +365,7 @@ function ItemDetailCard({item,sources,onOpenMonster,onPreviewMonster,t}:{item:It
     <section className="detail-section"><h3>{t.catalog.jobs}</h3><p>{labelList(t,item.jobs)}</p></section>
     {item.classes.length>0&&<section className="detail-section"><h3>{t.catalog.classes}</h3><p>{labelList(t,item.classes)}</p></section>}
     {scripts.length>0&&<section className="detail-section"><h3>{t.catalog.mechanics}</h3>{scripts.map(([label,script])=><details key={label}><summary>{label}</summary><pre>{script}</pre></details>)}</section>}
+    <ReportIssueLink kind="Objeto" id={item.id} name={item.name} label={t.catalog.reportIssue}/>
   </div>;
 }
 
