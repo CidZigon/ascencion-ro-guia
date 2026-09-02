@@ -19,8 +19,17 @@ function rankMap(map) {
   return 2;
 }
 
-function sortMaps(maps) {
-  return [...maps].sort((left, right) => rankMap(left) - rankMap(right) || left.localeCompare(right));
+/* Densidad de spawn: cuántos monstruos hay por segundo de reaparición en un
+   mapa. Con ella se ordenan los mapas de un monstruo de mayor a menor
+   probabilidad práctica de encontrarlo, en vez de un orden alfabético plano. */
+function spawnDensity(entry) {
+  if (!entry.count) return 0;
+  if (!entry.delay) return entry.count;
+  return entry.count / (entry.delay / 1000);
+}
+
+function sortSpawns(entries) {
+  return [...entries].sort((left, right) => spawnDensity(right) - spawnDensity(left) || rankMap(left.map) - rankMap(right.map) || left.map.localeCompare(right.map));
 }
 
 function scalar(value) {
@@ -123,8 +132,8 @@ function parseSpawnLine(line, spawns) {
   if (!header || header[1] === "-") return;
   const kind = fields[1]?.toLowerCase();
   if (kind !== "monster" && kind !== "boss_monster") return;
-  const mob = (fields[3] || "").match(/^(\d+),/);
-  if (mob) spawns.push({ map: header[1], id: Number(mob[1]) });
+  const mob = (fields[3] || "").match(/^(\d+),(\d+)(?:,(\d+))?/);
+  if (mob) spawns.push({ map: header[1], id: Number(mob[1]), count: Number(mob[2]), delay: mob[3] !== undefined ? Number(mob[3]) : undefined });
 }
 
 const items = JSON.parse(await readFile(INDEX_PATH, "utf8")).items;
@@ -149,14 +158,18 @@ try {
 
   const mapsByMob = new Map();
   for (const spawn of spawns) {
-    const list = mapsByMob.get(spawn.id) ?? [];
-    if (!list.includes(spawn.map)) list.push(spawn.map);
-    mapsByMob.set(spawn.id, list);
+    let byMap = mapsByMob.get(spawn.id);
+    if (!byMap) { byMap = new Map(); mapsByMob.set(spawn.id, byMap); }
+    const existing = byMap.get(spawn.map);
+    if (existing) {
+      existing.count += spawn.count;
+      if (spawn.delay !== undefined) existing.delay = existing.delay === undefined ? spawn.delay : Math.min(existing.delay, spawn.delay);
+    } else byMap.set(spawn.map, { count: spawn.count, delay: spawn.delay });
   }
 
   const monsters = [];
   for (const monster of parsed) {
-    const maps = sortMaps(mapsByMob.get(monster.id) ?? []);
+    const maps = sortSpawns([...(mapsByMob.get(monster.id) ?? new Map()).entries()].map(([map, info]) => ({ map, count: info.count, delay: info.delay })));
     const drops = monster.drops
       .map(drop => {
         const item = aegisToItem.get(drop.item.toLowerCase());
@@ -230,6 +243,8 @@ try {
         sprite: monster.sprite,
         level: monster.level,
         hp: monster.hp,
+        baseExp: monster.baseExp,
+        jobExp: monster.jobExp,
         race: monster.race,
         element: monster.element,
         elementLevel: monster.elementLevel,

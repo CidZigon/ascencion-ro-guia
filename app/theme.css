@@ -64,6 +64,7 @@
 .detail-badges{display:flex;flex-wrap:wrap;gap:5px;margin:14px 0}
 .detail-badges span{padding:4px 8px;border:1px solid #564a3f;border-radius:999px;background:#1d1918;color:#cfb988;font-size:9px;text-transform:uppercase;letter-spacing:.08em}
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin:0;background:#3e3631}
+.stat-grid-3{grid-template-columns:repeat(3,1fr)}
 .stat-grid div{padding:10px;background:#191719}
 .stat-grid dt{color:#8c827a;font-size:9px;text-transform:uppercase}
 .stat-grid dd{margin:2px 0 0;color:#ded6cc;font-weight:700;font-size:13px}
@@ -91,6 +92,15 @@ button.source-row{width:100%;text-align:left;color:inherit}
 .drop-info:hover b{color:#f0d7aa}
 .source-empty{margin:0;color:#8f8780;font-size:12px}
 .monster-search-result{background:linear-gradient(100deg,#1a222b,#221b2a)}
+.report-issue-link{display:inline-block;margin-top:14px;padding:8px 12px;border:1px solid #3e3732;border-radius:8px;background:#181618;color:#a99a86;font-size:11.5px;text-decoration:none}
+.report-issue-link:hover{border-color:#cda35f;color:#e0d7cd}
+.section-tag{margin-left:8px;padding:2px 7px;border:1px solid #564a3f;border-radius:999px;background:#1d1918;color:#cfb988;font:400 8.5px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;vertical-align:middle}
+.map-chip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px}
+.map-chip{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid #3e3732;border-radius:10px;background:#181618;text-align:left;cursor:pointer}
+.map-chip:hover,.map-chip:focus-visible{border-color:#cda35f;background:#2a2026;outline:none}
+.map-chip-count{color:var(--gold);font-size:26px;font-weight:900;line-height:1;font-family:Georgia,serif}
+.map-chip b{color:#e0d7cd;font-size:11px;font-weight:700;font-family:Consolas,monospace}
+.map-chip small{color:#948c85;font-size:9.5px}
 .catalog-loading,.catalog-fatal{min-height:calc(100vh - 74px);display:grid;align-content:center;justify-items:center;text-align:center;color:#aaa198}
 .catalog-fatal h1{color:#e4d6c2;font-family:Georgia,serif}
 
@@ -165,7 +175,7 @@ button.source-row{width:100%;text-align:left;color:inherit}
 
 @media(max-width:1100px){.catalog-body,.world-body{grid-template-columns:minmax(0,1fr) 440px}.item-list,.world-map-list{grid-template-columns:1fr}.catalog-toolbar{grid-template-columns:1fr 150px auto}.catalog-toolbar.monster-toolbar{grid-template-columns:1fr 1fr 1fr auto}}
 @media(max-width:800px){.item-catalog,.world-catalog{padding-top:24px}.catalog-toolbar,.catalog-toolbar.monster-toolbar,.world-toolbar{grid-template-columns:1fr 1fr}.catalog-search{grid-column:1/-1}.catalog-body,.world-body{grid-template-columns:1fr}.item-detail,.world-detail{position:static;grid-row:1;max-height:none;overflow:visible}.world-results{grid-row:2}.item-list,.world-map-list{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-loading,.catalog-fatal{min-height:calc(100vh - 105px)}}
-@media(max-width:540px){.catalog-hero{padding:30px 22px}.world-city-section{padding:13px}.world-city-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-toolbar,.catalog-toolbar.monster-toolbar,.world-toolbar{grid-template-columns:1fr}.catalog-search{grid-column:auto}.item-list,.world-map-list,.map-npc-grid{grid-template-columns:1fr}.world-map-card{grid-template-columns:70px minmax(0,1fr) auto}.world-map-thumb{width:70px;height:70px}.stat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.catalog-hero{padding:30px 22px}.world-city-section{padding:13px}.world-city-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-toolbar,.catalog-toolbar.monster-toolbar,.world-toolbar{grid-template-columns:1fr}.catalog-search{grid-column:auto}.item-list,.world-map-list,.map-npc-grid{grid-template-columns:1fr}.world-map-card{grid-template-columns:70px minmax(0,1fr) auto}.world-map-thumb{width:70px;height:70px}.stat-grid{grid-template-columns:repeat(2,1fr)}.stat-grid-3{grid-template-columns:1fr}}
 @media(max-width:540px){.world-dialog-backdrop{padding:0}.world-dialog{width:100%;height:100dvh;max-height:none;border:0;border-radius:0}.world-dialog-bar{padding:11px 12px 11px 16px}.world-dialog-content .world-detail-card{padding:18px 15px}.world-dialog-content .map-coordinate-list{max-height:none}.external-link-card{grid-template-columns:1fr;padding:24px 18px}.external-link-actions{display:grid}.external-link-actions>*{width:100%}}
 
 /* ---- Filtros por chips: sustituyen a los menús «Equipo» y «Armas» ---- */
