@@ -13,10 +13,36 @@ function unescapeLua(value) {
   return value.replace(/\\n/g, "\n").replace(/\\t/g, "\t").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
 }
 
+// El cliente de RO escribe el mismo valor de "Class:"/"Compound on:" de
+// varias formas según el item ("Twohand Sword", "Two Handed Sword", "Two-
+// handed Sword"...). Se normaliza a una sola forma correcta para que la
+// ficha no muestre redacciones distintas para el mismo tipo de arma/slot.
+const FIELD_VALUE_FIXES = {
+  "Accessories": "Accessory",
+  "Head Gear": "Headgear",
+  "One Handed Axe": "One-Handed Axe",
+  "One handed Staff": "One-Handed Staff",
+  "One-Hand Sword": "One-Handed Sword",
+  "One-handed Sword": "One-Handed Sword",
+  "Onehand Sword": "One-Handed Sword",
+  "Onehand Spear": "One-Handed Spear",
+  "Two Handed Sword": "Two-Handed Sword",
+  "Two-handed Sword": "Two-Handed Sword",
+  "Twohand Sword": "Two-Handed Sword",
+  "Taming item": "Taming Item",
+};
+
+function normalizeFieldLine(line) {
+  const match = line.match(/^(Class|Compound on):\s*(.+)$/);
+  if (!match) return line;
+  const value = match[2].trim();
+  return `${match[1]}: ${FIELD_VALUE_FIXES[value] ?? value}`;
+}
+
 function cleanLine(value) {
-  const stripped = unescapeLua(value).replace(/\^[0-9A-Fa-f]{6}/g, "").replace(/[ \t]+$/g, "");
+  const stripped = unescapeLua(value).replace(/\^[0-9A-Fa-f]{6}/g, "").replace(/[ \t]+$/g, "").replace(/(\S)\s+:\s+/g, "$1: ");
   if (/^_+$/.test(stripped)) return "";
-  return stripped;
+  return normalizeFieldLine(stripped);
 }
 
 function usableDescription(lines) {

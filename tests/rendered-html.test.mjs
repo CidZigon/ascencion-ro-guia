@@ -25,10 +25,16 @@ test("renderiza la biblioteca limpia y el acceso al catálogo local",async()=>{
 test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   const catalog=JSON.parse(await readFile(new URL("../public/data/items-index.json",import.meta.url),"utf8"));
   const files=(await readdir(new URL("../public/data/items/",import.meta.url))).filter(file=>file.endsWith(".json")).sort();
-  assert.equal(catalog.meta.count,5632);
-  assert.equal(catalog.items.length,5632);
+  assert.equal(catalog.meta.count,6169);
+  assert.equal(catalog.items.length,6169);
   assert.equal(files.length,catalog.meta.chunks);
-  assert.equal(new Set(catalog.items.map(item=>item.id)).size,5632);
+  assert.equal(new Set(catalog.items.map(item=>item.id)).size,6169);
+  assert.equal(catalog.meta.archivedCount,658);
+  assert.equal(catalog.items.filter(item=>item.unobtainable).length,658);
+  const archivedSword=catalog.items.find(item=>item.aegisName==="Sword_");
+  assert.equal(archivedSword.unobtainable,true);
+  const realSword=catalog.items.find(item=>item.id===1101);
+  assert.ok(!realSword.unobtainable);
   assert.ok(catalog.items.every(item=>/^\/world\/items\/\d+\.(?:gif|png)$/.test(item.sprite)));
 
   const sprites=JSON.parse(await readFile(new URL("../public/data/item-sprites.json",import.meta.url),"utf8"));
@@ -43,7 +49,7 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
     const chunk=JSON.parse(await readFile(new URL(`../public/data/items/${file}`,import.meta.url),"utf8"));
     details.push(...chunk.items);
   }
-  assert.equal(details.length,5632);
+  assert.equal(details.length,6169);
   assert.deepEqual(details.map(item=>item.id),catalog.items.map(item=>item.id));
   const redPotion=details.find(item=>item.id===501&&item.aegisName==="Red_Potion");
   assert.ok(redPotion);
@@ -52,6 +58,13 @@ test("el catálogo contiene todos los registros y bloques declarados",async()=>{
   const poringCardDetail=details.find(item=>item.id===4001);
   assert.match(poringCardDetail.description,/Luk \+2/);
   assert.match(poringCardDetail.description,/Perfect Dodge \+1/);
+  // El cliente escribe "Class:"/"Compound on:" de varias formas para el mismo
+  // tipo de arma o slot ("Twohand Sword", "Two Handed Sword"...); el pipeline
+  // las normaliza a una sola redacción correcta.
+  const gloriousClaymore=details.find(item=>item.id===1187);
+  assert.match(gloriousClaymore.description,/Class: Two-Handed Sword/);
+  assert.ok(!details.some(item=>item.description?.includes("Twohand Sword")));
+  assert.ok(!details.some(item=>item.description?.includes("Onehand")));
   assert.ok(catalog.meta.descriptions.matched>=4500);
   assert.equal(catalog.meta.descriptions.revision,"66cdfec631603fda6a90ba4bbe26ab07b5204c84");
 

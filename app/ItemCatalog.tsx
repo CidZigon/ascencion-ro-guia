@@ -13,7 +13,7 @@ type CatalogMeta = {
 type ItemIndex = {
   id:number; name:string; aegisName:string; sprite?:string; type:string; subType?:string; buy?:number; sell?:number;
   weight?:number; attack?:number; defense?:number; slots?:number; equipLevelMin?:number;
-  refineable?:boolean; locations?:string[]; chunk:number;
+  refineable?:boolean; locations?:string[]; chunk:number; unobtainable?:boolean;
 };
 type ItemDetail = ItemIndex & {
   magicAttack?:number; range?:number; weaponLevel?:number; armorLevel?:number; equipLevelMax?:number;
@@ -25,6 +25,7 @@ type CatalogPayload = { meta:CatalogMeta; items:ItemIndex[] };
 type ItemSources = {
   drops:{id:number;name:string;rate:number;mvp?:boolean;maps:string[]}[];
   shops:{name:string;map:string;x:number;y:number;price:number;cash?:boolean}[];
+  quests:{name:string;map:string|null;x?:number;y?:number}[];
 };
 
 let catalogPromise:Promise<CatalogPayload>|null=null;
@@ -45,7 +46,6 @@ function loadSources(chunk:number){
 }
 function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function zeny(value?:number){return value===undefined?"—":`${new Intl.NumberFormat("es-ES").format(value)} z`}
-function weight(value?:number){return value===undefined?"—":`${(value/10).toLocaleString("es-ES",{maximumFractionDigits:1})}`}
 /* rAthena expone las tasas de drop a 1x; AscencionRO corre a 10x. El excedente
    por encima de 100% no puede dropear varias veces en un solo evento, así que
    se recorta ahí. */
@@ -69,14 +69,18 @@ type DescLine =
   |{kind:"bonus";text:string}
   |{kind:"heading";text:string}
   |{kind:"text";text:string};
-const DESC_META_KEYS=["Class","Compound on","Weight","Jobs","Weapon Level","Armor Level","Required Level"];
 const BONUS_LINE=/^[A-Za-z][A-Za-z0-9 ()'./-]*\s[+-]\d+(?:\.\d+)?%?$/;
+// Cualquier línea "Etiqueta: valor" se resalta igual (Class, Attack, Weight,
+// Weapon Level, Level Requirement...) sin depender de una lista fija de
+// palabras — el cliente no siempre usa el mismo orden ("Required Level" vs
+// "Level Requirement") ni las mismas etiquetas de un item a otro.
+const META_LINE=/^([A-Za-z][A-Za-z0-9 /'-]{0,28}):\s+(.+)$/;
 function classifyDescLine(raw:string):DescLine{
   const line=raw.trim();
-  const metaKey=DESC_META_KEYS.find(key=>line.startsWith(`${key}:`));
-  if(metaKey)return{kind:"meta",label:metaKey,value:line.slice(metaKey.length+1).trim()};
   if(/^\[.+\]$/.test(line))return{kind:"heading",text:line.slice(1,-1)};
   if(BONUS_LINE.test(line))return{kind:"bonus",text:line};
+  const meta=line.match(META_LINE);
+  if(meta)return{kind:"meta",label:meta[1].trim(),value:meta[2]};
   return{kind:"text",text:line};
 }
 function parseItemDescription(raw:string):DescLine[][]{
@@ -105,7 +109,7 @@ function ItemDescription({text}:{text:string}){
 
 /* Categorías visibles del catálogo. Cada una agrupa uno o varios tipos de rAthena;
    son las que sustituyen a los antiguos menús «Equipo» y «Armas». */
-type Category = { id:string; sigil:string; types:string[]|null; facets:"slot"|"weapon"|"cardSlot"|null };
+type Category = { id:string; sigil:string; types:string[]|null; facets:"slot"|"weapon"|"cardSlot"|null; archive?:boolean };
 const CATEGORIES:Category[]=[
   {id:"all",         sigil:"◈", types:null,                                facets:null},
   {id:"equipo",      sigil:"⬟", types:["Armor"],                           facets:"slot"},
@@ -116,6 +120,7 @@ const CATEGORIES:Category[]=[
   {id:"municion",    sigil:"➶", types:["Ammo"],                            facets:null},
   {id:"pets",        sigil:"◉", types:["Petegg","Petarmor"],               facets:null},
   {id:"cash",        sigil:"✧", types:["Cash"],                            facets:null},
+  {id:"archivo",     sigil:"▤", types:null,                                facets:null, archive:true},
 ];
 const categoryById=(id:string)=>CATEGORIES.find(entry=>entry.id===id)??CATEGORIES[0];
 
@@ -161,12 +166,16 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
     if(!entry)return;
     let live=true;
     loadChunk(entry.chunk).then(items=>{if(live)setDetail(items.find(item=>item.id===selectedItemId)??null)}).catch(()=>{if(live)setError(true)});
-    loadSources(entry.chunk).then(payload=>{if(live)setSourceResult({itemId:selectedItemId,sources:payload[selectedItemId]??payload[String(selectedItemId)]??{drops:[],shops:[]}})}).catch(()=>{if(live)setSourceResult({itemId:selectedItemId,sources:{drops:[],shops:[]}})});
+    loadSources(entry.chunk).then(payload=>{if(live)setSourceResult({itemId:selectedItemId,sources:payload[selectedItemId]??payload[String(selectedItemId)]??{drops:[],shops:[],quests:[]}})}).catch(()=>{if(live)setSourceResult({itemId:selectedItemId,sources:{drops:[],shops:[],quests:[]}})});
     return()=>{live=false};
   },[catalog,selectedItemId]);
 
   const activeCategory=categoryById(category);
-  const inCategory=useMemo(()=>(item:ItemIndex)=>!activeCategory.types||activeCategory.types.includes(item.type),[activeCategory]);
+  const inCategory=useMemo(()=>(item:ItemIndex)=>{
+    if(activeCategory.archive)return Boolean(item.unobtainable);
+    if(item.unobtainable)return false;
+    return !activeCategory.types||activeCategory.types.includes(item.type);
+  },[activeCategory]);
   const inFacet=useMemo(()=>(item:ItemIndex)=>{
     if(!facet)return true;
     if(activeCategory.facets==="slot")return item.type!=="Card"&&Boolean(item.locations?.includes(facet));
@@ -187,7 +196,10 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
   const categoryCounts=useMemo(()=>{
     const counts:Record<string,number>={};
     for(const entry of CATEGORIES)counts[entry.id]=0;
-    for(const item of searched)for(const entry of CATEGORIES)if(!entry.types||entry.types.includes(item.type))counts[entry.id]++;
+    for(const item of searched)for(const entry of CATEGORIES){
+      const matches=entry.archive?Boolean(item.unobtainable):!item.unobtainable&&(!entry.types||entry.types.includes(item.type));
+      if(matches)counts[entry.id]++;
+    }
     return counts;
   },[searched]);
 
@@ -259,6 +271,8 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
           </button>;
         })}</div>
       </div>
+
+      {activeCategory.archive&&<p className="archive-note">{t.catalog.archiveNote}</p>}
 
       {(activeCategory.facets==="slot"||activeCategory.facets==="cardSlot")&&<div className="filter-row">
         <span className="filter-label">{t.catalog.filterSlot}</span>
@@ -345,25 +359,21 @@ function ItemDetailCard({item,sources,onOpenMonster,onPreviewMonster,t}:{item:It
   // que Angeling o Nightmare); mostrarlo aquí solo confunde sobre dónde cazar.
   const drops=(sources?.drops??[]).filter(drop=>drop.maps.length>0);
   const shops=groupShops(sources?.shops??[]);
+  const quests=sources?.quests??[];
   return <div className="detail-card">
     <div className="detail-title"><ItemSprite item={item} className="detail-sigil" detail/><div><span>#{item.id}</span><h2>{item.name}</h2><code>{item.aegisName}</code></div></div>
-    <div className="detail-badges"><span>{typeLabel(t,item.type)}</span>{item.subType&&<span>{item.subType}</span>}{item.refineable&&<span>{t.catalog.refineable}</span>}</div>
-    <dl className="stat-grid">
-      <div><dt>{t.catalog.buy}</dt><dd>{zeny(item.buy)}</dd></div><div><dt>{t.catalog.sell}</dt><dd>{zeny(item.sell)}</dd></div>
-      <div><dt>{t.catalog.weight}</dt><dd>{weight(item.weight)}</dd></div><div><dt>{t.catalog.minLevel}</dt><dd>{item.equipLevelMin??"—"}</dd></div>
-      <div><dt>ATK</dt><dd>{item.attack??"—"}</dd></div><div><dt>MATK</dt><dd>{item.magicAttack??"—"}</dd></div>
-      <div><dt>DEF</dt><dd>{item.defense??"—"}</dd></div><div><dt>{t.catalog.slots}</dt><dd>{item.slots??"—"}</dd></div>
-    </dl>
+    <div className="detail-badges"><span>{typeLabel(t,item.type)}</span>{item.subType&&<span>{item.subType}</span>}{item.refineable&&<span>{t.catalog.refineable}</span>}{item.unobtainable&&<span>{categoryLabel(t,"archivo")}</span>}</div>
+    {(item.buy!==undefined||item.sell!==undefined)&&<p className="price-line">{item.buy!==undefined&&<span><b>{t.catalog.buy}</b>{zeny(item.buy)}</span>}{item.sell!==undefined&&<span><b>{t.catalog.sell}</b>{zeny(item.sell)}</span>}</p>}
     <section className="detail-section"><h3>{t.catalog.description}</h3>{item.description?<ItemDescription text={item.description}/>:<p className="source-empty">{t.catalog.noDescription}</p>}</section>
-    <section className="detail-section"><h3>{t.catalog.droppedBy}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingMonsters}</p>:drops.length?<div className="source-list">{drops.map(drop=><div className="source-row drop-row" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`}>
+    {(sources===null||drops.length>0)&&<section className="detail-section"><h3>{t.catalog.droppedBy}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingMonsters}</p>:<div className="source-list">{drops.map(drop=><div className="source-row drop-row" key={`${drop.id}-${drop.mvp?"mvp":"drop"}`}>
       <button type="button" className="item-sigil drop-sprite" onClick={()=>onPreviewMonster(drop.id,drop.name,drop.maps,drop.mvp)} title={t.catalog.viewSpawns} aria-label={`${t.catalog.viewSpawns}: #${drop.id} ${drop.name}`}><DropSprite id={drop.id} name={drop.name} mvp={drop.mvp}/></button>
       <button type="button" className="drop-info" onClick={()=>onOpenMonster({id:drop.id})}><b>#{drop.id}{drop.mvp&&<span className="mvp">MVP</span>}</b><small>{drop.name}</small></button>
       <em>{dropRate(drop.rate)}</em>
-    </div>)}</div>:<p className="source-empty">{t.catalog.noDrops}</p>}</section>
-    <section className="detail-section"><h3>{t.catalog.soldAt}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingShops}</p>:shops.length?<div className="source-list">{shops.map(shop=><article className="source-row" key={`${shop.name}-${shop.price}-${shop.cash?"c":"z"}`}><div><b>{shop.name}</b><small>{shop.maps.join(" · ")}{shop.cash?" · Cash":""}</small></div><em>{shop.price<0?zeny(item.buy):shop.cash?`${shop.price} C`:zeny(shop.price)}</em></article>)}</div>:<p className="source-empty">{t.catalog.noShops}</p>}</section>
+    </div>)}</div>}</section>}
+    {(sources===null||shops.length>0)&&<section className="detail-section"><h3>{t.catalog.soldAt}</h3>{sources===null?<p className="source-empty">{t.catalog.searchingShops}</p>:<div className="source-list">{shops.map(shop=><article className="source-row" key={`${shop.name}-${shop.price}-${shop.cash?"c":"z"}`}><div><b>{shop.name}</b><small>{shop.maps.join(" · ")}{shop.cash?" · Cash":""}</small></div><em>{shop.price<0?zeny(item.buy):shop.cash?`${shop.price} C`:zeny(shop.price)}</em></article>)}</div>}</section>}
+    {quests.length>0&&<section className="detail-section"><h3>{t.catalog.questReward}</h3><div className="source-list">{quests.map(quest=><article className="source-row" key={`${quest.name}-${quest.map}`}><div><b>{quest.name}</b>{quest.map&&<small>{quest.map}{quest.x!==undefined?` · ${quest.x},${quest.y}`:""}</small>}</div></article>)}</div></section>}
     <section className="detail-section"><h3>{t.catalog.equipLocation}</h3><p>{labelList(t,item.locations)}</p></section>
     <section className="detail-section"><h3>{t.catalog.jobs}</h3><p>{labelList(t,item.jobs)}</p></section>
-    {item.classes.length>0&&<section className="detail-section"><h3>{t.catalog.classes}</h3><p>{labelList(t,item.classes)}</p></section>}
     {scripts.length>0&&<section className="detail-section"><h3>{t.catalog.mechanics}</h3>{scripts.map(([label,script])=><details key={label}><summary>{label}</summary><pre>{script}</pre></details>)}</section>}
     <ReportIssueLink kind="Objeto" id={item.id} name={item.name} label={t.catalog.reportIssue}/>
   </div>;

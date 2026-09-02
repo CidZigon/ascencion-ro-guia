@@ -70,8 +70,8 @@ export const STRINGS = {
       loadingCard: "Cargando ficha…",
       buy: "Compra", sell: "Venta", weight: "Peso", minLevel: "Nivel mínimo",
       slots: "Slots", description: "Descripción", droppedBy: "Lo dropean",
-      soldAt: "Dónde se compra", equipLocation: "Ubicación de equipo",
-      jobs: "Jobs compatibles", classes: "Clases", mechanics: "Mecánica verificada",
+      soldAt: "Dónde se compra", questReward: "Recompensa de quest", equipLocation: "Ubicación de equipo",
+      jobs: "Jobs compatibles", mechanics: "Mecánica verificada",
       onEquip: "Al equipar", onUnequip: "Al desequipar",
       noDescription: "Esta instantánea no incluye una descripción de cliente para este objeto.",
       searchingMonsters: "Buscando monstruos…", searchingShops: "Buscando tiendas…",
@@ -79,6 +79,7 @@ export const STRINGS = {
       noShops: "Ninguna tienda NPC lo vende en esta instantánea.",
       viewSpawns: "Ver dónde aparece",
       reportIssue: "Reportar un error en esta ficha",
+      archiveNote: "Objetos sin venta, drop ni quest rastreados en esta instantánea. No siempre significa que sean imposibles de conseguir — puede que nuestro rastreo aún no encuentre su fuente real. Se guardan aparte para no confundir la búsqueda normal.",
       anyLocation: "Todos / no restringido",
       slotWord: (n: number) => `${n} slot${n === 1 ? "" : "s"}`,
       levelShort: (n: number) => `Nv ${n}`,
@@ -88,7 +89,7 @@ export const STRINGS = {
     categories: {
       all: "Todo", equipo: "Equipo", armas: "Armas", cartas: "Cartas",
       consumibles: "Consumibles", materiales: "Materiales", municion: "Munición",
-      pets: "Pets", cash: "Cash",
+      pets: "Pets", cash: "Cash", archivo: "Archivo",
     },
 
     types: {
@@ -336,8 +337,8 @@ export const STRINGS = {
       loadingCard: "Loading item…",
       buy: "Buy", sell: "Sell", weight: "Weight", minLevel: "Required level",
       slots: "Slots", description: "Description", droppedBy: "Dropped by",
-      soldAt: "Where to buy it", equipLocation: "Equipment slot",
-      jobs: "Usable by", classes: "Classes", mechanics: "Verified mechanics",
+      soldAt: "Where to buy it", questReward: "Quest reward", equipLocation: "Equipment slot",
+      jobs: "Usable by", mechanics: "Verified mechanics",
       onEquip: "On equip", onUnequip: "On unequip",
       noDescription: "This snapshot has no client description for this item.",
       searchingMonsters: "Looking for monsters…", searchingShops: "Looking for shops…",
@@ -345,6 +346,7 @@ export const STRINGS = {
       noShops: "No NPC shop sells it in this snapshot.",
       viewSpawns: "See where it spawns",
       reportIssue: "Report an issue with this card",
+      archiveNote: "Items with no known shop, drop or quest source in this snapshot. That doesn't always mean they're impossible to get — our tracking may just be missing the real source. Kept separate so they don't clutter normal search.",
       anyLocation: "All / unrestricted",
       slotWord: (n: number) => `${n} slot${n === 1 ? "" : "s"}`,
       levelShort: (n: number) => `Lv ${n}`,
@@ -354,7 +356,7 @@ export const STRINGS = {
     categories: {
       all: "All", equipo: "Equipment", armas: "Weapons", cartas: "Cards",
       consumibles: "Consumables", materiales: "Materials", municion: "Ammo",
-      pets: "Pets", cash: "Cash",
+      pets: "Pets", cash: "Cash", archivo: "Archive",
     },
 
     types: {
