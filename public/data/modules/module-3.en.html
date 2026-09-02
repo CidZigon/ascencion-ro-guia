@@ -1,0 +1,294 @@
+<style>
+:host{--bg:#07121d;--panel:#0d2030;--line:#28455b;--gold:#ffe19a;--mint:#86dfcf;--text:#e6f0f6;--muted:#a9c0cf}
+*{box-sizing:border-box}:host{scroll-behavior:smooth}:host{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;line-height:1.68}header{padding:28px 18px 18px;max-width:1040px;margin:auto}h1{font-size:clamp(1.7rem,5vw,2.6rem);line-height:1.1;margin:.5rem 0}.badge{display:inline-block;border:1px solid #39586e;border-radius:999px;padding:4px 8px;margin:2px;font-size:.72rem;font-weight:900;color:#bfe8ff}nav{position:sticky;top:0;z-index:30;background:#081826ee;border-block:1px solid #20394d;display:flex;gap:6px;overflow-x:auto;padding:8px calc((100% - 1040px)/2 + 12px)}nav a{white-space:nowrap;color:#dcebf5;text-decoration:none;border:1px solid #2e4e65;border-radius:999px;padding:5px 9px;font-size:.78rem}main{max-width:1040px;margin:auto;padding:0 14px 40px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}.card b{display:block;color:var(--gold);font-size:1.35rem}.book{margin:20px 0;border:1px solid var(--line);border-radius:18px;background:#091a29;overflow:hidden;scroll-margin-top:70px}.book>summary{list-style:none;cursor:pointer;padding:17px;background:linear-gradient(180deg,#112c43,#0d2336)}.book>summary::-webkit-details-marker{display:none}.book>summary:after{content:'＋';float:right;color:var(--mint);font-size:1.2rem;font-weight:900}.book[open]>summary:after{content:'−'}.book summary strong{display:block;color:var(--gold);font-size:1.3rem}.book summary small{display:block;color:#d0e1ec;margin-top:4px;max-width:80ch}.kicker{text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;color:#91c1df;font-weight:900}.:host{padding:16px 20px 20px}.meta{font-size:.82rem;color:#a9c6d8;border-bottom:1px solid #28445a;padding-bottom:8px;margin-bottom:12px}article{max-width:78ch;margin:auto;color:#d9e8f3}.lead{font-size:1.12rem;color:#f2f8fb}.lead:first-letter{float:left;font-family:Georgia,serif;font-size:3rem;line-height:.8;padding:.15rem .45rem 0 0;color:var(--gold)}article p{margin:.82rem 0}article hr{border:0;border-top:1px solid #29465d;margin:1.25rem 0}blockquote{margin:16px 0;border-left:3px solid #d0b45a;background:#151f29;padding:10px 12px;color:#f0e5c6;font-style:italic}.play,.source{display:inline-block;margin:6px 6px 0 0;border-radius:999px;text-decoration:none;font-weight:900}.play{background:#15374f;border:1px solid #5db9ab;color:#ddfff8;padding:8px 12px}.source{border:1px solid #35556b;color:#c5dcec;padding:6px 9px;font-size:.78rem}.side{border-color:#435a6b}.side>summary{background:linear-gradient(180deg,#172c3e,#102231)}.tline{display:grid;gap:7px}.trow{display:grid;grid-template-columns:75px 1fr;gap:10px;background:#0d2233;border:1px solid #2e4a5e;border-radius:11px;padding:8px 10px}.trow>b{color:var(--gold)}.note{font-size:.84rem;color:var(--muted)}section{scroll-margin-top:70px;margin:18px 0}h2{color:var(--gold)}@media(max-width:700px){.:host{padding:13px}.book>summary{padding:14px}.trow{grid-template-columns:60px 1fr}}
+
+:host{--parchment:#e8e0ca;--chapterbg:#0c1d2a;--dialog:#d7edf4;--lore:#dfc982}
+:host{line-height:1.74}
+.story-shell{max-width:1080px;margin:auto}
+.book{margin:22px 0;border:1px solid var(--line);border-radius:20px;background:#091a28;overflow:hidden;scroll-margin-top:82px}
+.book>summary{list-style:none;cursor:pointer;padding:18px 20px;background:linear-gradient(180deg,#112d44,#0c2234)}
+.book>summary::-webkit-details-marker{display:none}
+.book>summary::after{content:"＋";float:right;color:#8ddfd3;font-size:1.25rem;font-weight:900}
+.book[open]>summary::after{content:"−"}
+.book-kicker{font-size:.76rem;letter-spacing:.11em;text-transform:uppercase;color:#8db9d7;font-weight:900}
+.book-title{font-size:1.35rem;font-weight:950;color:#ffe59b}
+.book-hook{margin:.45rem 2.4rem 0 0;color:#d8e8f3}
+.book-body{padding:20px 22px 24px}
+.narrative{max-width:80ch;margin:auto;color:#d8e7f1;font-size:1.02rem}
+.narrative p{margin:.92rem 0}
+.narrative .opening{font-size:1.13rem;color:#f2f7fa}
+.narrative .drop:first-letter{float:left;font-family:Georgia,serif;font-size:3.25rem;line-height:.82;padding:.16rem .55rem 0 0;color:#ffe19a}
+.narrative h3{color:#d9f2ee;margin:1.7rem 0 .55rem;font-size:1.1rem}
+.narrative h4{color:#ffe19a;margin:1.3rem 0 .4rem}
+.narrative hr{border:0;border-top:1px solid #29465d;margin:1.5rem 0}
+.dialogue{border-left:3px solid #78c6ba;background:#0e2636;padding:11px 14px;margin:15px 0;border-radius:0 11px 11px 0;color:var(--dialog)}
+.dialogue b{color:#b5eee5}
+.dialogue small{display:block;color:#8eadc1;margin-bottom:5px;font-style:italic}
+.lorebox{border:1px solid #6c6040;background:#1b1b15;border-radius:14px;padding:12px 14px;margin:15px 0}
+.lorebox b{color:#ffe19a}
+.city-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:10px;margin:16px 0}
+.city-card{background:#0d2435;border:1px solid #35546c;border-radius:14px;padding:12px}
+.city-card h4{margin:0 0 5px;color:#ffe19a}
+.city-card p{font-size:.87rem;margin:.35rem 0;color:#c7dbe7}
+.city-card a{font-size:.78rem}
+.context-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:8px;margin:0 auto 16px;max-width:80ch}
+.context-card{background:#0d2638;border:1px solid #34546c;border-radius:11px;padding:9px 10px;font-size:.82rem}
+.context-card b{display:block;color:#a9e4da;margin-bottom:2px}
+.play-link{display:inline-block;background:#15364e;border:1px solid #5fbcae;border-radius:999px;padding:8px 12px;color:#ddfff9!important;text-decoration:none!important;font-weight:900;margin:6px 6px 6px 0}
+.play-link:hover{background:#1b425e}
+.source-link{display:inline-block;margin:4px 6px 4px 0;font-size:.78rem}
+.chapter-nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.chapter-nav a{font-size:.8rem;border:1px solid #365970;border-radius:999px;padding:5px 8px;text-decoration:none;color:#d9ebf7}
+.chapter-nav a:hover{border-color:#69bfb1;color:#eafffa}
+.timeline{display:grid;gap:7px;margin:14px 0}
+.timeline-row{display:grid;grid-template-columns:86px 1fr;gap:10px;background:#0c2233;border:1px solid #2d485e;border-radius:11px;padding:8px 10px}
+.timeline-row .ep{font-weight:900;color:#ffe19a}
+.editorial{border:1px solid #485e73;background:#0d2232;border-radius:14px;padding:12px 14px;margin:14px 0;color:#c0d5e3}
+.spoiler-flag{border-color:#7b4f4f!important;color:#ffc9c9!important}
+.side-chronicle{border-color:#43576a}
+.side-chronicle>summary{background:linear-gradient(180deg,#172a3c,#112331)}
+@media(max-width:700px){
+ .book>summary{padding:14px}.book-body{padding:14px}.city-grid{grid-template-columns:1fr}
+ .timeline-row{grid-template-columns:66px 1fr}.narrative{font-size:.98rem}
+}
+
+.story{border:1px solid var(--line);border-radius:18px;background:#0a1b2a;margin:18px 0;overflow:hidden;scroll-margin-top:82px}
+.story>summary{list-style:none;cursor:pointer;padding:16px 18px;background:linear-gradient(180deg,#112c42,#0d2234)}
+.story>summary::-webkit-details-marker{display:none}
+.story>summary::after{content:"＋";float:right;color:#8ddfd2;font-size:1.2rem;font-weight:900}
+.story[open]>summary::after{content:"−"}
+.story-title{font-size:1.22rem;font-weight:950;color:#ffe59b}
+.story-sub{font-size:.86rem;color:#b6cfdf;margin:.3rem 2rem 0 0}
+.story-body{padding:16px 18px 20px}
+.story-flow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.phase{background:#0d2537;border:1px solid #34536a;border-radius:13px;padding:12px}
+.phase h3{margin:0 0 6px;font-size:.94rem;color:#aee8dd}
+.phase p{margin:.35rem 0;color:#d7e7f1}
+.quest-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.quest-chip{border:1px solid #465f74;border-radius:999px;padding:4px 8px;font-size:.76rem;background:#102638}
+.story-note{border-left:3px solid #68c8b8;background:#0c2233;padding:9px 11px;border-radius:0 9px 9px 0;color:#bfd5e3;margin:10px 0}
+.play-link{display:inline-block;background:#15364e;border:1px solid #5fbcae;border-radius:999px;padding:8px 12px;color:#ddfff9!important;text-decoration:none!important;font-weight:900;margin:6px 6px 6px 0}
+.play-link:hover{background:#1b425e}
+.source-link{display:inline-block;margin:4px 6px 4px 0;font-size:.78rem}
+.context-mini{font-size:.84rem;color:#abc5d5;margin:8px 0}
+.side{border-color:#41596e}
+.side>summary{background:linear-gradient(180deg,#162a3c,#102231)}
+.editorial{border:1px solid #485e73;background:#0d2232;border-radius:14px;padding:12px 14px;margin:14px 0;color:#c0d5e3}
+@media(max-width:760px){.story-flow{grid-template-columns:1fr}.story-body{padding:14px}.story>summary{padding:14px}}
+
+.release-note{border-color:#3e7f5b!important;color:#aaf0bc!important}
+
+.portal-target{outline:3px solid #f0c75e!important;outline-offset:4px;scroll-margin-top:110px!important}.source-note{color:#a9bfd0;font-style:italic}
+    .step-source{display:none!important}
+    .npclink{font-weight:850;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+    </style><div class='module-page'>
+<header>
+
+<div class="badge">RAGNAROK STORIES</div>
+<div class="badge">NARRATIVE SUMMARY</div>
+<div class="badge">SPOILERS</div>
+<div class="badge">≤ EPISODE 13.2</div>
+<h1>Ragnarok Online Pre-Renewal<br/><span style="color:var(--gold)">Story Summaries</span></h1>
+<p>The great stories of Ragnarok Online summarized from beginning to end, with direct access to the playable route in Access &amp; Dungeons.</p>
+</header>
+<nav>
+<a href="#inicio">Home</a>
+<a href="#historia-schwartz">Schwartzvald</a>
+<a href="#historia-arunafeltz">Arunafeltz</a>
+<a href="#historia-nameless">Nameless</a>
+<a href="#historia-morroc">Morroc</a>
+<a href="#historia-newworld">New World</a>
+<a href="#historia-tribes">Laphine/Sapha</a>
+<a href="#historia-yggdrasil">Yggdrasil</a>
+<a href="#laterales">Side stories</a>
+
+</nav>
+<main>
+<section id="inicio">
+<div class="panel" style="margin-top:12px"><strong>📖 How to read these stories</strong><p>Each story summarizes <b>how it begins</b>, <b>what happens during it</b>, and <b>how it ends</b>.</p><p>When you want to play that story, use <b>🎮 Open the playable route</b>.</p></div>
+</section>
+<details class="story" id="historia-schwartz">
+<summary>
+<div class="story-title">⚙️ Schwartzvald — Rekenber and the price of progress</div>
+<div class="story-sub">An industrial investigation ends up revealing human experiments and a political fight against Rekenber.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Factory Quest</span><span class="quest-chip">Einbroch Murder</span><span class="quest-chip">Biolabs Entrance</span><span class="quest-chip">Cursed Spirit</span><span class="quest-chip">President Quest</span><span class="quest-chip">Odin's Temple Excavation</span><span class="quest-chip">Rebellion</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>It all starts in Einbroch with seemingly ordinary problems: a poorly maintained factory and a murder investigation. The clues start pointing to Rekenber and the Republic's interest in materials related to Ymir.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>In Lighthalzen, the adventurer enters Biolabs and discovers the darker side of Rekenber's research: test subjects, victims, and experiments that can no longer be hidden as simple scientific progress. The investigation escalates all the way to the Schwartzvald government and also reaches expeditions at Odin's Temple.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>The Rebellion Quest brings that evidence and those contacts together in an attempt to stop Rekenber's operations. The corporation doesn't disappear, but it becomes clear that Schwartzvald's progress has a human cost, and that part of the government is willing to confront it.</p></div>
+</div>
+<div class="story-note">Rekenber links Schwartzvald's prosperity to its experiments, Biolabs, and the political resistance against the corporation.</div>
+<div><a class="play-link" data-portal-anchor="#zona-schwartz" data-portal-module="2" href="#module-2#zona-schwartz">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Factory_Quest" rel="noopener noreferrer" target="_blank">Factory ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Einbroch_Murder_Quest" rel="noopener noreferrer" target="_blank">Einbroch Murder ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Cursed_Spirit_Quest" rel="noopener noreferrer" target="_blank">Cursed Spirit ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/President_Quest" rel="noopener noreferrer" target="_blank">President ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Rebellion_Quest" rel="noopener noreferrer" target="_blank">Rebellion ↗</a></div>
+</div>
+</details>
+<details class="story" id="historia-arunafeltz">
+<summary>
+<div class="story-title">☀️ Arunafeltz — the crisis within the faith</div>
+<div class="story-sub">A minor disappearance leads to the political and religious heart of Rachel.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Lost Child</span><span class="quest-chip">Rachel Sanctuary</span><span class="quest-chip">Veins Siblings</span><span class="quest-chip">Thor Volcano Base</span><span class="quest-chip">Peace for Arunafeltz</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>Vincent is looking for a missing child. The Lost Child investigation seems like a minor problem, but it ends up bringing the adventurer closer to High Priest Zhed and the internal affairs of Rachel's temple.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>Rachel Sanctuary reveals divisions within the Church of Freyja. The investigation continues toward Veins and Thor Volcano, where the consequences of those decisions stop being merely political and start directly affecting ordinary people.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>Peace for Arunafeltz tries to close the crisis from within: Zhed, Niren, and the Pope must face what happened and find a way to keep the institution from continuing down the same path.</p></div>
+</div>
+<div class="story-note">The conflict shows a church divided between factions, political interests, and priests trying to make amends for what happened.</div>
+<div><a class="play-link" data-portal-anchor="#zona-arunafeltz" data-portal-module="2" href="#module-2#zona-arunafeltz">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Lost_Child_Quest" rel="noopener noreferrer" target="_blank">Lost Child ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Rachel_Sanctuary_Quest" rel="noopener noreferrer" target="_blank">Rachel Sanctuary ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Veins_Siblings_Quest" rel="noopener noreferrer" target="_blank">Veins Siblings ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Peace_for_Arunafeltz_Quest" rel="noopener noreferrer" target="_blank">Peace for Arunafeltz ↗</a></div>
+</div>
+</details>
+<details class="story" id="historia-nameless">
+<summary>
+<div class="story-title">⛪ Nameless Island — what they tried to erase</div>
+<div class="story-sub">The secrets of Rune-Midgard and Arunafeltz end up converging on an abandoned island.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Curse of Gaebolg</span><span class="quest-chip">Rachel Sanctuary</span><span class="quest-chip">Veins Siblings</span><span class="quest-chip">Nameless Island Entrance</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>Curse of Gaebolg investigates historical secrets of Rune-Midgard, while Rachel Sanctuary and Veins Siblings leave unresolved questions in Arunafeltz. Different clues end up pointing to the same place.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>Agents, priests, and contacts in Veins lead the adventurer toward an island that has been set apart from the normal routes. There they find a destroyed community and the Cursed Monastery, overrun by the undead and demonic creatures.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>The investigation culminates inside the monastery, where Fallen Bishop Hibram and the horrors of the place reveal just how far the decisions that were meant to stay hidden actually went.</p></div>
+</div>
+<div class="story-note">The story ties together the threads of Rachel, Veins, and Curse of Gaebolg before leading to the Cursed Monastery.</div>
+<div><a class="play-link" data-portal-anchor="#q-nameless" data-portal-module="2" href="#module-2#q-nameless">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Curse_of_Gaebolg_%28Founding_of_the_Nation_Myth_Quest%29" rel="noopener noreferrer" target="_blank">Curse of Gaebolg ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Nameless_Island_Entrance_Quest" rel="noopener noreferrer" target="_blank">Nameless Island ↗</a></div>
+</div>
+</details>
+<details class="story" id="historia-morroc">
+<summary>
+<div class="story-title">🔥 Morroc — the fall of a city</div>
+<div class="story-sub">The ancient seal on Satan Morroc fails and turns the heart of the desert into a dimensional wound.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Dandelion's Request / variant</span><span class="quest-chip">Continental Guard / variant</span><span class="quest-chip">Satan Morroc</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>Morroc exists on top of an ancient threat: Satan Morroc had been sealed within the region, and the city grew up around the place meant to contain him.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>The investigations and forces gathered around Morroc end up confronting the demon's return. The city is devastated and the terrain is left warped by the Dimensional Gorge.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>Defeating or containing Satan Morroc doesn't restore the city. The catastrophe leaves a breach into an unknown region and directly sets up the expedition to the New World.</p></div>
+</div>
+<div class="story-note">The exact quest can vary depending on the server's implementation; the central event is the fall of Morroc and the opening of the Dimensional Gorge.</div>
+<div><a class="play-link" data-portal-anchor="#zona-morroc" data-portal-module="2" href="#module-2#zona-morroc">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Dandelion%27s_Request" rel="noopener noreferrer" target="_blank">Dandelion's Request ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Continental_Guard_Quest_%28Resurrection_of_Satan_Morroc%29" rel="noopener noreferrer" target="_blank">Continental Guard ↗</a></div>
+</div>
+</details>
+<details class="story" id="historia-newworld">
+<summary>
+<div class="story-title">🌌 New World — the expedition</div>
+<div class="story-sub">The three great powers cooperate to explore the territory beyond the Dimensional Gorge.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Onward to the New World</span><span class="quest-chip">New Surroundings</span><span class="quest-chip">Attitude to the New World</span><span class="quest-chip">Report from the New World</span><span class="quest-chip">Finding a Fairy</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>Rune-Midgarts, Schwartzvald, and Arunafeltz form a joint expedition. The adventurer passes through the different nations before receiving authorization to cross the Dimensional Gorge.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>Midgard Camp becomes the exploration base. The first quests study the wildlife, resources, routes, and conditions of the place. Report from the New World gathers that information and sends it back to the human nations.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>Finding a Fairy confirms the territory isn't empty: there are peoples who already lived there long before the expedition arrived.</p></div>
+</div>
+<div class="story-note">The expedition changes the scale of the story: the three nations stop exploring each other and start studying an unknown territory.</div>
+<div><a class="play-link" data-portal-anchor="#zona-newworld" data-portal-module="2" href="#module-2#zona-newworld">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Onward_to_the_New_World_Quest" rel="noopener noreferrer" target="_blank">Onward ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/New_Surroundings" rel="noopener noreferrer" target="_blank">New Surroundings ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Attitude_to_the_New_World" rel="noopener noreferrer" target="_blank">Attitude ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Report_from_the_New_World" rel="noopener noreferrer" target="_blank">Report ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Finding_a_Fairy" rel="noopener noreferrer" target="_blank">Finding a Fairy ↗</a></div>
+</div>
+</details>
+<details class="story" id="historia-tribes">
+<summary>
+<div class="story-title">🌿 Laphine and Sapha — learning to listen</div>
+<div class="story-sub">The most important problem in the New World isn't killing monsters — it's being able to communicate with its inhabitants.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Ring of the Wise King</span><span class="quest-chip">Two Tribes</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>The expedition members encounter the Laphine and Sapha, but can't speak with them. Ring of the Wise King grows out of the attempt to understand their languages and creates a way to communicate.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>With the ring, the adventurer begins dealing directly with Arc, Snorren, and other members of both cultures. Two Tribes shows that their conflicts have real causes: territory, survival, resources, and problems surrounding Yggdrasil.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>The player stops being an outside observer and becomes a mediator between humans, the Laphine, and the Sapha.</p></div>
+</div>
+<div class="story-note">The Ring of the Wise King lets the Laphine and Sapha stop being incomprehensible inhabitants and become direct conversation partners.</div>
+<div><a class="play-link" data-portal-anchor="#zona-newworld" data-portal-module="2" href="#module-2#zona-newworld">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Ring_of_the_Wise_King" rel="noopener noreferrer" target="_blank">Ring of the Wise King ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Two_Tribes" rel="noopener noreferrer" target="_blank">Two Tribes ↗</a></div>
+</div>
+</details>
+<details class="story" id="historia-yggdrasil">
+<summary>
+<div class="story-title">🌳 Yggdrasil — the close of Episode 13.2</div>
+<div class="story-sub">The investigations by humans, the Laphine, and the Sapha all end up leading to the roots of the great tree.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Two Tribes</span><span class="quest-chip">Guardian of Yggdrasil</span><span class="quest-chip">Nidhoggur's Nest</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>Two Tribes leads the adventurer to Yggdrasil Dungeon and makes it clear there's a deeper problem surrounding the tree.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>Guardian of Yggdrasil gathers information from Midgard Camp, Prontera, the Laphine, and the Sapha. The investigation requires securing cooperation between peoples who, until recently, couldn't even communicate.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>Access to Nidhoggur's Nest and the confrontation with Nidhoggur's Shadow serve as the natural climax of the content we're covering up to Episode 13.2.</p></div>
+</div>
+<div class="story-note">Guardian of Yggdrasil and Nidhoggur's Nest bring the narrative line covered up to Episode 13.2 to its conclusion.</div>
+<div><a class="play-link" data-portal-anchor="#q-guardian-yggdrasil" data-portal-module="2" href="#module-2#q-guardian-yggdrasil">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Two_Tribes" rel="noopener noreferrer" target="_blank">Two Tribes ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Guardian_of_Yggdrasil" rel="noopener noreferrer" target="_blank">Guardian of Yggdrasil ↗</a></div>
+</div>
+</details>
+<section id="laterales">
+<div class="eyebrow">Stories worth knowing</div>
+<h2>📚 Side stories</h2>
+<p class="editorial">Independent stories that flesh out the world and can be read at any time.</p>
+<details class="story side" id="historia-sign">
+<summary>
+<div class="story-title">🌑 The Sign — Geffenia</div>
+<div class="story-sub">A long archaeological investigation that ends up opening a route to Geffenia.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Umbala Language</span><span class="quest-chip">Piano Keys</span><span class="quest-chip">The Sign</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>The Sign begins with trials and fragments related to Sobbing Starlight. Little by little, the search leads toward Umbala and Niflheim.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>The adventurer gathers pieces, interprets documents, learns to communicate where language is a barrier, and completes a series of trials that connect the present with ancient stories.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>In the end they obtain Lucifer's Lament, which opens the portal to Geffenia.</p></div>
+</div>
+<div class="story-note">The Sign ties together archaeology, Umbala, Niflheim, and ancient clues until it opens the way to Geffenia.</div>
+<div><a class="play-link" data-portal-anchor="#zona-geffen" data-portal-module="2" href="#module-2#zona-geffen">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Sign_Quest" rel="noopener noreferrer" target="_blank">The Sign ↗</a></div>
+</div>
+</details>
+<details class="story side" id="historia-kiel">
+<summary>
+<div class="story-title">🤖 Kiel Hyre — identity and technology</div>
+<div class="story-sub">A seemingly simple delivery ends up uncovering secret facilities and a much darker story.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Kiel Hyre Quest</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>The adventurer arrives at Kiel Hyre Academy for a simple errand and meets Elly.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>The investigation starts uncovering keycards, restricted rooms, and technology that raises questions about the people and beings created inside the facility.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>Kiel D-01 appears as the closing point of the mystery and the conflict surrounding the Hyre division and its creations.</p></div>
+</div>
+<div class="story-note">Kiel Hyre explores identity, technology, and the consequences of creating beings capable of acting and remembering.</div>
+<div><a class="play-link" data-portal-anchor="#q-kiel" data-portal-module="2" href="#module-2#q-kiel">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Kiel_Hyre_Quest" rel="noopener noreferrer" target="_blank">Kiel Hyre ↗</a></div>
+</div>
+</details>
+<details class="story side" id="historia-friendship">
+<summary>
+<div class="story-title">💔 Friendship &amp; Bruspetti</div>
+<div class="story-sub">Small stories from Lighthalzen where the conflict doesn't revolve around a monster.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">Friendship Quest</span><span class="quest-chip">Bruspetti Quest</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>Friendship begins with Maku and Digotz, two people separated by resentment and misunderstandings.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>The adventurer carries messages, digs into their past, and finds a diary that helps explain how their relationship broke down.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>Bruspetti continues the intimate tone with a more tragic story and forces a confrontation with what really happened.</p></div>
+</div>
+<div class="story-note">Friendship and Bruspetti show the personal side of Lighthalzen and Rachel, away from the grand conspiracies.</div>
+<div><a class="play-link" data-portal-anchor="#q-friendship" data-portal-module="2" href="#module-2#q-friendship">🎮 Open the playable route</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Friendship_Quest" rel="noopener noreferrer" target="_blank">Friendship ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Bruspetti_Quest" rel="noopener noreferrer" target="_blank">Bruspetti ↗</a></div>
+</div>
+</details>
+<details class="story side" id="historia-airship">
+<summary>
+<div class="story-title">✈️ The secrets of the Airships</div>
+<div class="story-sub">A short story that connects Schwartzvald's transportation with technology related to Ymir.</div>
+</summary>
+<div class="story-body">
+<div class="quest-chips"><span class="quest-chip">How the Airship Works</span><span class="quest-chip">Heart Fragment</span></div>
+<div class="story-flow">
+<div class="phase"><h3>🌱 Beginning</h3><p>The adventurer starts by asking how the Airships work and talking with their captains.</p></div>
+<div class="phase"><h3>⚔️ Development</h3><p>The answers lead toward materials, laboratories, and documents that once again connect Schwartzvald's modern technology to much older knowledge.</p></div>
+<div class="phase"><h3>🏁 Outcome</h3><p>The investigation ends up reinforcing one of the Republic's great themes: many of its marvels work thanks to things it still doesn't fully understand.</p></div>
+</div>
+<div class="story-note">The Airships connect a piece of everyday Schwartzvald technology to research into much older knowledge.</div>
+<div><a class="source-link" data-external="1" href="https://irowiki.org/classic/How_the_Airship_Works_Quest" rel="noopener noreferrer" target="_blank">How the Airship Works ↗</a><a class="source-link" data-external="1" href="https://irowiki.org/classic/Heart_Fragment_Quest" rel="noopener noreferrer" target="_blank">Heart Fragment ↗</a></div>
+</div>
+</details>
+</section>
+
+</main>
+
+</div>

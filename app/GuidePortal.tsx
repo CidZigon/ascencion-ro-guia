@@ -51,8 +51,8 @@ function cleanUserText(value:string){
 }
 
 export function GuidePortal(){
-  const [moduleData,setModuleData]=useState<Record<number,{html:string;style:string}>>({});
-  const [searchIndex,setSearchIndex]=useState<SearchEntry[]|null>(null);
+  const [moduleData,setModuleData]=useState<Record<string,{html:string;style:string;translated:boolean}>>({});
+  const [searchIndex,setSearchIndex]=useState<Partial<Record<Lang,SearchEntry[]>>>({});
   const [active,setActive]=useState<ActiveView>(null);
   const [query,setQuery]=useState("");
   const [loadError,setLoadError]=useState(false);
@@ -72,7 +72,7 @@ export function GuidePortal(){
   const navTimer=useRef(0);
   const hostRef=useRef<HTMLDivElement>(null);
   const shadowRef=useRef<ShadowRoot|null>(null);
-  const preparedModules=useRef<Record<number,string>>({});
+  const preparedModules=useRef<Record<string,string>>({});
   const pendingAnchor=useRef("");
 
   const openModule=useCallback((id:number,anchor="")=>{
@@ -210,21 +210,29 @@ export function GuidePortal(){
   },[]);
 
   useEffect(()=>{
-    if(typeof active!=="number"||moduleData[active])return;
+    if(typeof active!=="number")return;
+    const key=`${active}:${lang}`;
+    if(moduleData[key])return;
     let live=true;
-    Promise.all([
-      fetch(`/data/modules/module-${active}.html`).then(response=>{if(!response.ok)throw new Error("module");return response.text()}),
-      loadModuleStyle(),
-    ]).then(([html,style])=>{if(live)setModuleData(current=>({...current,[active]:{html,style}}))}).catch(()=>{if(live)setLoadError(true)});
+    const fetchModule=lang==="en"
+      ?fetch(`/data/modules/module-${active}.en.html`).then(response=>{
+          if(response.ok)return response.text().then(html=>({html,translated:true}));
+          return fetch(`/data/modules/module-${active}.html`).then(fallback=>{if(!fallback.ok)throw new Error("module");return fallback.text()}).then(html=>({html,translated:false}));
+        })
+      :fetch(`/data/modules/module-${active}.html`).then(response=>{if(!response.ok)throw new Error("module");return response.text()}).then(html=>({html,translated:false}));
+    Promise.all([fetchModule,loadModuleStyle()])
+      .then(([{html,translated},style])=>{if(live)setModuleData(current=>({...current,[key]:{html,style,translated}}))})
+      .catch(()=>{if(live)setLoadError(true)});
     return()=>{live=false};
-  },[active,moduleData]);
+  },[active,lang,moduleData]);
 
   useEffect(()=>{
-    if(query.trim().length<2||searchIndex)return;
+    if(query.trim().length<2||searchIndex[lang])return;
     let live=true;
-    fetch("/data/guide-search.json").then(response=>{if(!response.ok)throw new Error("search");return response.json()}).then(data=>{if(live)setSearchIndex(data)}).catch(()=>{if(live)setSearchIndex([])});
+    const path=lang==="en"?"/data/guide-search.en.json":"/data/guide-search.json";
+    fetch(path).then(response=>{if(!response.ok)throw new Error("search");return response.json()}).then(data=>{if(live)setSearchIndex(current=>({...current,[lang]:data}))}).catch(()=>{if(live)setSearchIndex(current=>({...current,[lang]:[]}))});
     return()=>{live=false};
-  },[query,searchIndex]);
+  },[query,searchIndex,lang]);
 
   useEffect(()=>{
     if(!hostRef.current)return;
@@ -235,29 +243,30 @@ export function GuidePortal(){
     const shadow=shadowRef.current;
     if(!shadow)return;
     if(typeof active!=="number"){shadow.innerHTML="";return}
-    if(!moduleData?.[active]){shadow.innerHTML="";return}
-    const prepared=preparedModules.current[active];
+    const key=`${active}:${lang}`;
+    const entry=moduleData?.[key];
+    if(!entry){shadow.innerHTML="";return}
+    const prepared=preparedModules.current[key];
     if(prepared)shadow.innerHTML=prepared;
     else{
-      const data=moduleData[active];
-      shadow.innerHTML=`${data.html}<style data-ascencion-theme>${data.style}</style>`;
-      prepareGuideNavigation(shadow);
+      shadow.innerHTML=`${entry.html}<style data-ascencion-theme>${entry.style}</style>`;
+      prepareGuideNavigation(shadow,t.guide.exploreGuide);
       localizeItemLinks(shadow);
       localizeWorldLinks(shadow);
-      preparedModules.current[active]=shadow.innerHTML;
+      preparedModules.current[key]=shadow.innerHTML;
     }
     bindModule(shadow,active,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink);
     const anchor=pendingAnchor.current;
     pendingAnchor.current="";
     if(anchor)setTimeout(()=>scrollInside(shadow,anchor),80);
-  },[active,moduleData,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink]);
+  },[active,lang,moduleData,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink,t.guide.exploreGuide]);
 
   const results=useMemo(()=>{
     const term=query.trim();
     if(term.length<2)return[];
     const key=normalize(term);
-    return (searchIndex??[]).filter(item=>normalize(`${item.title} ${item.text}`).includes(key)).slice(0,50);
-  },[query,searchIndex]);
+    return (searchIndex[lang]??[]).filter(item=>normalize(`${item.title} ${item.text}`).includes(key)).slice(0,50);
+  },[query,searchIndex,lang]);
 
   const selectedEquip=equipmentSlot?equipSlotById(equipmentSlot):undefined;
   const selectedWeapon=weaponType?weaponKindById(weaponType):undefined;
@@ -293,7 +302,7 @@ export function GuidePortal(){
         {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
         {active==="monsters"&&<Suspense fallback={<SurfaceLoading label={t.loading.monsters}/>}><MonsterCatalog key={`monsters-${monsterQuery}`} selectedMonsterId={selectedMonsterId} initialQuery={monsterQuery} onSelectMonster={selectMonster} onOpenItem={id=>openCatalog({id})} onPreviewMonster={previewMonster} t={t}/></Suspense>}
         {active==="world"&&<Suspense fallback={<SurfaceLoading label={t.loading.world}/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld} t={t}/></Suspense>}
-        {typeof active==="number"&&<section className="module-view">{lang==="en"&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[active]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
+        {typeof active==="number"&&<section className="module-view">{lang==="en"&&!moduleData[`${active}:${lang}`]?.translated&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[`${active}:${lang}`]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
     {worldPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)} t={t}/></Suspense>}
@@ -348,13 +357,13 @@ function Library({openModule,openCatalog,openMonster,openWorld,t}:{openModule:(i
   </section>
 }
 
-function prepareGuideNavigation(shadow:ShadowRoot){
+function prepareGuideNavigation(shadow:ShadowRoot,exploreLabel:string){
   const navigation=shadow.querySelector<HTMLElement>("nav");
   if(!navigation||navigation.closest(".section-navigation"))return;
   const menu=document.createElement("details");
   const summary=document.createElement("summary");
   menu.className="section-navigation";
-  summary.textContent="Explorar esta guía";
+  summary.textContent=exploreLabel;
   navigation.classList.add("section-navigation-links");
   navigation.replaceWith(menu);
   menu.append(summary,navigation);

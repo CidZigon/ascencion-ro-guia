@@ -191,7 +191,10 @@ test("el índice del mundo resuelve mapas, monstruos, NPC y guías con medios lo
 test("los módulos se cargan por separado y sus enlaces de objetos se resuelven localmente",async()=>{
   const portal=await readFile(new URL("../app/GuidePortal.tsx",import.meta.url),"utf8");
   assert.doesNotMatch(portal,/fetch\("\/content\.bundle"\)/);
+  assert.match(portal,/fetch\(`\/data\/modules\/module-\$\{active\}\.en\.html`\)/);
   assert.match(portal,/fetch\(`\/data\/modules\/module-\$\{active\}\.html`\)/);
+  assert.match(portal,/guide-search\.en\.json/);
+  assert.match(portal,/translated:true/);
   assert.match(portal,/localizeItemLinks\(shadow\)/);
   assert.match(portal,/localizeWorldLinks\(shadow\)/);
   assert.match(portal,/WorldReferenceDialog/);
@@ -200,12 +203,12 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(portal,/link\.dataset\.worldX/);
   assert.match(portal,/link\.closest\("tr"\)/);
   assert.match(portal,/bindModule\(shadow,active,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink\)/);
-  assert.match(portal,/prepareGuideNavigation\(shadow\)/);
+  assert.match(portal,/prepareGuideNavigation\(shadow,t\.guide\.exploreGuide\)/);
   assert.doesNotMatch(portal,/cleanVisibleGuideMetadata/);
-  assert.match(portal,/preparedModules\.current\[active\]/);
+  assert.match(portal,/preparedModules\.current\[key\]/);
   assert.match(portal,/loadModuleStyle\(\)/);
   assert.match(portal,/data-ascencion-theme/);
-  assert.match(portal,/if\(!moduleData\?\.\[active\]\)\{shadow\.innerHTML="";return\}/);
+  assert.match(portal,/const entry=moduleData\?\.\[key\];/);
   assert.doesNotMatch(portal,/<link rel=\\"stylesheet\\" href=\\"\/modern-modules\.css\\">/);
   assert.match(portal,/a\[href\^="#item-"\]/);
   assert.match(portal,/#objeto-\$\{id\}/);
@@ -242,9 +245,9 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(theme,/@media\(max-width:800px\).*\.world-results\{grid-row:2\}/s);
 
   const modules=await readdir(new URL("../public/data/modules/",import.meta.url));
-  assert.equal(modules.filter(file=>file.endsWith(".html")).length,8);
+  assert.equal(modules.filter(file=>/^module-\d+\.html$/.test(file)).length,8);
   let itemCards=0;
-  for(const file of modules.filter(file=>file.endsWith(".html"))){
+  for(const file of modules.filter(file=>/^module-\d+\.html$/.test(file))){
     const html=await readFile(new URL(`../public/data/modules/${file}`,import.meta.url),"utf8");
     itemCards+=(html.match(/id="item-\d+"/g)??[]).length;
   }
@@ -278,6 +281,19 @@ test("las ocho secciones contienen sólo texto final orientado al jugador",async
   assert.match(pkg.scripts["data:modules"],/finalize-guide-content\.mjs/);
   assert.match(pkg.scripts["data:descriptions"],/build-item-descriptions\.mjs/);
   assert.match(pkg.scripts["data:build"],/build-item-descriptions\.mjs/);
+
+  const enModules=(await readdir(new URL("../public/data/modules/",import.meta.url))).filter(file=>/^module-\d+\.en\.html$/.test(file));
+  const searchEn=JSON.parse(await readFile(new URL("../public/data/guide-search.en.json",import.meta.url),"utf8"));
+  assert.ok(Array.isArray(searchEn));
+  for(const entry of searchEn){
+    assert.doesNotMatch(`${entry.title} ${entry.text}`,forbidden,`${entry.module}${entry.anchor}`);
+    assert.ok(!["#fuentes","#metodologia","#limites"].includes(entry.anchor));
+  }
+  for(const file of enModules){
+    const html=await readFile(new URL(`../public/data/modules/${file}`,import.meta.url),"utf8");
+    assert.match(html,/<h1\b/i,file);
+    assert.doesNotMatch(html,/<footer\b/i,file);
+  }
 });
 
 test("Endless Tower muestra un sprite local en cada tarjeta de monstruo",async()=>{
