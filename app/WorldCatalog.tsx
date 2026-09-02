@@ -2,7 +2,8 @@
 import type { Dict } from "./i18n";
 /* eslint-disable @next/next/no-img-element -- sprites GIF animados y mapas estáticos ya optimizados en la caché local */
 
-import { useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ModalShell } from "./ModalShell";
 
 export type WorldKind="map"|"monster"|"npc"|"reference";
@@ -137,15 +138,29 @@ function WorldAtlasDetail({map,payload,t}:{map:MapEntry;payload:WorldPayload;t:D
   const pinsByCoordinate=new Map<string,WorldPoint>();
   for(const point of map.points){if(point.kind==="reference"&&point.x>=0&&point.y>=0&&isMeaningfulMapReference(point.label,map.code))pinsByCoordinate.set(`${point.x}-${point.y}`,point)}
   for(const npc of npcs){for(const point of primaryNpcPoints(npc))pinsByCoordinate.set(`${point.x}-${point.y}`,{...point,kind:"npc",label:npc.name})}
-  const notes=uniqueStrings([
-    ...map.points.filter(point=>point.kind==="reference").map(point=>cleanMapReference(point.label,map.code)),
-    ...map.contexts,
-  ]).filter(note=>isMeaningfulMapReference(note,""));
+  // Cada punto lleva el mismo número que su pin en el mapa, para que las
+  // tarjetas de NPC y las referencias de abajo se puedan emparejar con lo que
+  // se ve arriba en vez de ser dos listas sueltas sin relación visible.
+  const pinNumber=new Map([...pinsByCoordinate.keys()].map((key,index)=>[key,index+1]));
+  const npcPinNumber=(npc:NpcEntry)=>{const point=primaryNpcPoints(npc)[0];return point?pinNumber.get(`${point.x}-${point.y}`):undefined};
+
+  const seenNotes=new Set<string>();
+  const referenceNotes=map.points.filter(point=>point.kind==="reference"&&isMeaningfulMapReference(point.label,map.code)).flatMap(point=>{
+    const text=cleanMapReference(point.label,map.code);
+    const key=normalize(text);
+    if(!text||seenNotes.has(key))return[];
+    seenNotes.add(key);
+    const number=point.x>=0&&point.y>=0?pinNumber.get(`${point.x}-${point.y}`):undefined;
+    return[{text,number}];
+  });
+  const contextNotes=uniqueStrings(map.contexts).filter(note=>isMeaningfulMapReference(note,"")&&!seenNotes.has(normalize(note))).map(text=>({text,number:undefined}));
+  const notes=[...referenceNotes,...contextNotes];
+
   return <div className="world-detail-card world-atlas-detail">
     <div className="world-detail-title"><span>⌖</span><div><small>{isCity(map)?"Ciudad":"Mapa de Midgard"}</small><h2>{map.code}</h2><code>{mapDisplayName(map)}</code></div></div>
-    <section className="map-section"><div className="atlas-map-heading"><h3>{t.world.localMap}</h3><span>{npcs.length} {t.world.npcShort} · {notes.length} {t.world.references}</span></div><MapBoard code={map.code} image={map.image} points={[...pinsByCoordinate.values()]} showCoordinateList={false} t={t}/></section>
-    <section><div className="atlas-map-heading"><h3>{t.world.npcsHere}</h3><span>{npcs.length}</span></div>{npcs.length?<div className="map-npc-grid">{npcs.map(npc=>{const point=primaryNpcPoints(npc)[0];return <article key={npc.id}><span className="map-npc-sprite">{npc.sprite?<img src={npc.sprite} alt={`Sprite de ${npc.name}`} loading="lazy"/>:<i>♙</i>}</span><div><b>{npc.name}</b><small>{point?`${point.x}, ${point.y}`:t.world.noCoordinate}</small>{npc.spriteApproximate&&<em>{t.world.representativeSprite}</em>}</div></article>})}</div>:<p className="atlas-empty-note">{t.world.noNpcs}</p>}</section>
-    <section><div className="atlas-map-heading"><h3>{t.world.questsHere}</h3><span>{notes.length}</span></div>{notes.length?<div className="map-reference-list">{notes.map((note,index)=><article key={`${normalize(note)}-${index}`}><span>◇</span><p>{note}</p></article>)}</div>:<p className="atlas-empty-note">{t.world.noQuests}</p>}</section>
+    <section className="map-section"><div className="atlas-map-heading"><h3>{t.world.localMap}</h3><span>{npcs.length} {t.world.npcShort} · {notes.length} {t.world.references}</span></div><MapBoard key={map.code} code={map.code} image={map.image} points={[...pinsByCoordinate.values()]} showCoordinateList={false} t={t}/></section>
+    <section><div className="atlas-map-heading"><h3>{t.world.npcsHere}</h3><span>{npcs.length}</span></div>{npcs.length?<div className="map-npc-grid">{npcs.map(npc=>{const point=primaryNpcPoints(npc)[0];const number=npcPinNumber(npc);return <article key={npc.id}><span className="map-npc-sprite">{npc.sprite?<img src={npc.sprite} alt={`Sprite de ${npc.name}`} loading="lazy"/>:<i>♙</i>}</span><div><b>{number&&<i className="pin-badge">{number}</i>}{npc.name}</b><small>{point?`${point.x}, ${point.y}`:t.world.noCoordinate}</small>{npc.spriteApproximate&&<em>{t.world.representativeSprite}</em>}</div></article>})}</div>:<p className="atlas-empty-note">{t.world.noNpcs}</p>}</section>
+    <section><div className="atlas-map-heading"><h3>{t.world.questsHere}</h3><span>{notes.length}</span></div>{notes.length?<div className="map-reference-list">{notes.map((note,index)=><article key={`${normalize(note.text)}-${index}`}>{note.number?<i className="pin-badge">{note.number}</i>:<span>◇</span>}<p>{note.text}</p></article>)}</div>:<p className="atlas-empty-note">{t.world.noQuests}</p>}</section>
   </div>;
 }
 
@@ -185,7 +200,7 @@ export function MonsterSpawnDialog({monsterId,monsterName,mvp,maps,onClose,t}:{m
       {!maps.length?<section className="monster-locations"><h3>{t.world.spawnTitle}</h3><p className="atlas-empty-note">{t.world.noSpawnMaps}</p></section>
         :<section className="monster-locations">
           <h3>{t.world.spawnTitle} · {maps.length}</h3>
-          <div className="spawn-map"><MapBoard code={active??""} image={active?`/world/maps/${active}.gif`:null} points={[]} showCoordinateList={false} t={t}/></div>
+          <div className="spawn-map"><MapBoard key={active??""} code={active??""} image={active?`/world/maps/${active}.gif`:null} points={[]} showCoordinateList={false} t={t}/></div>
           <div className="spawn-list">{maps.map(code=>{
             const entry=world?.maps.find(map=>map.code.toLowerCase()===code.toLowerCase());
             return <button key={code} type="button" className={active===code?"active":""} onClick={()=>setActive(code)}><b>{code}</b>{entry&&<span>{mapDisplayName(entry)}</span>}</button>;
@@ -206,7 +221,7 @@ function WorldDetail({entry,maps,onSelect,selectedPoint,t}:{entry:Entry;maps:Map
   return <div className="world-detail-card">
     <div className="world-detail-title"><span className={portrait?"sprite-detail":""}>{portrait?<img src={portrait} alt={`Sprite de ${portraitName}`}/>:ICONS[entry.kind]}</span><div><small>{kindLabel(t,entry.kind)}</small><h2>{entryName(entry)}</h2><code>{entry.kind==="map"?entry.code:entry.kind==="monster"?`ID ${entry.id}`:entry.kind==="npc"?entry.map||t.world.noMapGiven:t.world.integratedReference}</code>{entry.kind==="npc"&&entry.spriteApproximate&&<em className="sprite-reference-note">{t.world.approximateSprite}</em>}</div></div>
     {entry.kind==="monster"&&<MonsterLocations key={entry.id} monster={entry} maps={maps} onSelect={onSelect} t={t}/>}
-    {map&&<section className="map-section"><h3>{entry.kind==="npc"?t.world.npcLocation:t.world.mapAndCoords}</h3><MapBoard code={map.code} image={image} points={points} t={t}/></section>}
+    {map&&<section className="map-section"><h3>{entry.kind==="npc"?t.world.npcLocation:t.world.mapAndCoords}</h3><MapBoard key={map.code} code={map.code} image={image} points={points} t={t}/></section>}
     {lines.length>0&&<section><h3>{t.world.mentionedPlaces}</h3><ul>{lines.map(line=><li key={line}>{line}</li>)}</ul></section>}
     {entry.kind==="reference"&&entry.topics.length>0&&<section><h3>{t.world.integratedIn}</h3><div className="topic-chips">{entry.topics.map(topic=><span key={topic}>{t.topics[topic]||t.world.topicNumber(topic)}</span>)}</div></section>}
     <section><h3>{entry.kind==="reference"?t.world.availableHere:t.world.appearsIn}</h3><div className="context-list">{entry.contexts.length?entry.contexts.map((context,index)=><p key={`${context}-${index}`}>{context}</p>):<p>{t.world.noNote}</p>}</div></section>
@@ -223,17 +238,121 @@ function MonsterLocations({monster,maps,onSelect,t}:{monster:Extract<Entry,{kind
   const [active,setActive]=useState(monster.locations[0]?.map||"");
   const location=monster.locations.find(item=>item.map===active)||monster.locations[0];
   const map=location?maps.find(item=>item.id===location.map)??null:null;
-  return <section className="monster-locations"><h3>{t.world.spawnTitle} · {monster.locations.length}</h3>{location&&map&&<div className="spawn-map"><MapBoard code={map.code} image={map.image} points={[]} showCoordinateList={false} t={t}/><button onClick={()=>onSelect({kind:"map",id:map.id})}>{t.world.openMapCard} <span>→</span></button></div>}<div className="spawn-list">{monster.locations.length?monster.locations.map(item=><button className={item.map===location?.map?"active":""} key={item.map} onClick={()=>setActive(item.map)}><b>{item.map}</b><span>{item.name}</span><small>{item.spawn.replace(item.map,"").replace(/[()]/g,"").trim()||t.world.specialSpawn}</small></button>):<p>{t.world.noSpawnMaps}</p>}</div></section>;
+  return <section className="monster-locations"><h3>{t.world.spawnTitle} · {monster.locations.length}</h3>{location&&map&&<div className="spawn-map"><MapBoard key={map.code} code={map.code} image={map.image} points={[]} showCoordinateList={false} t={t}/><button onClick={()=>onSelect({kind:"map",id:map.id})}>{t.world.openMapCard} <span>→</span></button></div>}<div className="spawn-list">{monster.locations.length?monster.locations.map(item=><button className={item.map===location?.map?"active":""} key={item.map} onClick={()=>setActive(item.map)}><b>{item.map}</b><span>{item.name}</span><small>{item.spawn.replace(item.map,"").replace(/[()]/g,"").trim()||t.world.specialSpawn}</small></button>):<p>{t.world.noSpawnMaps}</p>}</div></section>;
 }
+const ZOOM_MIN=1;
+const ZOOM_MAX=4;
+function clampTo(value:number,limit:number){return Math.min(limit,Math.max(-limit,value))}
+function pointerDistance(a:{x:number;y:number},b:{x:number;y:number}){return Math.hypot(a.x-b.x,a.y-b.y)}
+
+// Los mapas oficiales son imágenes fijas de resolución modesta; sin zoom, los
+// nombres de zonas y los pines quedan ilegibles en pantallas de celular. El
+// arrastre y el zoom (rueda, botones o pellizco) viven en un contenedor
+// interno transformado con translate+scale para que la imagen y los pines
+// se muevan como una sola unidad, mientras .map-canvas recorta la vista.
 function MapBoard({code,image,points,showCoordinateList=true,t}:{code:string;image:string|null;points:WorldPoint[];showCoordinateList?:boolean;t:Dict}){
   const [broken,setBroken]=useState(false);
+  const [scale,setScale]=useState(1);
+  const [offset,setOffset]=useState({x:0,y:0});
+  const [dragging,setDragging]=useState(false);
+  const canvasRef=useRef<HTMLDivElement>(null);
+  const dragStart=useRef<{x:number;y:number;offsetX:number;offsetY:number}|null>(null);
+  const pointers=useRef(new Map<number,{x:number;y:number}>());
+  const pinchStart=useRef<{distance:number;scale:number}|null>(null);
   const max=Math.max(400,...points.flatMap(point=>[point.x,point.y]));
+  const canZoom=Boolean(image)&&!broken;
+
+  function zoomTo(cx:number,cy:number,targetScale:number){
+    const canvas=canvasRef.current;
+    if(!canvas)return;
+    const size=canvas.getBoundingClientRect().width;
+    const nextScale=Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,targetScale));
+    const pointX=(cx-offset.x)/scale;
+    const pointY=(cy-offset.y)/scale;
+    const bound=(nextScale-1)/2*size;
+    setScale(nextScale);
+    setOffset({x:clampTo(cx-pointX*nextScale,bound),y:clampTo(cy-pointY*nextScale,bound)});
+  }
+  function centerOffset(event:{clientX:number;clientY:number}){
+    const rect=canvasRef.current!.getBoundingClientRect();
+    return {x:event.clientX-rect.left-rect.width/2,y:event.clientY-rect.top-rect.height/2};
+  }
+  function handleWheel(event:React.WheelEvent){
+    if(!canZoom)return;
+    event.preventDefault();
+    const {x,y}=centerOffset(event);
+    zoomTo(x,y,scale*(event.deltaY<0?1.2:1/1.2));
+  }
+  function handleDoubleClick(event:React.MouseEvent){
+    if(!canZoom)return;
+    const {x,y}=centerOffset(event);
+    zoomTo(x,y,scale>1.05?1:2.5);
+  }
+  function handlePointerDown(event:React.PointerEvent){
+    if(!canZoom)return;
+    // Un pointerId recién creado por un dedo/mouse siempre está "activo" para
+    // el navegador, pero por si algún gesto raro llega tarde (el dedo ya se
+    // levantó, el navegador no soporta el pointer capture, etc.) esto no debe
+    // tumbar el resto del gesto.
+    try{canvasRef.current?.setPointerCapture(event.pointerId)}catch{/* pointer ya no activo */}
+    pointers.current.set(event.pointerId,{x:event.clientX,y:event.clientY});
+    if(pointers.current.size===1){
+      dragStart.current={x:event.clientX,y:event.clientY,offsetX:offset.x,offsetY:offset.y};
+      setDragging(true);
+    }else if(pointers.current.size===2){
+      dragStart.current=null;
+      const [a,b]=[...pointers.current.values()];
+      pinchStart.current={distance:pointerDistance(a,b),scale};
+    }
+  }
+  function handlePointerMove(event:React.PointerEvent){
+    if(!pointers.current.has(event.pointerId))return;
+    pointers.current.set(event.pointerId,{x:event.clientX,y:event.clientY});
+    if(pointers.current.size===2&&pinchStart.current){
+      const [a,b]=[...pointers.current.values()];
+      const factor=pointerDistance(a,b)/pinchStart.current.distance;
+      const rect=canvasRef.current!.getBoundingClientRect();
+      const midX=(a.x+b.x)/2-rect.left-rect.width/2;
+      const midY=(a.y+b.y)/2-rect.top-rect.height/2;
+      zoomTo(midX,midY,pinchStart.current.scale*factor);
+    }else if(dragStart.current){
+      const size=canvasRef.current!.getBoundingClientRect().width;
+      const bound=(scale-1)/2*size;
+      setOffset({
+        x:clampTo(dragStart.current.offsetX+(event.clientX-dragStart.current.x),bound),
+        y:clampTo(dragStart.current.offsetY+(event.clientY-dragStart.current.y),bound),
+      });
+    }
+  }
+  function endPointer(event:React.PointerEvent){
+    pointers.current.delete(event.pointerId);
+    if(pointers.current.size===1){
+      const [,point]=[...pointers.current.entries()][0];
+      dragStart.current={x:point.x,y:point.y,offsetX:offset.x,offsetY:offset.y};
+      pinchStart.current=null;
+    }else if(pointers.current.size===0){
+      dragStart.current=null;
+      pinchStart.current=null;
+      setDragging(false);
+    }
+  }
+
   return <div className="map-view">
-    <div className="map-canvas">
-      {image&&!broken?<img src={image} alt={t.world.mapOf(code)} onError={()=>setBroken(true)}/>:<div className="map-fallback"><span>⌖</span><b>{code}</b><small>{t.world.coordinatePlan}</small></div>}
-      <div className="map-grid" aria-hidden="true"/>
-      {points.map((point,index)=><span className={point.kind==="npc"?"map-pin npc-pin":"map-pin"} key={`${point.x}-${point.y}-${point.kind}-${index}`} style={{left:`${Math.min(98,Math.max(2,point.x/max*100))}%`,bottom:`${Math.min(98,Math.max(2,point.y/max*100))}%`}} title={point.label}><i>{index+1}</i></span>)}
+    <div className={dragging?"map-canvas dragging":"map-canvas"} ref={canvasRef} onWheel={handleWheel} onDoubleClick={handleDoubleClick} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={endPointer} onPointerCancel={endPointer}>
+      {image&&!broken?<>
+        <div className="map-canvas-inner" style={{transform:`translate(${offset.x}px,${offset.y}px) scale(${scale})`}}>
+          <img src={image} alt={t.world.mapOf(code)} onError={()=>setBroken(true)} draggable={false}/>
+          <div className="map-grid" aria-hidden="true"/>
+          {points.map((point,index)=><span className={point.kind==="npc"?"map-pin npc-pin":"map-pin"} key={`${point.x}-${point.y}-${point.kind}-${index}`} style={{left:`${Math.min(98,Math.max(2,point.x/max*100))}%`,bottom:`${Math.min(98,Math.max(2,point.y/max*100))}%`,transform:`translate(-50%,50%) scale(${1/scale})`}} aria-label={point.label}><i data-tooltip={point.label}>{index+1}</i></span>)}
+        </div>
+        <div className="map-zoom-controls">
+          <button type="button" onClick={()=>zoomTo(0,0,scale*1.4)} aria-label={t.world.zoomIn}>+</button>
+          <button type="button" onClick={()=>zoomTo(0,0,scale/1.4)} aria-label={t.world.zoomOut}>−</button>
+          {scale>1.02&&<button type="button" className="map-zoom-reset" onClick={()=>{setScale(1);setOffset({x:0,y:0})}}>{t.world.zoomReset}</button>}
+        </div>
+      </>:<div className="map-fallback"><span>⌖</span><b>{code}</b><small>{t.world.coordinatePlan}</small></div>}
     </div>
+    {canZoom&&<p className="map-zoom-hint">{t.world.zoomHint}</p>}
     {showCoordinateList&&<div className="map-coordinate-list">{points.length?points.map((point,index)=><span key={`${point.label}-${index}`}><i>{index+1}</i><b>{point.x}, {point.y}</b><em>{point.label}</em></span>):<p>{t.world.noExactCoordinates}</p>}</div>}
   </div>;
 }
