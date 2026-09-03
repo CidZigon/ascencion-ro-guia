@@ -9,6 +9,7 @@ import type { WorldKind, WorldSelection } from "./WorldCatalog";
 type NavMenu = "guides";
 type ActiveView = number | "items" | "world" | "equipment" | "weapons" | "monsters" | null;
 
+const ExpGuide=lazy(async()=>({default:(await import("./ExpGuide")).ExpGuide}));
 const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCatalog}));
 const MonsterCatalog=lazy(async()=>({default:(await import("./MonsterCatalog")).MonsterCatalog}));
 const WorldCatalog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldCatalog}));
@@ -23,7 +24,7 @@ function loadModuleStyle(){
 
 type ModuleInfo = { id:number; icon:string; title:string; description:string };
 type SearchEntry = { module:number; anchor:string; title:string; text:string; moduleTitle:string; icon:string };
-type ExternalDestination = { href:string; label:string };
+export type ExternalDestination = { href:string; label:string };
 
 const MODULES: ModuleInfo[] = [
   { id:1, icon:"🧭", title:"Progresión y EXP", description:"Rutas de leveo, cacerías, quests de EXP y progresión eficiente." },
@@ -86,7 +87,10 @@ export function GuidePortal(){
     pendingAnchor.current=anchor;
     setLoadError(false);
     setActive(previous=>{
-      if(previous===id&&anchor)setTimeout(()=>{if(shadowRef.current)scrollInside(shadowRef.current,anchor)},30);
+      if(previous===id&&anchor){
+        if(id===1)setTimeout(()=>scrollLightDom(anchor),30);
+        else setTimeout(()=>{if(shadowRef.current)scrollInside(shadowRef.current,anchor)},30);
+      }
       return id;
     });
     setQuery("");
@@ -214,7 +218,9 @@ export function GuidePortal(){
   },[]);
 
   useEffect(()=>{
-    if(typeof active!=="number")return;
+    // El módulo 1 (Progresión y EXP) ya no es HTML inyectado: lo renderiza
+    // ExpGuide con su propio contenido bilingüe (app/data/expGuideContent.ts).
+    if(typeof active!=="number"||active===1)return;
     const key=`${active}:${lang}`;
     if(moduleData[key])return;
     let live=true;
@@ -265,6 +271,16 @@ export function GuidePortal(){
     if(anchor)setTimeout(()=>scrollInside(shadow,anchor),80);
   },[active,lang,moduleData,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink,t.guide.exploreGuide]);
 
+  // ExpGuide vive en DOM normal, no en un shadow root, así que un resultado
+  // de búsqueda que apunta a #module-1#portal-f1-N necesita su propio scroll
+  // (mismo criterio que scrollInside: abre los <details> ancestros primero).
+  useEffect(()=>{
+    if(active!==1)return;
+    const anchor=pendingAnchor.current;
+    pendingAnchor.current="";
+    if(anchor)setTimeout(()=>scrollLightDom(anchor),80);
+  },[active]);
+
   const results=useMemo(()=>{
     const term=query.trim();
     if(term.length<2)return[];
@@ -313,7 +329,8 @@ export function GuidePortal(){
         {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
         {active==="monsters"&&<Suspense fallback={<SurfaceLoading label={t.loading.monsters}/>}><MonsterCatalog key={`monsters-${monsterQuery}`} selectedMonsterId={selectedMonsterId} initialQuery={monsterQuery} onSelectMonster={selectMonster} onOpenItem={id=>openCatalog({id})} onPreviewMonster={previewMonster} t={t}/></Suspense>}
         {active==="world"&&<Suspense fallback={<SurfaceLoading label={t.loading.world}/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld} t={t}/></Suspense>}
-        {typeof active==="number"&&<section className="module-view">{lang==="en"&&!moduleData[`${active}:${lang}`]?.translated&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[`${active}:${lang}`]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
+        {active===1&&<Suspense fallback={<SurfaceLoading label={t.guide.preparing}/>}><ExpGuide lang={lang} onOpenMonster={openMonster} onOpenWorld={openWorldPreview} onOpenExternal={openExternalLink}/></Suspense>}
+        {typeof active==="number"&&active!==1&&<section className="module-view">{lang==="en"&&!moduleData[`${active}:${lang}`]?.translated&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[`${active}:${lang}`]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
     {worldPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)} t={t}/></Suspense>}
@@ -384,6 +401,8 @@ function prepareGuideNavigation(shadow:ShadowRoot,exploreLabel:string){
 
 function openDetailsTo(element:HTMLElement){let current:HTMLElement|null=element;while(current){if(current.tagName==="DETAILS")(current as HTMLDetailsElement).open=true;current=current.parentElement}}
 function scrollInside(shadow:ShadowRoot,anchor:string){const el=shadow.getElementById(anchor.replace(/^#/,""));if(el){openDetailsTo(el);setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),30)}}
+// ExpGuide (módulo 1) vive en DOM normal, no en un shadow root.
+function scrollLightDom(anchor:string){const el=document.getElementById(anchor.replace(/^#/,""));if(el){openDetailsTo(el);el.scrollIntoView({behavior:"smooth",block:"start"})}}
 
 function localizeItemLinks(shadow:ShadowRoot){
   shadow.querySelectorAll<HTMLAnchorElement>('a[href^="#item-"]').forEach(link=>{

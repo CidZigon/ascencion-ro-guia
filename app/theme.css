@@ -253,3 +253,60 @@ button.source-row{width:100%;text-align:left;color:inherit}
   .catalog-filters{padding:12px}
   .filter-chip{min-height:34px}
 }
+
+/* ---- Guía "Progresión y EXP" (módulo 1) — componente React, no HTML inyectado ---- */
+.exp-guide{width:100%;max-width:1220px;margin:0 auto;padding:6px clamp(16px,3vw,34px) 60px;display:flex;flex-direction:column;gap:16px}
+.exp-hero .exp-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.exp-nav{display:flex;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:5;padding:10px 2px;background:linear-gradient(180deg,var(--bg) 60%,transparent)}
+.exp-nav button{padding:7px 13px;border:1px solid var(--glass-border);border-radius:999px;background:#ffffff0a;color:#ded6cc;font-size:11px;font-weight:800;font-family:inherit;white-space:nowrap;cursor:pointer}
+.exp-nav button:hover{border-color:var(--glass-border-hover);color:#f0d7aa}
+.exp-panel{padding:16px 18px;border-radius:16px;background-color:var(--glass-bg);background-image:var(--noise);background-size:140px 140px;background-repeat:repeat;background-blend-mode:overlay;backdrop-filter:blur(18px) saturate(150%);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);color:#ded6cc}
+.exp-panel>strong{color:var(--gold);font-size:13px}
+.exp-panel p{margin:8px 0 0}
+.exp-small{margin:8px 0 0;color:#aaa198;font-size:12.5px;line-height:1.6}
+.compat-badges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.exp-toolbar{align-items:center}
+.exp-section{display:flex;flex-direction:column;gap:4px;scroll-margin-top:70px}
+.exp-eyebrow{display:block;color:#d6ad6f;font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px}
+.exp-empty{color:#8f8780;font-size:12px;padding:14px 0}
+
+.exp-row-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.exp-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:11px 16px;border-radius:14px;background:#ffffff08;border:1px solid var(--glass-border);color:#ded6cc;font-size:12.5px}
+.exp-row-level{flex:0 0 auto;padding:3px 9px;border-radius:999px;background:#1d1424;color:#e4cea5;font:700 11px Georgia,serif}
+.exp-row-main{display:flex;flex-direction:column;gap:2px;min-width:180px}
+.exp-row-main b{color:#eee5da;font-size:13.5px}
+.exp-row-sub,.exp-row-stats,.exp-row-drop{color:#aaa198;display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+
+.exp-mob-btn{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border:1px solid var(--glass-border);border-radius:999px;background:#ffffff0a;color:#ded6cc;cursor:pointer}
+.exp-mob-btn:hover{border-color:var(--glass-border-hover);color:#f0d7aa}
+.exp-mob-sprite{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle at 40% 30%,#d2b07128,#ffffff08 75%);overflow:hidden}
+.exp-mob-sprite img{width:22px;height:22px;object-fit:contain;image-rendering:pixelated}
+.exp-inline-link{display:inline;padding:0;border:0;background:none;color:#83e4d7;font-weight:800;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;cursor:pointer}
+.exp-inline-link:hover{color:#c7fff7}
+.exp-map-chip{display:inline-flex;padding:2px 9px;border:1px solid var(--glass-border);border-radius:999px;background:#ffffff0a;color:#83e4d7;font-size:11px;cursor:pointer}
+.exp-map-chip:hover{border-color:var(--glass-border-hover);color:#c7fff7}
+
+.exp-quest{margin-top:8px;border-radius:16px;background-color:var(--glass-bg);background-image:var(--noise);background-size:140px 140px;background-repeat:repeat;background-blend-mode:overlay;backdrop-filter:blur(18px) saturate(150%);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);overflow:hidden}
+.exp-quest summary{list-style:none;cursor:pointer;padding:14px 18px}
+.exp-quest summary::-webkit-details-marker{display:none}
+.exp-quest-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.exp-quest-title{color:#eee5da;font:700 16px Georgia,serif}
+.exp-quest-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.exp-effort{flex:0 0 auto;font-size:10.5px;font-weight:900;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.exp-effort-easy{color:#8ee0a6}
+.exp-effort-medium{color:#ffd77a}
+.exp-quest-body{padding:0 18px 18px;color:#ded6cc;font-size:12.5px;line-height:1.65;border-top:1px solid var(--glass-border)}
+.exp-quest-body p{margin:12px 0 0}
+.exp-quest-body ol{margin:10px 0 0;padding-left:20px}
+.exp-quest-body li{margin:6px 0;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.exp-prereq{margin-top:12px;border:1px dashed #574a3a;border-radius:12px;background:#1d1712}
+.exp-prereq summary{padding:9px 12px;color:#c9b58c;font-weight:800;font-size:12px}
+.exp-prereq-body{padding:0 12px 12px;color:#c9b58c;font-size:12px}
+.exp-chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}
+.exp-chain span{border:1px solid #51463e;border-radius:999px;padding:3px 8px;background:#0f0f10;font-size:11px}
+.exp-source-link{display:inline-block;margin-top:14px;color:#83e4d7;font-weight:800;font-size:12px;text-decoration:none}
+.exp-source-link:hover{color:#c7fff7;text-decoration:underline}
+@media(max-width:700px){
+  .exp-row{flex-direction:column;align-items:flex-start}
+  .exp-quest-head{flex-direction:column}
+}
