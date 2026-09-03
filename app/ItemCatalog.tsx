@@ -124,11 +124,21 @@ const CATEGORIES:Category[]=[
 ];
 const categoryById=(id:string)=>CATEGORIES.find(entry=>entry.id===id)??CATEGORIES[0];
 
-/* Las cartas de arma usan Right_Hand como ubicación, una ranura que no existe
-   en el equipo normal (las armas tienen su propio filtro por tipo). Se agrega
-   solo para el filtro de cartas, sin tocar EQUIP_SLOTS que también usa la
-   categoría de Equipo. */
-const CARD_SLOTS=[...EQUIP_SLOTS,{id:"arma",location:"Right_Hand",icon:"⚔",title:"Arma",description:"Cartas para compuestas en armas de cualquier tipo."}];
+/* Para el equipo real, las tres ranuras de cabeza importan (una pieza ocupa
+   una sola). Para cartas es ruido: casi cualquier carta de cabeza sirve en
+   las tres, así que se fusionan en un único "Casco". Las cartas de arma
+   usan Right_Hand, una ranura que no existe en el equipo normal — se agrega
+   solo aquí, sin tocar EQUIP_SLOTS que también usa la categoría de Equipo. */
+const HEAD_LOCATIONS=["Head_Top","Head_Mid","Head_Low"];
+// "Headgear" y "CardWeapon" son claves sintéticas (no ranuras reales de
+// rAthena): agrupan/renombran para el filtro de cartas sin tocar las
+// etiquetas Head_Top/Mid/Low ni Right_Hand que sigue usando la ficha de
+// equipo real de cada item.
+const CARD_SLOTS=[
+  {id:"casco",location:"Headgear",matchLocations:HEAD_LOCATIONS,icon:"⛑",title:"Casco",description:"Gorros, cascos, gafas, máscaras y demás piezas de cabeza."},
+  ...EQUIP_SLOTS.filter(slot=>!HEAD_LOCATIONS.includes(slot.location)),
+  {id:"arma",location:"CardWeapon",matchLocations:["Right_Hand"],icon:"⚔",title:"Arma",description:"Cartas para compuestas en armas de cualquier tipo."},
+];
 const categoryLabel=(t:Dict,id:string)=>(t.categories as Record<string,string>)[id]??id;
 
 /* Tramos de nivel mínimo. Cubren el recorrido real de un personaje Pre-Renewal. */
@@ -179,7 +189,10 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
   const inFacet=useMemo(()=>(item:ItemIndex)=>{
     if(!facet)return true;
     if(activeCategory.facets==="slot")return item.type!=="Card"&&Boolean(item.locations?.includes(facet));
-    if(activeCategory.facets==="cardSlot")return Boolean(item.locations?.includes(facet));
+    if(activeCategory.facets==="cardSlot"){
+      const matchSet=CARD_SLOTS.find(slot=>slot.location===facet)?.matchLocations??[facet];
+      return Boolean(item.locations?.some(location=>matchSet.includes(location)));
+    }
     if(activeCategory.facets==="weapon")return item.subType===facet;
     return true;
   },[facet,activeCategory]);
@@ -209,7 +222,12 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
     for(const item of searched){
       if(!inCategory(item))continue;
       if(activeCategory.facets==="slot"){if(item.type==="Card")continue;for(const location of item.locations??[])counts[location]=(counts[location]??0)+1}
-      else if(activeCategory.facets==="cardSlot"){for(const location of item.locations??[])counts[location]=(counts[location]??0)+1}
+      else if(activeCategory.facets==="cardSlot"){
+        for(const slot of CARD_SLOTS){
+          const matchSet=slot.matchLocations??[slot.location];
+          if(item.locations?.some(location=>matchSet.includes(location)))counts[slot.location]=(counts[slot.location]??0)+1;
+        }
+      }
       else if(item.subType)counts[item.subType]=(counts[item.subType]??0)+1;
     }
     return counts;
@@ -251,8 +269,9 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
     :t.catalog.heroFiltered(filtered.length.toLocaleString("es-ES"));
 
   return <section className="item-catalog">
-    <header className="catalog-hero">
-      <div>{category!=="all"&&<small>{facetLabel?categoryLabel(t,category):t.catalog.eyebrow}</small>}<h1>{heroTitle}</h1><p>{heroCopy}</p></div>
+    <header className="catalog-head">
+      <div>{category!=="all"&&<small>{facetLabel?categoryLabel(t,category):t.catalog.eyebrow}</small>}<h1>{heroTitle}</h1></div>
+      <p>{heroCopy}</p>
     </header>
 
     <div className="catalog-toolbar">
@@ -312,13 +331,15 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
           <span><b>{filtered.length.toLocaleString("es-ES")}</b> {t.catalog.matches}</span>
           {anyFilter&&<button type="button" className="clear-filters" onClick={clearAll}>{t.catalog.clearFilters}</button>}
         </div>
-        <div className="item-list">{filtered.slice(0,limit).map(item=><button key={item.id} className={selectedItemId===item.id?"item-row selected":"item-row"} onClick={()=>onSelectItem(item.id)}>
-          <ItemSprite item={item} className="item-sigil"/>
-          <span className="item-main"><b>{item.name}</b><small>{itemLine(t,item,activeCategory)}</small></span>
-          <span className="item-id">#{item.id}</span>
-        </button>)}</div>
-        {!filtered.length&&<div className="catalog-empty"><b>{t.catalog.emptyTitle}</b><span>{t.catalog.emptyHint}</span></div>}
-        {limit<filtered.length&&<button className="load-more" onClick={()=>setLimit(value=>value+80)}>{t.catalog.more}</button>}
+        <div className="item-list">
+          {filtered.slice(0,limit).map(item=><button key={item.id} className={selectedItemId===item.id?"item-row selected":"item-row"} onClick={()=>onSelectItem(item.id)}>
+            <ItemSprite item={item} className="item-sigil"/>
+            <span className="item-main"><b>{item.name}</b><small>{itemLine(t,item,activeCategory)}</small></span>
+            <span className="item-id">#{item.id}</span>
+          </button>)}
+          {!filtered.length&&<div className="catalog-empty"><b>{t.catalog.emptyTitle}</b><span>{t.catalog.emptyHint}</span></div>}
+          {limit<filtered.length&&<button className="load-more" onClick={()=>setLimit(value=>value+80)}>{t.catalog.more}</button>}
+        </div>
       </div>
       <aside className="item-detail">{selectedItemId===null?<div className="detail-placeholder"><span>◆</span><h2>{t.catalog.pickTitle}</h2><p>{t.catalog.pickCopy}</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>{t.catalog.loadingCard}</p></div>:<ItemDetailCard item={activeDetail} sources={activeSources} onOpenMonster={onOpenMonster} onPreviewMonster={onPreviewMonster} t={t}/>}</aside>
     </div>

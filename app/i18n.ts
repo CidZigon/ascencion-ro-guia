@@ -100,6 +100,7 @@ export const STRINGS = {
 
     locations: {
       Head_Top: "Casco (superior)", Head_Mid: "Casco (medio)", Head_Low: "Casco (inferior)",
+      Headgear: "Casco", CardWeapon: "Arma",
       Armor: "Armadura", Garment: "Capa", Shoes: "Zapatos", Both_Accessory: "Accesorios",
       Left_Hand: "Escudo", Right_Hand: "Mano derecha", Both_Hand: "Dos manos", Ammo: "Munición",
       Costume_Head_Top: "Costume (superior)", Costume_Head_Mid: "Costume (medio)", Costume_Head_Low: "Costume (inferior)",
@@ -368,6 +369,7 @@ export const STRINGS = {
 
     locations: {
       Head_Top: "Upper headgear", Head_Mid: "Mid headgear", Head_Low: "Lower headgear",
+      Headgear: "Headgear", CardWeapon: "Weapon",
       Armor: "Armor", Garment: "Garment", Shoes: "Shoes", Both_Accessory: "Accessory",
       Left_Hand: "Shield", Right_Hand: "Right hand", Both_Hand: "Two-handed", Ammo: "Ammo",
       Costume_Head_Top: "Costume (upper)", Costume_Head_Mid: "Costume (mid)", Costume_Head_Low: "Costume (lower)",

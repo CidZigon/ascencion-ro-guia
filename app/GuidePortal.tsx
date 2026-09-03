@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, lazy, type ReactNode, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Suspense, lazy, type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { EQUIP_HASH, WEAPON_HASH, equipSlotById, weaponKindById } from "./gear";
 import { STRINGS, getLang, getServerLang, setLang, subscribeLang, type Dict, type Lang } from "./i18n";
 import { ModalShell } from "./ModalShell";
@@ -36,6 +36,10 @@ const MODULES: ModuleInfo[] = [
   { id:8, icon:"🐾", title:"Compañeros", description:"Pets, homúnculos y mercenarios con datos Pre-Renewal." },
 ];
 
+// Un tinte por gu\u00eda: la misma idea que en el resto del sitio \u2014 el color es luz
+// sobre el cristal, no relleno, as\u00ed que van con alfa baja.
+const MODULE_TINTS=["#e0b04d4d","#3ec2c94d","#8f68a54d","#7fae4d4d","#c94d5a4d","#d2b0714d","#6fb0e04d","#d97fae4d"];
+
 function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function excerpt(text:string,query:string){const i=Math.max(0,normalize(text).indexOf(normalize(query)));const start=Math.max(0,i-65);const end=Math.min(text.length,i+query.length+115);return `${start?"…":""}${text.slice(start,end)}${end<text.length?"…":""}`}
 function cleanUserText(value:string){
@@ -69,6 +73,7 @@ export function GuidePortal(){
   const [externalLink,setExternalLink]=useState<ExternalDestination|null>(null);
   const [navMenu,setNavMenu]=useState<NavMenu|null>(null);
   const headerRef=useRef<HTMLElement>(null);
+  const railRef=useRef<HTMLElement>(null);
   const navTimer=useRef(0);
   const hostRef=useRef<HTMLDivElement>(null);
   const shadowRef=useRef<ShadowRoot|null>(null);
@@ -176,19 +181,18 @@ export function GuidePortal(){
 
   const openNavMenu=useCallback((menu:NavMenu)=>{window.clearTimeout(navTimer.current);setNavMenu(menu)},[]);
   const closeNavMenu=useCallback(()=>{window.clearTimeout(navTimer.current);setNavMenu(null)},[]);
-  const scheduleCloseNavMenu=useCallback(()=>{window.clearTimeout(navTimer.current);navTimer.current=window.setTimeout(()=>setNavMenu(null),160)},[]);
-
-  const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setWorldPreview(selection)},[]);
-  const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setExternalLink(destination)},[]);
-  const previewMonster=useCallback((id:number,name:string,maps:string[],mvp?:boolean)=>{setExternalLink(null);setWorldPreview(null);setMonsterSpawnPreview({id,name,mvp,maps})},[]);
 
   useEffect(()=>{
-    const close=(event:PointerEvent)=>{if(headerRef.current&&!headerRef.current.contains(event.target as Node))closeNavMenu()};
+    const close=(event:PointerEvent)=>{if(railRef.current&&!railRef.current.contains(event.target as Node))closeNavMenu()};
     const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")closeNavMenu()};
     document.addEventListener("pointerdown",close);
     document.addEventListener("keydown",escape);
     return()=>{document.removeEventListener("pointerdown",close);document.removeEventListener("keydown",escape)};
   },[closeNavMenu]);
+
+  const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setWorldPreview(selection)},[]);
+  const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setExternalLink(destination)},[]);
+  const previewMonster=useCallback((id:number,name:string,maps:string[],mvp?:boolean)=>{setExternalLink(null);setWorldPreview(null);setMonsterSpawnPreview({id,name,mvp,maps})},[]);
 
   useEffect(()=>{
     const applyHash=()=>{
@@ -271,19 +275,26 @@ export function GuidePortal(){
   const selectedEquip=equipmentSlot?equipSlotById(equipmentSlot):undefined;
   const selectedWeapon=weaponType?weaponKindById(weaponType):undefined;
 
-  return <main className="portal">
+  return <main className={active===null?"portal portal-home":"portal"}>
+    <div className="portal-backdrop" aria-hidden="true"/>
+    <aside className="side-rail" ref={railRef}>
+      <button className="brand" onClick={showLibrary} aria-label={t.goHome}><span className="brand-mark">A</span><span><b>AscencionRO</b><small>{t.tagline}</small></span></button>
+      <nav className="side-rail-nav" aria-label="Navegación principal">
+        <button className={active===null?"active":""} onClick={showLibrary}><RailIcon name="home"/>{t.nav.home}</button>
+        <button className={active==="items"?"active":""} onClick={()=>openCatalog()}><RailIcon name="items"/>{t.nav.items}</button>
+        <button className={active==="monsters"?"active":""} onClick={()=>openMonster()}><RailIcon name="monsters"/>{t.nav.monsters}</button>
+        <button className={active==="world"?"active":""} onClick={()=>openWorld()}><RailIcon name="world"/>{t.nav.world}</button>
+        <div className="rail-menu-wrap">
+          <button className={typeof active==="number"?"active":""} aria-expanded={navMenu==="guides"} aria-controls="guide-menu" onClick={()=>navMenu==="guides"?closeNavMenu():openNavMenu("guides")}><RailIcon name="guides"/>{t.nav.guides}</button>
+          {navMenu==="guides"&&<div className="rail-menu" id="guide-menu">
+            <div className="rail-menu-intro"><b>{t.guidesMenu.title}</b><span>{t.guidesMenu.copy}</span></div>
+            <div className="rail-menu-grid">{MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>{closeNavMenu();openModule(topic.id)}}><span>{topic.icon}</span><span><b>{t.modules[topic.id-1].title}</b><small>{t.modules[topic.id-1].description}</small></span><i aria-hidden="true">→</i></button>)}</div>
+          </div>}
+        </div>
+      </nav>
+    </aside>
     <header className="site-header" ref={headerRef}>
       <div className="nav-shell">
-        <button className="brand" onClick={showLibrary} aria-label={t.goHome}><span className="brand-mark">A</span><span><b>AscencionRO</b><small>{t.tagline}</small></span></button>
-        <nav className="primary-nav" aria-label="Navegación principal">
-          <button className={active===null?"active":""} onClick={showLibrary}>{t.nav.home}</button>
-          <button className={active==="items"?"active":""} onClick={()=>openCatalog()}>{t.nav.items}</button>
-          <button className={active==="monsters"?"active":""} onClick={()=>openMonster()}>{t.nav.monsters}</button>
-          <button className={active==="world"?"active":""} onClick={()=>openWorld()}>{t.nav.world}</button>
-          <NavDropdown id="guide-menu" label={t.nav.guides} open={navMenu==="guides"} active={typeof active==="number"} onOpen={()=>openNavMenu("guides")} onClose={closeNavMenu} onHoverClose={scheduleCloseNavMenu} introTitle={t.guidesMenu.title} introCopy={t.guidesMenu.copy} className="guide-topics-menu">
-            {MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>openModule(topic.id)}><span>{topic.icon}</span><span><b>{t.modules[topic.id-1].title}</b><small>{t.modules[topic.id-1].description}</small></span><i aria-hidden="true">→</i></button>)}
-          </NavDropdown>
-        </nav>
         <div className="search-wrap">
           <div className="search-field"><span aria-hidden="true">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={t.search.placeholder} aria-label={t.search.aria}/>{query&&<button onClick={()=>setQuery("")} aria-label={t.search.clear}>×</button>}</div>
           {query.trim().length>=2&&<div className="search-panel"><button className="search-result catalog-search-result" onClick={()=>openCatalog({query})}><b>◆ {t.search.inItems(query)}</b><small>{t.search.inItemsHint}</small></button><button className="search-result monster-search-result" onClick={()=>openMonster({query})}><b>♜ {t.search.inMonsters(query)}</b><small>{t.search.inItemsHint}</small></button><button className="search-result world-search-result" onClick={()=>openWorld({query})}><b>⌖ {t.search.inWorld(query)}</b><small>{t.search.inWorldHint}</small></button><div className="search-label">{searchIndex===null?t.search.searching:results.length?t.search.results(results.length):t.search.empty}</div>{results.map((r,i)=><button className="search-result" key={`${r.module}-${r.anchor}-${i}`} onClick={()=>openModule(r.module,r.anchor)}><b>{r.icon} {cleanUserText(r.title)}</b><small>{t.modules[r.module-1]?.title} · {cleanUserText(excerpt(r.text,query))}</small></button>)}</div>}
@@ -296,7 +307,7 @@ export function GuidePortal(){
     </header>
     <section className="workspace">
       <div className="content">
-        {active===null&&<Library openModule={openModule} openCatalog={openCatalog} openMonster={openMonster} openWorld={openWorld} t={t}/>}
+        {active===null&&<Library openModule={openModule} t={t}/>}
         {active==="items"&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`items-${catalogQuery}`} selectedItemId={selectedItemId} initialQuery={catalogQuery} onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t}/></Suspense>}
         {active==="equipment"&&selectedEquip&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`equipo-${selectedEquip.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t} scope={{kind:"slot",location:selectedEquip.location,eyebrow:"Equipo",title:selectedEquip.title,description:selectedEquip.description}}/></Suspense>}
         {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
@@ -314,14 +325,16 @@ export function GuidePortal(){
 
 function SurfaceLoading({label}:{label:string}){return <div className="catalog-loading"><div className="loader"/><p>{label}</p></div>}
 
-function NavDropdown({id,label,open,active,onOpen,onClose,onHoverClose,introTitle,introCopy,className="",children}:{id:string;label:string;open:boolean;active:boolean;onOpen:()=>void;onClose:()=>void;onHoverClose:()=>void;introTitle:string;introCopy:string;className?:string;children:ReactNode}){
-  return <div className="guide-menu-wrap" onMouseEnter={onOpen} onMouseLeave={onHoverClose}>
-    <button className={active?"active":""} onClick={()=>open?onClose():onOpen()} aria-expanded={open} aria-controls={id}>{label} <span aria-hidden="true">⌄</span></button>
-    {open&&<div className={`guide-menu ${className}`.trim()} id={id}>
-      <div className="guide-menu-intro"><b>{introTitle}</b><span>{introCopy}</span></div>
-      <div className="guide-menu-grid">{children}</div>
-    </div>}
-  </div>;
+const RAIL_ICONS:Record<string,ReactNode>={
+  home:<><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></>,
+  items:<><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
+  monsters:<><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/><circle cx="12" cy="8" r="4"/></>,
+  world:<><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></>,
+  guides:<><path d="M4 19V5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M9 8h6M9 12h6M9 16h4"/></>,
+};
+
+function RailIcon({name}:{name:keyof typeof RAIL_ICONS}){
+  return <svg viewBox="0 0 24 24" aria-hidden="true" strokeLinecap="round" strokeLinejoin="round">{RAIL_ICONS[name]}</svg>;
 }
 
 function ExternalLinkDialog({destination,onClose}:{destination:ExternalDestination;onClose:()=>void}){
@@ -349,11 +362,11 @@ function NeonCursor(){
   return <span ref={cursorRef} className="neon-cursor" aria-hidden="true"/>;
 }
 
-function Library({openModule,openCatalog,openMonster,openWorld,t}:{openModule:(id:number)=>void;openCatalog:(options?:{id?:number;query?:string})=>void;openMonster:(options?:{id?:number;query?:string})=>void;openWorld:(options?:{kind?:WorldKind;id?:string;query?:string})=>void;t:Dict}){
+function Library({openModule,t}:{openModule:(id:number)=>void;t:Dict}){
   return <section className="library">
-    <div className="database-links"><button className="catalog-teaser" onClick={()=>openCatalog()}><span className="teaser-sigil">◆</span><span><b>{t.library.items.title}</b><em>{t.library.items.copy}</em></span><strong>{t.library.explore} <span>→</span></strong></button><button className="catalog-teaser monster-teaser" onClick={()=>openMonster()}><span className="teaser-sigil">♜</span><span><b>{t.library.monsters.title}</b><em>{t.library.monsters.copy}</em></span><strong>{t.library.explore} <span>→</span></strong></button><button className="catalog-teaser world-teaser" onClick={()=>openWorld()}><span className="teaser-sigil">⌖</span><span><b>{t.library.world.title}</b><em>{t.library.world.copy}</em></span><strong>{t.library.explore} <span>→</span></strong></button></div>
+    <div className="server-banner"><span className="mark">A</span><div><h1>AscencionRO</h1><p>{t.tagline}</p></div></div>
     <div className="section-title"><div><h2>{t.library.byTopic}</h2><p>{t.library.byTopicCopy}</p></div></div>
-    <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><h3>{t.modules[topic.id-1].title}</h3><p>{t.modules[topic.id-1].description}</p><span className="card-open">{t.library.open} <b>→</b></span></button>)}</div>
+    <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} style={{"--tint":MODULE_TINTS[topic.id-1]} as CSSProperties} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><span className="card-open">{t.library.open}<b>→</b></span><span className="card-copy"><h3>{t.modules[topic.id-1].title}</h3><p>{t.modules[topic.id-1].description}</p></span></button>)}</div>
   </section>
 }
 

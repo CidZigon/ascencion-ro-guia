@@ -16,10 +16,12 @@ test("renderiza la biblioteca limpia y el acceso al catálogo local",async()=>{
   const html=await response.text();
   assert.match(html,/<title>AscencionRO · Enciclopedia Pre-Renewal<\/title>/i);
   assert.doesNotMatch(html,/Todo Midgard/);
-  assert.match(html,/Busca objetos al instante/);
-  assert.match(html,/Consulta el bestiario local/);
-  assert.match(html,/Explora ciudades y mapas/);
+  assert.doesNotMatch(html,/Busca objetos al instante/);
+  assert.match(html,/class="side-rail-nav"/);
+  assert.match(html,/>Objetos</);
   assert.match(html,/>Monstruos</);
+  assert.match(html,/>Mundo</);
+  assert.match(html,/>Guías</);
   assert.doesNotMatch(html,/Your site is taking shape|codex-preview/i);
 });
 test("el catálogo contiene todos los registros y bloques declarados",async()=>{

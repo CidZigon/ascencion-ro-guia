@@ -121,7 +121,7 @@ export function WorldCatalog({selection,initialQuery,onSelect,t}:{selection:Worl
     if(window.matchMedia("(max-width: 800px)").matches)setTimeout(()=>document.querySelector(".world-detail")?.scrollIntoView({behavior:"smooth",block:"start"}),30);
   };
   return <section className="world-catalog">
-    <header className="catalog-hero world-hero"><div><small>{t.world.eyebrow}</small><h1>{t.world.heroTitle}</h1><p>{t.world.heroCopy}</p></div></header>
+    <header className="catalog-head world-hero"><div><small>{t.world.eyebrow}</small><h1>{t.world.heroTitle}</h1></div><p>{t.world.heroCopy}</p></header>
     <section className="world-city-section" aria-labelledby="region-title"><div className="world-section-heading"><div><small>{t.world.zonesEyebrow}</small><h2 id="region-title">{t.world.zonesTitle}</h2></div><span>{REGIONS.filter(item=>(regionCounts.get(item.id)??0)>0).length} {t.world.available}</span></div><div className="world-city-strip"><button className={region==="all"?"active":""} onClick={()=>setRegion("all")}><span>✦</span><b>{t.world.allShort}</b><small>{payload.counts.maps} {t.world.maps}</small></button>{REGIONS.filter(item=>(regionCounts.get(item.id)??0)>0).map(item=><button key={item.id} className={region===item.id?"active":""} onClick={()=>setRegion(item.id)}><span>{item.icon}</span><b>{regionText(t,item.id).name}</b><small>{regionCounts.get(item.id)} {t.world.maps}</small></button>)}</div></section>
     <div className="world-toolbar">
       <label><span>{t.world.searchLabel}</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="prt_fild08, Prontera, Langry…"/></label>

@@ -117,8 +117,9 @@ export function MonsterCatalog({selectedMonsterId,initialQuery,onSelectMonster,o
   if(!catalog)return <section className="catalog-loading"><div className="loader"/><p>{t.monsters.opening}</p></section>;
 
   return <section className="item-catalog monster-catalog">
-    <header className="catalog-hero monster-hero">
-      <div><small>{t.monsters.eyebrow}</small><h1>{t.monsters.heroTitle}</h1><p>Consulta los {catalog.meta.count.toLocaleString("es-ES")} monstruos Pre-Renewal: nivel, elemento, mapas y todo lo que dropean. Las fichas se abren aquí mismo.</p></div>
+    <header className="catalog-head monster-hero">
+      <div><small>{t.monsters.eyebrow}</small><h1>{t.monsters.heroTitle}</h1></div>
+      <p>Consulta los {catalog.meta.count.toLocaleString("es-ES")} monstruos Pre-Renewal: nivel, elemento, mapas y todo lo que dropean.</p>
     </header>
     <div className="catalog-toolbar monster-toolbar">
       <label className="catalog-search"><span>{t.monsters.searchLabel}</span><input value={query} onChange={event=>{setQuery(event.target.value);setLimit(80)}} placeholder={t.monsters.searchPlaceholder}/></label>
@@ -130,13 +131,15 @@ export function MonsterCatalog({selectedMonsterId,initialQuery,onSelectMonster,o
     <div className="catalog-body">
       <div className="catalog-results">
         <div className="catalog-status">{isEfficiencySort?<b>{sort==="efficiency-base"?t.monsters.topEfficiencyTitleBase(shown.length):sort==="efficiency-job"?t.monsters.topEfficiencyTitleJob(shown.length):t.monsters.topEfficiencyTitle(shown.length)}</b>:<><b>{filtered.length.toLocaleString("es-ES")}</b> coincidencias</>}</div>
-        <div className="item-list">{shown.map(item=><button key={item.id} className={selectedMonsterId===item.id?"item-row selected":"item-row"} onClick={()=>onSelectMonster(item.id)}>
-          <MonsterSprite monster={item} className="item-sigil"/>
-          <span className="item-main"><b>{item.name}{item.mvp&&<span className="mvp">MVP</span>}</b><small>{t.monsters.levelShort} {item.level??"—"} · {raceLabel(t,item.race)} · {elementLabel(t,item.element)}{item.elementLevel?` ${item.elementLevel}`:""}</small></span>
-          <span className="item-id">#{item.id}</span>
-        </button>)}</div>
-        {!filtered.length&&<div className="catalog-empty"><b>{t.monsters.emptyTitle}</b><span>{t.monsters.emptyHint}</span></div>}
-        {!isEfficiencySort&&limit<filtered.length&&<button className="load-more" onClick={()=>setLimit(value=>value+80)}>{t.monsters.more}</button>}
+        <div className="item-list">
+          {shown.map(item=><button key={item.id} className={selectedMonsterId===item.id?"item-row selected":"item-row"} onClick={()=>onSelectMonster(item.id)}>
+            <MonsterSprite monster={item} className="item-sigil"/>
+            <span className="item-main"><b>{item.name}{item.mvp&&<span className="mvp">MVP</span>}</b><small>{t.monsters.levelShort} {item.level??"—"} · {raceLabel(t,item.race)} · {elementLabel(t,item.element)}{item.elementLevel?` ${item.elementLevel}`:""}</small></span>
+            <span className="item-id">#{item.id}</span>
+          </button>)}
+          {!filtered.length&&<div className="catalog-empty"><b>{t.monsters.emptyTitle}</b><span>{t.monsters.emptyHint}</span></div>}
+          {!isEfficiencySort&&limit<filtered.length&&<button className="load-more" onClick={()=>setLimit(value=>value+80)}>{t.monsters.more}</button>}
+        </div>
       </div>
       <aside className="item-detail">{selectedMonsterId===null?<div className="detail-placeholder"><span>♜</span><h2>{t.monsters.pickTitle}</h2><p>{t.monsters.pickCopy}</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>{t.monsters.loadingCard}</p></div>:<MonsterDetailCard key={activeDetail.id} monster={activeDetail} onOpenItem={onOpenItem} onPreviewMonster={onPreviewMonster} t={t}/>}</aside>
     </div>

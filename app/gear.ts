@@ -1,6 +1,10 @@
 export type EquipSlot = {
   id: string;
   location: string;
+  /** Cuando un slot representa varias ubicaciones equivalentes (p. ej. el
+   * casco fusionado del filtro de cartas), coincide si el item ocupa
+   * cualquiera de estas. Si falta, solo cuenta `location`. */
+  matchLocations?: string[];
   icon: string;
   title: string;
   description: string;
