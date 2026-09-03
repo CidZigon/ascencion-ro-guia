@@ -24,7 +24,6 @@ type Callbacks={onOpenMonster:(options:{id:number})=>void;onOpenWorld:(selection
 
 export function ExpGuide({lang,onOpenMonster,onOpenWorld,onOpenExternal}:Callbacks&{lang:Lang}){
   const data=EXP_GUIDE[lang==="en"?"en":"es"];
-  const [query,setQuery]=useState("");
   const [levelBand,setLevelBand]=useState<string|null>(null);
 
   // Igual que localizeWorldLinks hacía con el HTML: si un nombre de NPC
@@ -49,18 +48,13 @@ export function ExpGuide({lang,onOpenMonster,onOpenWorld,onOpenExternal}:Callbac
     return known?.size===1?[...known][0]:undefined;
   };
 
-  const key=normalize(query.trim());
   const band=levelBand?LEVEL_BANDS.find(entry=>entry.id===levelBand):undefined;
   const inLevel=useCallback((minLevel:number)=>!band||(minLevel>=band.min&&minLevel<=band.max),[band]);
-  const matches=useCallback((...values:string[])=>!key||values.some(value=>normalize(value).includes(key)),[key]);
 
-  const turnins=useMemo(()=>data.turnins.filter(row=>inLevel(row.minLevel)&&matches(row.item,row.npc,row.mob.name,row.bestMap,row.npcLocation.label)),[data,inLevel,matches]);
-  const hunts=useMemo(()=>data.hunts.filter(row=>inLevel(row.minLevel)&&matches(row.mob.name,row.npc,row.npcLocation.label,row.dropNote)),[data,inLevel,matches]);
-  const quests=useMemo(()=>data.quests.filter(entry=>inLevel(entry.minLevel)&&matches(entry.title,...entry.badges,...entry.steps.map(step=>step.text))),[data,inLevel,matches]);
-  const cooldowns=useMemo(()=>data.cooldowns.filter(entry=>inLevel(entry.minLevel)&&matches(entry.title,...entry.badges,...entry.steps.map(step=>step.text))),[data,inLevel,matches]);
-
-  const anyFilter=query.trim()!==""||levelBand!==null;
-  const clearFilters=()=>{setQuery("");setLevelBand(null)};
+  const turnins=useMemo(()=>data.turnins.filter(row=>inLevel(row.minLevel)),[data,inLevel]);
+  const hunts=useMemo(()=>data.hunts.filter(row=>inLevel(row.minLevel)),[data,inLevel]);
+  const quests=useMemo(()=>data.quests.filter(entry=>inLevel(entry.minLevel)),[data,inLevel]);
+  const cooldowns=useMemo(()=>data.cooldowns.filter(entry=>inLevel(entry.minLevel)),[data,inLevel]);
 
   return <section className="exp-guide">
     <div className="server-banner exp-hero">
@@ -80,10 +74,10 @@ export function ExpGuide({lang,onOpenMonster,onOpenWorld,onOpenExternal}:Callbac
       <p className="exp-small">{data.compatNote}</p>
     </div>
 
-    <div className="catalog-toolbar exp-toolbar">
-      <label className="catalog-search"><span>{data.searchPlaceholder}</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder={data.searchPlaceholder}/></label>
-      <div className="chip-set">{LEVEL_BANDS.map(entry=><button key={entry.id} type="button" className={levelBand===entry.id?"filter-chip slim active":"filter-chip slim"} aria-pressed={levelBand===entry.id} onClick={()=>setLevelBand(current=>current===entry.id?null:entry.id)}>{entry.label}</button>)}</div>
-      {anyFilter&&<button type="button" className="clear-filters" onClick={clearFilters}>{data.clearFilters}</button>}
+    <div className="exp-level-toolbar">
+      <span className="filter-label">{data.allLevels}</span>
+      <div className="chip-set">{LEVEL_BANDS.map(entry=><button key={entry.id} type="button" className={levelBand===entry.id?"filter-chip active":"filter-chip"} aria-pressed={levelBand===entry.id} onClick={()=>setLevelBand(current=>current===entry.id?null:entry.id)}>{entry.label}</button>)}</div>
+      {levelBand!==null&&<button type="button" className="clear-filters" onClick={()=>setLevelBand(null)}>{data.clearFilters}</button>}
     </div>
 
     <section id="exp-turnins" className="exp-section">

@@ -265,7 +265,7 @@ button.source-row{width:100%;text-align:left;color:inherit}
 .exp-panel p{margin:8px 0 0}
 .exp-small{margin:8px 0 0;color:#aaa198;font-size:12.5px;line-height:1.6}
 .compat-badges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
-.exp-toolbar{align-items:center}
+.exp-level-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 18px;border-radius:16px;background-color:var(--glass-bg);background-image:var(--noise);background-size:140px 140px;background-repeat:repeat;background-blend-mode:overlay;backdrop-filter:blur(18px) saturate(150%);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow)}
 .exp-section{display:flex;flex-direction:column;gap:4px;scroll-margin-top:70px}
 .exp-eyebrow{display:block;color:#d6ad6f;font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px}
 .exp-empty{color:#8f8780;font-size:12px;padding:14px 0}

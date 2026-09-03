@@ -12,6 +12,7 @@ type ActiveView = number | "items" | "world" | "equipment" | "weapons" | "monste
 const ExpGuide=lazy(async()=>({default:(await import("./ExpGuide")).ExpGuide}));
 const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCatalog}));
 const MonsterCatalog=lazy(async()=>({default:(await import("./MonsterCatalog")).MonsterCatalog}));
+const MonsterQuickViewDialog=lazy(async()=>({default:(await import("./MonsterCatalog")).MonsterQuickViewDialog}));
 const WorldCatalog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldCatalog}));
 const WorldReferenceDialog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldReferenceDialog}));
 const MonsterSpawnDialog=lazy(async()=>({default:(await import("./WorldCatalog")).MonsterSpawnDialog}));
@@ -71,6 +72,7 @@ export function GuidePortal(){
   const [worldSelection,setWorldSelection]=useState<WorldSelection|null>(null);
   const [worldPreview,setWorldPreview]=useState<WorldSelection|null>(null);
   const [monsterSpawnPreview,setMonsterSpawnPreview]=useState<{id:number;name:string;mvp?:boolean;maps:string[]}|null>(null);
+  const [monsterQuickView,setMonsterQuickView]=useState<number|null>(null);
   const [externalLink,setExternalLink]=useState<ExternalDestination|null>(null);
   const [navMenu,setNavMenu]=useState<NavMenu|null>(null);
   const headerRef=useRef<HTMLElement>(null);
@@ -84,6 +86,7 @@ export function GuidePortal(){
   const openModule=useCallback((id:number,anchor="")=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     pendingAnchor.current=anchor;
     setLoadError(false);
     setActive(previous=>{
@@ -105,6 +108,7 @@ export function GuidePortal(){
   const openCatalog=useCallback((options:{id?:number;query?:string}={})=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     setActive("items");
     setSelectedItemId(options.id??null);
     setCatalogQuery(options.query??"");
@@ -127,6 +131,7 @@ export function GuidePortal(){
   const openMonster=useCallback((options:{id?:number;query?:string}={})=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     setActive("monsters");
     setSelectedMonsterId(options.id??null);
     setMonsterQuery(options.query??"");
@@ -146,6 +151,7 @@ export function GuidePortal(){
   const openWorld=useCallback((options:{kind?:WorldKind;id?:string;query?:string}={})=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     setActive("world");
     setWorldSelection(options.kind&&options.id?{kind:options.kind,id:options.id}:null);
     setWorldQuery(options.query??"");
@@ -168,6 +174,7 @@ export function GuidePortal(){
   const showLibrary=useCallback(()=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     setActive(null);
     setQuery("");
     setNavMenu(null);
@@ -194,9 +201,12 @@ export function GuidePortal(){
     return()=>{document.removeEventListener("pointerdown",close);document.removeEventListener("keydown",escape)};
   },[closeNavMenu]);
 
-  const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setWorldPreview(selection)},[]);
-  const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setExternalLink(destination)},[]);
-  const previewMonster=useCallback((id:number,name:string,maps:string[],mvp?:boolean)=>{setExternalLink(null);setWorldPreview(null);setMonsterSpawnPreview({id,name,mvp,maps})},[]);
+  const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setMonsterQuickView(null);setWorldPreview(selection)},[]);
+  const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setMonsterQuickView(null);setExternalLink(destination)},[]);
+  const previewMonster=useCallback((id:number,name:string,maps:string[],mvp?:boolean)=>{setExternalLink(null);setWorldPreview(null);setMonsterQuickView(null);setMonsterSpawnPreview({id,name,mvp,maps})},[]);
+  // A diferencia de openMonster (navega al catálogo completo), esto abre una
+  // vista rápida en modal sin abandonar la guía ni perder sus filtros.
+  const openMonsterQuickView=useCallback((options:{id:number})=>{setExternalLink(null);setWorldPreview(null);setMonsterSpawnPreview(null);setMonsterQuickView(options.id)},[]);
 
   useEffect(()=>{
     const applyHash=()=>{
@@ -329,12 +339,13 @@ export function GuidePortal(){
         {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
         {active==="monsters"&&<Suspense fallback={<SurfaceLoading label={t.loading.monsters}/>}><MonsterCatalog key={`monsters-${monsterQuery}`} selectedMonsterId={selectedMonsterId} initialQuery={monsterQuery} onSelectMonster={selectMonster} onOpenItem={id=>openCatalog({id})} onPreviewMonster={previewMonster} t={t}/></Suspense>}
         {active==="world"&&<Suspense fallback={<SurfaceLoading label={t.loading.world}/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld} t={t}/></Suspense>}
-        {active===1&&<Suspense fallback={<SurfaceLoading label={t.guide.preparing}/>}><ExpGuide lang={lang} onOpenMonster={openMonster} onOpenWorld={openWorldPreview} onOpenExternal={openExternalLink}/></Suspense>}
+        {active===1&&<Suspense fallback={<SurfaceLoading label={t.guide.preparing}/>}><ExpGuide lang={lang} onOpenMonster={openMonsterQuickView} onOpenWorld={openWorldPreview} onOpenExternal={openExternalLink}/></Suspense>}
         {typeof active==="number"&&active!==1&&<section className="module-view">{lang==="en"&&!moduleData[`${active}:${lang}`]?.translated&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[`${active}:${lang}`]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
     {worldPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)} t={t}/></Suspense>}
     {monsterSpawnPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setMonsterSpawnPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><MonsterSpawnDialog key={`spawn-${monsterSpawnPreview.id}`} monsterId={monsterSpawnPreview.id} monsterName={monsterSpawnPreview.name} mvp={monsterSpawnPreview.mvp} maps={monsterSpawnPreview.maps} onClose={()=>setMonsterSpawnPreview(null)} t={t}/></Suspense>}
+    {monsterQuickView!==null&&<Suspense fallback={<ModalShell eyebrow={t.monsters.eyebrow} title={t.monsters.heroTitle} onClose={()=>setMonsterQuickView(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><MonsterQuickViewDialog key={`quickview-${monsterQuickView}`} monsterId={monsterQuickView} onClose={()=>setMonsterQuickView(null)} onOpenItem={id=>{setMonsterQuickView(null);openCatalog({id})}} onPreviewMonster={previewMonster} t={t}/></Suspense>}
     {externalLink&&<ExternalLinkDialog destination={externalLink} onClose={()=>setExternalLink(null)} t={t}/>}
     <NeonCursor/>
   </main>;
