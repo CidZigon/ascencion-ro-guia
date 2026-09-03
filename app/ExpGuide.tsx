@@ -93,7 +93,7 @@ export function ExpGuide({lang,onOpenMonster,onOpenWorld,onOpenExternal}:Callbac
         <span className="exp-row-level">{row.levelRange}</span>
         <div className="exp-row-main"><b>{row.item}</b><span className="exp-row-sub">NPC <NpcLink name={row.npc} map={npcMapFor(row.npc,row.npcLocation.map)} onOpenWorld={onOpenWorld}/> · <MapChip mapRef={row.npcLocation} onOpenWorld={onOpenWorld}/></span></div>
         <MobButton mob={row.mob} onOpenMonster={onOpenMonster}/>
-        <span className="exp-row-stats">{row.bestMap} · HP {row.hp} · Lv {row.mobLevel} · {row.spawn} · <b>{row.dropRate}</b></span>
+        <span className="exp-row-stats">{row.bestMap} · HP {row.hp} · Lv {row.mobLevel}</span>
       </div>)}
       {!turnins.length&&<p className="exp-empty">—</p>}</div>
     </section>

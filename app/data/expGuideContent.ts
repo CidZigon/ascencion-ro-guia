@@ -10,7 +10,7 @@
 export type ExpLang = "es" | "en";
 export type ExpMapRef = { map: string; label: string };
 export type ExpMobRef = { id: number; name: string };
-export type ExpTurnIn = { id: string; minLevel: number; levelRange: string; item: string; npc: string; npcLocation: ExpMapRef; mob: ExpMobRef; bestMap: string; hp: string; mobLevel: string; spawn: string; dropRate: string };
+export type ExpTurnIn = { id: string; minLevel: number; levelRange: string; item: string; npc: string; npcLocation: ExpMapRef; mob: ExpMobRef; bestMap: string; hp: string; mobLevel: string };
 export type ExpHunt = { id: string; minLevel: number; levelRange: string; mob: ExpMobRef; exp: string; npc: string; npcLocation: ExpMapRef; prereq: string; dropNote: string };
 export type ExpStep = { text: string; npcNames: string[]; map: ExpMapRef | null };
 export type ExpPrereq = { id: string; title: string; paragraphs: string[]; chain: string[]; sourceHref: string; sourceLabel: string };
@@ -55,7 +55,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
       "Confirmar script en tu servidor",
       "RMS Pre-Re 1×"
     ],
-    "turninsNote": "NPC, cantidad y recompensa pertenecen al sistema Repeatable EXP de iRO Classic. El mob recomendado usa stats/spawns Pre-Renewal de RateMyServer. Toca el nombre del mob para abrir su ficha local.",
+    "turninsNote": "NPC y cantidad pertenecen al sistema Repeatable EXP de iRO Classic. El mob recomendado es el más seguro entre todos los que dropean ese item (menos HP), no necesariamente el más citado en guías externas — en AscencionRO (10x) cualquier rate base de RMS de 10% o más ya cae garantizado en cada kill, así que la única diferencia real entre alternativas es qué tan peligroso es matarlas. Toca el nombre del mob para abrir su ficha local.",
     "huntsEyebrow": "1B · iRO Classic Repeatables",
     "huntsTitle": "⚔️ Monster Hunting",
     "huntsCompatBadges": [
@@ -105,11 +105,9 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "id": 1007,
           "name": "Fabre"
         },
-        "bestMap": "prt_fild08b",
+        "bestMap": "gef_fild07",
         "hp": "63",
-        "mobLevel": "2",
-        "spawn": "140 / 5s",
-        "dropRate": "65%"
+        "mobLevel": "2"
       },
       {
         "id": "portal-f1-2",
@@ -122,14 +120,12 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "label": "📍 gef_fild04 · 191,54"
         },
         "mob": {
-          "id": 1008,
-          "name": "Pupa"
+          "id": 1048,
+          "name": "Thief Bug Egg"
         },
-        "bestMap": "gef_fild04",
-        "hp": "427",
-        "mobLevel": "2",
-        "spawn": "60 instant",
-        "dropRate": "55%"
+        "bestMap": "ein_fild09",
+        "hp": "48",
+        "mobLevel": "4"
       },
       {
         "id": "portal-f1-3",
@@ -147,9 +143,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "prt_fild04",
         "hp": "595",
-        "mobLevel": "16",
-        "spawn": "40 instant",
-        "dropRate": "90%"
+        "mobLevel": "16"
       },
       {
         "id": "portal-f1-4",
@@ -167,9 +161,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "mjolnir_01",
         "hp": "1,424",
-        "mobLevel": "23",
-        "spawn": "40 instant",
-        "dropRate": "90%"
+        "mobLevel": "23"
       },
       {
         "id": "portal-f1-5",
@@ -182,14 +174,12 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "label": "📍 moc_fild11 · 57,138"
         },
         "mob": {
-          "id": 1040,
-          "name": "Golem"
+          "id": 1129,
+          "name": "Horong"
         },
-        "bestMap": "moc_fild11",
-        "hp": "3,900",
-        "mobLevel": "25",
-        "spawn": "70 instant",
-        "dropRate": "90%"
+        "bestMap": "ama_dun02",
+        "hp": "1,939",
+        "mobLevel": "34"
       },
       {
         "id": "portal-f1-6",
@@ -207,9 +197,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "moc_fild17",
         "hp": "2,282",
-        "mobLevel": "26",
-        "spawn": "100 instant",
-        "dropRate": "90%"
+        "mobLevel": "26"
       },
       {
         "id": "portal-f1-7",
@@ -225,11 +213,9 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "id": 1119,
           "name": "Frilldora"
         },
-        "bestMap": "cmd_fild05",
+        "bestMap": "moc_fild17",
         "hp": "2,023",
-        "mobLevel": "30",
-        "spawn": "45 instant",
-        "dropRate": "55%"
+        "mobLevel": "30"
       },
       {
         "id": "portal-f1-8",
@@ -247,9 +233,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "pay_fild10",
         "hp": "2,697",
-        "mobLevel": "33",
-        "spawn": "70 instant",
-        "dropRate": "90%"
+        "mobLevel": "33"
       },
       {
         "id": "portal-f1-9",
@@ -265,11 +249,9 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "id": 1586,
           "name": "Leaf Cat"
         },
-        "bestMap": "ayo_dun01",
+        "bestMap": "ayo_fild01",
         "hp": "2,396",
-        "mobLevel": "38",
-        "spawn": "65 instant",
-        "dropRate": "43.65%"
+        "mobLevel": "38"
       },
       {
         "id": "portal-f1-10",
@@ -282,14 +264,12 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "label": "📍 cmd_fild01 · 362,256"
         },
         "mob": {
-          "id": 1206,
-          "name": "Anolian"
+          "id": 1271,
+          "name": "Alligator"
         },
-        "bestMap": "cmd_fild03",
-        "hp": "18,960",
-        "mobLevel": "61",
-        "spawn": "90 instant",
-        "dropRate": "48.5%"
+        "bestMap": "cmd_fild01",
+        "hp": "6,962",
+        "mobLevel": "42"
       },
       {
         "id": "portal-f1-11",
@@ -307,9 +287,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "ein_fild01",
         "hp": "7,259",
-        "mobLevel": "56",
-        "spawn": "50 instant + 5 / 5–6 min",
-        "dropRate": "40.74%"
+        "mobLevel": "56"
       },
       {
         "id": "portal-f1-12",
@@ -325,11 +303,9 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "id": 1881,
           "name": "Les"
         },
-        "bestMap": "mosk_dun02",
+        "bestMap": "mosk_dun01",
         "hp": "3,080",
-        "mobLevel": "39",
-        "spawn": "40 / 10–20s",
-        "dropRate": "20%"
+        "mobLevel": "39"
       },
       {
         "id": "portal-f1-13",
@@ -347,9 +323,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "ein_fild06",
         "hp": "11,077",
-        "mobLevel": "69",
-        "spawn": "55 instant",
-        "dropRate": "45.59%"
+        "mobLevel": "69"
       }
     ],
     "hunts": [
@@ -1790,7 +1764,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
       "Confirm the script on your server",
       "RMS Pre-Re 1×"
     ],
-    "turninsNote": "NPC, quantity, and reward belong to iRO Classic's Repeatable EXP system. The recommended mob uses Pre-Renewal stats/spawns from RateMyServer. Tap the mob's name to open its local card.",
+    "turninsNote": "NPC and quantity belong to iRO Classic's Repeatable EXP system. The recommended mob is the safest among every monster that drops that item (lowest HP), not necessarily the one most often cited in outside guides — on AscencionRO (10x) any RMS base rate of 10% or more already drops on every kill, so the only real difference between options is how dangerous they are to fight. Tap the mob's name to open its local card.",
     "huntsEyebrow": "1B · iRO Classic Repeatables",
     "huntsTitle": "⚔️ Monster Hunting",
     "huntsCompatBadges": [
@@ -1840,11 +1814,9 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "id": 1007,
           "name": "Fabre"
         },
-        "bestMap": "prt_fild08b",
+        "bestMap": "gef_fild07",
         "hp": "63",
-        "mobLevel": "2",
-        "spawn": "140 / 5s",
-        "dropRate": "65%"
+        "mobLevel": "2"
       },
       {
         "id": "portal-f1-2",
@@ -1857,14 +1829,12 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "label": "📍 gef_fild04 · 191,54"
         },
         "mob": {
-          "id": 1008,
-          "name": "Pupa"
+          "id": 1048,
+          "name": "Thief Bug Egg"
         },
-        "bestMap": "gef_fild04",
-        "hp": "427",
-        "mobLevel": "2",
-        "spawn": "60 instant",
-        "dropRate": "55%"
+        "bestMap": "ein_fild09",
+        "hp": "48",
+        "mobLevel": "4"
       },
       {
         "id": "portal-f1-3",
@@ -1882,9 +1852,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "prt_fild04",
         "hp": "595",
-        "mobLevel": "16",
-        "spawn": "40 instant",
-        "dropRate": "90%"
+        "mobLevel": "16"
       },
       {
         "id": "portal-f1-4",
@@ -1902,9 +1870,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "mjolnir_01",
         "hp": "1,424",
-        "mobLevel": "23",
-        "spawn": "40 instant",
-        "dropRate": "90%"
+        "mobLevel": "23"
       },
       {
         "id": "portal-f1-5",
@@ -1917,14 +1883,12 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "label": "📍 moc_fild11 · 57,138"
         },
         "mob": {
-          "id": 1040,
-          "name": "Golem"
+          "id": 1129,
+          "name": "Horong"
         },
-        "bestMap": "moc_fild11",
-        "hp": "3,900",
-        "mobLevel": "25",
-        "spawn": "70 instant",
-        "dropRate": "90%"
+        "bestMap": "ama_dun02",
+        "hp": "1,939",
+        "mobLevel": "34"
       },
       {
         "id": "portal-f1-6",
@@ -1942,9 +1906,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "moc_fild17",
         "hp": "2,282",
-        "mobLevel": "26",
-        "spawn": "100 instant",
-        "dropRate": "90%"
+        "mobLevel": "26"
       },
       {
         "id": "portal-f1-7",
@@ -1960,11 +1922,9 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "id": 1119,
           "name": "Frilldora"
         },
-        "bestMap": "cmd_fild05",
+        "bestMap": "moc_fild17",
         "hp": "2,023",
-        "mobLevel": "30",
-        "spawn": "45 instant",
-        "dropRate": "55%"
+        "mobLevel": "30"
       },
       {
         "id": "portal-f1-8",
@@ -1982,9 +1942,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "pay_fild10",
         "hp": "2,697",
-        "mobLevel": "33",
-        "spawn": "70 instant",
-        "dropRate": "90%"
+        "mobLevel": "33"
       },
       {
         "id": "portal-f1-9",
@@ -2000,11 +1958,9 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "id": 1586,
           "name": "Leaf Cat"
         },
-        "bestMap": "ayo_dun01",
+        "bestMap": "ayo_fild01",
         "hp": "2,396",
-        "mobLevel": "38",
-        "spawn": "65 instant",
-        "dropRate": "43.65%"
+        "mobLevel": "38"
       },
       {
         "id": "portal-f1-10",
@@ -2017,14 +1973,12 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "label": "📍 cmd_fild01 · 362,256"
         },
         "mob": {
-          "id": 1206,
-          "name": "Anolian"
+          "id": 1271,
+          "name": "Alligator"
         },
-        "bestMap": "cmd_fild03",
-        "hp": "18,960",
-        "mobLevel": "61",
-        "spawn": "90 instant",
-        "dropRate": "48.5%"
+        "bestMap": "cmd_fild01",
+        "hp": "6,962",
+        "mobLevel": "42"
       },
       {
         "id": "portal-f1-11",
@@ -2042,9 +1996,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "ein_fild01",
         "hp": "7,259",
-        "mobLevel": "56",
-        "spawn": "50 instant + 5 / 5–6 min",
-        "dropRate": "40.74%"
+        "mobLevel": "56"
       },
       {
         "id": "portal-f1-12",
@@ -2060,11 +2012,9 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
           "id": 1881,
           "name": "Les"
         },
-        "bestMap": "mosk_dun02",
+        "bestMap": "mosk_dun01",
         "hp": "3,080",
-        "mobLevel": "39",
-        "spawn": "40 / 10–20s",
-        "dropRate": "20%"
+        "mobLevel": "39"
       },
       {
         "id": "portal-f1-13",
@@ -2082,9 +2032,7 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
         },
         "bestMap": "ein_fild06",
         "hp": "11,077",
-        "mobLevel": "69",
-        "spawn": "55 instant",
-        "dropRate": "45.59%"
+        "mobLevel": "69"
       }
     ],
     "hunts": [
