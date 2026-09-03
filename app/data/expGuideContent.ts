@@ -17,13 +17,12 @@ export type ExpPrereq = { id: string; title: string; paragraphs: string[]; chain
 export type ExpQuestLike = { id: string; minLevel: number; title: string; badges: string[]; effort: string; effortLabel: string; paragraphs: string[]; steps: ExpStep[]; prereq: ExpPrereq | null; sourceHref: string; sourceLabel: string };
 export type ExpGuideText = {
   title: string; tagline: string; badges: string[];
-  compatTitle: string; compatBadges: string[]; compatNote: string;
   searchPlaceholder: string; clearFilters: string; allLevels: string;
-  turninsEyebrow: string; turninsTitle: string; turninsCompatBadges: string[]; turninsNote: string;
-  huntsEyebrow: string; huntsTitle: string; huntsCompatBadges: string[]; huntsNote: string; huntsRule: string; huntsDropDisclaimer: string;
-  questsEyebrow: string; questsTitle: string; questsIntro: string;
-  cooldownsEyebrow: string; cooldownsTitle: string; cooldownsCompatBadges: string[]; cooldownsIntro: string;
-  rulesEyebrow: string; rulesTitle: string; rulesParagraphs: string[];
+  turninsTitle: string; turninsCompatBadges: string[]; turninsNote: string;
+  huntsTitle: string; huntsCompatBadges: string[]; huntsNote: string; huntsRule: string; huntsDropDisclaimer: string;
+  questsTitle: string; questsIntro: string;
+  cooldownsTitle: string; cooldownsCompatBadges: string[]; cooldownsIntro: string;
+  rulesTitle: string; rulesParagraphs: string[];
   startLabel: string; prereqLabel: string; sourceLabel: string;
   navResumen: string; navTurnins: string; navHunts: string; navQuests: string; navCooldowns: string; navReglas: string;
   turnins: ExpTurnIn[]; hunts: ExpHunt[]; quests: ExpQuestLike[]; cooldowns: ExpQuestLike[];
@@ -38,25 +37,15 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
       "EPISODIO 13.2",
       "rAthena / Pre-Re"
     ],
-    "compatTitle": "🧭 Compatibilidad de esta guía",
-    "compatBadges": [
-      "Episode 13.2 / New World",
-      "iRO Classic Repeatables: confirmar en servidor",
-      "Pre-Renewal",
-      "rAthena"
-    ],
-    "compatNote": "rAthena Pre-Renewal usa mecánicas/archivos de referencia de Episode 13.2, pero los scripts pueden habilitarse, deshabilitarse o modificarse por servidor. Por eso los Item Turn-In y Monster Hunting de iRO Classic se marcan como contenido que conviene confirmar en la implementación local.",
     "searchPlaceholder": "Buscar quest, item, mob, NPC o mapa…",
     "clearFilters": "Limpiar filtros",
     "allLevels": "Todos los niveles",
-    "turninsEyebrow": "1A · iRO Classic Repeatables",
     "turninsTitle": "📦 Item Turn-In",
     "turninsCompatBadges": [
       "Confirmar script en tu servidor",
       "RMS Pre-Re 1×"
     ],
     "turninsNote": "NPC y cantidad pertenecen al sistema Repeatable EXP de iRO Classic. El mob recomendado es el más seguro entre todos los que dropean ese item (menos HP), no necesariamente el más citado en guías externas — en AscencionRO (10x) cualquier rate base de RMS de 10% o más ya cae garantizado en cada kill, así que la única diferencia real entre alternativas es qué tan peligroso es matarlas. Toca el nombre del mob para abrir su ficha local.",
-    "huntsEyebrow": "1B · iRO Classic Repeatables",
     "huntsTitle": "⚔️ Monster Hunting",
     "huntsCompatBadges": [
       "Confirmar script en tu servidor",
@@ -65,17 +54,14 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
     "huntsNote": "La recompensa mostrada es para 50 kills; las opciones de 100 y 150 multiplican la EXP por 2 y 3. No existe una cadena previa adicional: basta estar dentro del rango de nivel y que el NPC/script esté habilitado.",
     "huntsRule": "Regla de conteo: las muertes hechas por Homúnculos o Mercenarios no aumentan el contador. Las kills pueden compartirse con miembros de party cercanos bajo las reglas documentadas por iRO Classic.",
     "huntsDropDisclaimer": "El valor en zeny depende de la economía del servidor. Esta columna destaca cartas, equipo o materiales con utilidad clara; no pretende ser una lista completa de drops.",
-    "questsEyebrow": "1C · Selección recomendada",
     "questsTitle": "📜 Quests con mejor salto de EXP / esfuerzo",
     "questsIntro": "Por defecto se muestra solo lo esencial. Abre únicamente la quest que te interese o usa el buscador.",
-    "cooldownsEyebrow": "1D · Episode 13.2 · Into the Unknown",
     "cooldownsTitle": "⏱️ Cooldowns recomendados",
     "cooldownsCompatBadges": [
       "Contenido 13.2",
       "Rutina New World"
     ],
     "cooldownsIntro": "Estas fichas muestran el inicio exacto, qué haces, qué consume la quest y qué prerrequisito abre el contenido. El detalle largo queda plegado.",
-    "rulesEyebrow": "Mecánica",
     "rulesTitle": "🧠 Reglas de EXP que evitan desperdicios",
     "rulesParagraphs": [
       "En Pre-Renewal Classic, el nivel del personaje no modifica por sí mismo la EXP base del monstruo. Para las recompensas de quest existe un límite por “bucket” de EXP: una recompensa individual no puede saltar arbitrariamente muchos niveles. Por eso conviene entregar recompensas grandes cuando estás cerca de 0% del nivel actual.",
@@ -1747,25 +1733,15 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
       "EPISODE 13.2",
       "rAthena / Pre-Re"
     ],
-    "compatTitle": "🧭 This guide's compatibility",
-    "compatBadges": [
-      "Episode 13.2 / New World",
-      "iRO Classic Repeatables: confirm on your server",
-      "Pre-Renewal",
-      "rAthena"
-    ],
-    "compatNote": "rAthena Pre-Renewal uses mechanics/reference files from Episode 13.2, but scripts can be enabled, disabled, or modified per server. That's why iRO Classic's Item Turn-In and Monster Hunting are marked as content worth confirming on your local implementation.",
     "searchPlaceholder": "Search quest, item, mob, NPC, or map…",
     "clearFilters": "Clear filters",
     "allLevels": "All levels",
-    "turninsEyebrow": "1A · iRO Classic Repeatables",
     "turninsTitle": "📦 Item Turn-In",
     "turninsCompatBadges": [
       "Confirm the script on your server",
       "RMS Pre-Re 1×"
     ],
     "turninsNote": "NPC and quantity belong to iRO Classic's Repeatable EXP system. The recommended mob is the safest among every monster that drops that item (lowest HP), not necessarily the one most often cited in outside guides — on AscencionRO (10x) any RMS base rate of 10% or more already drops on every kill, so the only real difference between options is how dangerous they are to fight. Tap the mob's name to open its local card.",
-    "huntsEyebrow": "1B · iRO Classic Repeatables",
     "huntsTitle": "⚔️ Monster Hunting",
     "huntsCompatBadges": [
       "Confirm the script on your server",
@@ -1774,17 +1750,14 @@ export const EXP_GUIDE: Record<ExpLang, ExpGuideText> = {
     "huntsNote": "The reward shown is for 50 kills; the 100 and 150 options multiply the EXP by 2 and 3. There's no additional prerequisite chain: you just need to be within the level range and have the NPC/script enabled.",
     "huntsRule": "Counting rule: kills made by Homunculus or Mercenaries don't increase the counter. Kills can be shared with nearby party members under the rules documented by iRO Classic.",
     "huntsDropDisclaimer": "The zeny value depends on the server's economy. This column highlights cards, gear, or materials with clear utility; it isn't meant to be a complete drop list.",
-    "questsEyebrow": "1C · Recommended picks",
     "questsTitle": "📜 Quests with the best EXP-per-effort payoff",
     "questsIntro": "Only the essentials show by default. Open just the quest you're interested in, or use the search box.",
-    "cooldownsEyebrow": "1D · Episode 13.2 · Into the Unknown",
     "cooldownsTitle": "⏱️ Recommended cooldowns",
     "cooldownsCompatBadges": [
       "13.2 content",
       "New World routine"
     ],
     "cooldownsIntro": "These cards show the exact start, what you do, what the quest consumes, and what prerequisite unlocks it. The long detail stays collapsed.",
-    "rulesEyebrow": "Mechanics",
     "rulesTitle": "🧠 EXP rules that prevent waste",
     "rulesParagraphs": [
       "In Pre-Renewal Classic, character level doesn't by itself change a monster's base EXP. For quest rewards there's a per-“bucket” EXP cap: a single reward can't arbitrarily jump many levels' worth. That's why it's best to turn in large rewards when you're close to 0% of your current level.",

@@ -13,7 +13,7 @@ type WorldPoint={x:number;y:number;label:string;kind:"npc"|"reference"};
 type MapEntry={id:string;code:string;labels:string[];points:WorldPoint[];image:string|null;contexts:string[];topics:number[]};
 type MonsterLocation={map:string;name:string;spawn:string};
 type MonsterEntry={id:number;name:string;sprite:string|null;locations:MonsterLocation[];contexts:string[];topics:number[]};
-type NpcEntry={id:string;name:string;map:string|null;sprite:string|null;spriteApproximate?:boolean;locations:string[];points:WorldPoint[];contexts:string[];topics:number[]};
+export type NpcEntry={id:string;name:string;map:string|null;sprite:string|null;spriteApproximate?:boolean;locations:string[];points:WorldPoint[];contexts:string[];topics:number[]};
 type ReferenceEntry={id:string;name:string;contexts:string[];topics:number[]};
 type WorldPayload={counts:{maps:number;monsters:number;npcs:number;references:number};maps:MapEntry[];monsters:MonsterEntry[];npcs:NpcEntry[];references:ReferenceEntry[]};
 type WorldRegion={id:string;name:string;description:string;icon:string;codes?:string[];prefixes?:string[];special?:"instance"|"other"};
@@ -24,7 +24,7 @@ type Entry=
   |({kind:"reference"}&ReferenceEntry);
 
 let worldPromise:Promise<WorldPayload>|null=null;
-function loadWorld(){
+export function loadWorld(){
   worldPromise??=fetch("/data/world-index.json").then(response=>{if(!response.ok)throw new Error("world");return response.json()});
   return worldPromise;
 }

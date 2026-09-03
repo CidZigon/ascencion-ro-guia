@@ -285,6 +285,10 @@ button.source-row{width:100%;text-align:left;color:inherit}
 .exp-inline-link:hover{color:#c7fff7}
 .exp-map-chip{display:inline-flex;padding:2px 9px;border:1px solid var(--glass-border);border-radius:999px;background:#ffffff0a;color:#83e4d7;font-size:11px;cursor:pointer}
 .exp-map-chip:hover{border-color:var(--glass-border-hover);color:#c7fff7}
+.exp-npc{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap}
+.exp-npc-sprite{width:22px;height:22px;object-fit:contain;image-rendering:pixelated;border-radius:50%;background:radial-gradient(circle at 40% 30%,#d2b07128,#ffffff08 75%)}
+.exp-navi-btn{display:inline-flex;padding:2px 8px;border:1px dashed #51463e;border-radius:999px;background:transparent;color:#9b938c;font-size:10px;cursor:pointer}
+.exp-navi-btn:hover{border-color:var(--gold);color:#f0d7aa}
 
 .exp-quest{margin-top:8px;border-radius:16px;background-color:var(--glass-bg);background-image:var(--noise);background-size:140px 140px;background-repeat:repeat;background-blend-mode:overlay;backdrop-filter:blur(18px) saturate(150%);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);overflow:hidden}
 .exp-quest summary{list-style:none;cursor:pointer;padding:14px 18px}
