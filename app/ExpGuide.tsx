@@ -52,24 +52,38 @@ export function ExpGuide({lang,onOpenMonster,onOpenWorld,onOpenExternal}:Callbac
 
   // Igual que localizeWorldLinks hacía con el HTML: si un nombre de NPC
   // aparece con un único mapa en toda la guía, un paso que lo menciona sin
-  // coordenada propia ("Regresa con Vincent.") igual puede enlazar ahí.
+  // coordenada propia ("Regresa con Vincent.") igual puede enlazar ahí — y
+  // ahora también recuerda las coordenadas de la primera vez que se vio ese
+  // NPC en ese mapa, para que el botón /navi no desaparezca en las mismas
+  // repeticiones que antes se quedaban sin mapa propio.
   const knownNpcMaps=useMemo(()=>{
-    const map=new Map<string,Set<string>>();
-    const remember=(name:string,mapCode?:string)=>{
+    const maps=new Map<string,Set<string>>();
+    const coords=new Map<string,{x:number;y:number}>();
+    const remember=(name:string,mapCode?:string,label?:string)=>{
       if(!mapCode)return;
       const key=npcSlug(name);
-      const known=map.get(key)??new Set<string>();
+      const known=maps.get(key)??new Set<string>();
       known.add(mapCode);
-      map.set(key,known);
+      maps.set(key,known);
+      const coordKey=`${key}|${mapCode}`;
+      if(label&&!coords.has(coordKey)){
+        const parsed=parseCoords(label);
+        if(parsed)coords.set(coordKey,parsed);
+      }
     };
-    for(const row of[...data.turnins,...data.hunts])remember(row.npc,row.npcLocation.map);
-    for(const entry of[...data.quests,...data.cooldowns])for(const step of entry.steps)for(const name of step.npcNames)remember(name,step.map?.map);
-    return map;
+    for(const row of[...data.turnins,...data.hunts])remember(row.npc,row.npcLocation.map,row.npcLocation.label);
+    for(const entry of[...data.quests,...data.cooldowns])for(const step of entry.steps)for(const name of step.npcNames)remember(name,step.map?.map,step.map?.label);
+    return {maps,coords};
   },[data]);
   const npcMapFor=(name:string,explicit?:string)=>{
     if(explicit)return explicit;
-    const known=knownNpcMaps.get(npcSlug(name));
+    const known=knownNpcMaps.maps.get(npcSlug(name));
     return known?.size===1?[...known][0]:undefined;
+  };
+  const npcCoordsFor=(name:string,map:string|undefined,stepMap?:ExpMapRef|null)=>{
+    if(stepMap)return parseCoords(stepMap.label);
+    if(!map)return null;
+    return knownNpcMaps.coords.get(`${npcSlug(name)}|${map}`)??null;
   };
 
   const band=levelBand?LEVEL_BANDS.find(entry=>entry.id===levelBand):undefined;
@@ -127,14 +141,14 @@ export function ExpGuide({lang,onOpenMonster,onOpenWorld,onOpenExternal}:Callbac
     <section id="exp-quests" className="exp-section">
       <div className="section-title"><div><h2>{data.questsTitle}</h2></div></div>
       <p className="exp-small">{data.questsIntro}</p>
-      {quests.map(entry=><QuestCard key={entry.id} entry={entry} sourceLabel={data.sourceLabel} npcMapFor={npcMapFor} npcSprites={npcSprites} lang={lang} onOpenWorld={onOpenWorld} onOpenExternal={onOpenExternal}/>)}
+      {quests.map(entry=><QuestCard key={entry.id} entry={entry} sourceLabel={data.sourceLabel} npcMapFor={npcMapFor} npcCoordsFor={npcCoordsFor} npcSprites={npcSprites} lang={lang} onOpenWorld={onOpenWorld} onOpenExternal={onOpenExternal}/>)}
       {!quests.length&&<p className="exp-empty">—</p>}
     </section>
 
     <section id="exp-cooldowns" className="exp-section">
       <div className="section-title"><div><h2>{data.cooldownsTitle}</h2></div><div className="compat-badges">{data.cooldownsCompatBadges.map(badge=><span key={badge} className="filter-chip slim">{badge}</span>)}</div></div>
       <p className="exp-small">{data.cooldownsIntro}</p>
-      {cooldowns.map(entry=><QuestCard key={entry.id} entry={entry} sourceLabel={data.sourceLabel} npcMapFor={npcMapFor} npcSprites={npcSprites} lang={lang} onOpenWorld={onOpenWorld} onOpenExternal={onOpenExternal}/>)}
+      {cooldowns.map(entry=><QuestCard key={entry.id} entry={entry} sourceLabel={data.sourceLabel} npcMapFor={npcMapFor} npcCoordsFor={npcCoordsFor} npcSprites={npcSprites} lang={lang} onOpenWorld={onOpenWorld} onOpenExternal={onOpenExternal}/>)}
       {!cooldowns.length&&<p className="exp-empty">—</p>}
     </section>
 
@@ -179,8 +193,9 @@ function MapChip({mapRef,onOpenWorld}:{mapRef:ExpMapRef;onOpenWorld:(selection:W
 }
 
 type NpcMapFor=(name:string,explicit?:string)=>string|undefined;
+type NpcCoordsFor=(name:string,map:string|undefined,stepMap?:ExpMapRef|null)=>{x:number;y:number}|null;
 
-function QuestCard({entry,sourceLabel,npcMapFor,npcSprites,lang,onOpenWorld,onOpenExternal}:{entry:ExpQuestLike;sourceLabel:string;npcMapFor:NpcMapFor;npcSprites:Map<string,string>;lang:Lang;onOpenWorld:(selection:WorldSelection)=>void;onOpenExternal:(destination:ExternalDestination)=>void}){
+function QuestCard({entry,sourceLabel,npcMapFor,npcCoordsFor,npcSprites,lang,onOpenWorld,onOpenExternal}:{entry:ExpQuestLike;sourceLabel:string;npcMapFor:NpcMapFor;npcCoordsFor:NpcCoordsFor;npcSprites:Map<string,string>;lang:Lang;onOpenWorld:(selection:WorldSelection)=>void;onOpenExternal:(destination:ExternalDestination)=>void}){
   const openSource=(href:string,label:string)=>(event:React.MouseEvent)=>{event.preventDefault();onOpenExternal({href,label})};
   return <details className="exp-quest" id={entry.id}>
     <summary>
@@ -194,7 +209,7 @@ function QuestCard({entry,sourceLabel,npcMapFor,npcSprites,lang,onOpenWorld,onOp
       <ol>{entry.steps.map((step,index)=><li key={index}>
         {step.text}{" "}
         {step.map&&<MapChip mapRef={step.map} onOpenWorld={onOpenWorld}/>}
-        {step.npcNames.map(name=>{const map=npcMapFor(name,step.map?.map);const coords=step.map?parseCoords(step.map.label):null;return map?<NpcLink key={name} name={name} map={map} coords={coords} sprites={npcSprites} lang={lang} onOpenWorld={onOpenWorld}/>:null})}
+        {step.npcNames.map(name=>{const map=npcMapFor(name,step.map?.map);const coords=npcCoordsFor(name,map,step.map);return map?<NpcLink key={name} name={name} map={map} coords={coords} sprites={npcSprites} lang={lang} onOpenWorld={onOpenWorld}/>:null})}
       </li>)}</ol>
       {entry.prereq&&<details className="exp-prereq">
         <summary>{entry.prereq.title}</summary>
