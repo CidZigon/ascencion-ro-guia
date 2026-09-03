@@ -141,13 +141,6 @@ const CARD_SLOTS=[
 ];
 const categoryLabel=(t:Dict,id:string)=>(t.categories as Record<string,string>)[id]??id;
 
-/* Tramos de nivel mínimo. Cubren el recorrido real de un personaje Pre-Renewal. */
-const LEVEL_BANDS=[
-  {id:"1-24",  label:"1–24",  min:1,  max:24},
-  {id:"25-49", label:"25–49", min:25, max:49},
-  {id:"50-74", label:"50–74", min:50, max:74},
-  {id:"75+",   label:"75+",   min:75, max:Infinity},
-];
 const SLOT_CHOICES=[0,1,2,3,4];
 
 export type CatalogScope =
@@ -162,8 +155,11 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
   // Un enlace como #arma-dagger ya no bloquea la vista: solo deja los filtros puestos.
   const [category,setCategory]=useState(()=>scope?.kind==="slot"?"equipo":scope?.kind==="weapon"?"armas":"all");
   const [facet,setFacet]=useState<string|null>(()=>scope?.kind==="slot"?scope.location:scope?.kind==="weapon"?scope.subType:null);
+  // Colapsados = solo se muestra el chip elegido, para dejarle más alto a la lista de items.
+  // "Todo" no colapsa: ahí no hay nada elegido todavía.
+  const [categoryExpanded,setCategoryExpanded]=useState(()=>!scope);
+  const [facetExpanded,setFacetExpanded]=useState(()=>!scope);
   const [slotFilter,setSlotFilter]=useState<number|null>(null);
-  const [levelBand,setLevelBand]=useState<string|null>(null);
   const [sort,setSort]=useState("id");
   const [refineable,setRefineable]=useState(false);
   const [limit,setLimit]=useState(80);
@@ -234,13 +230,11 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
   },[searched,activeCategory,inCategory]);
 
   const filtered=useMemo(()=>{
-    const band=levelBand?LEVEL_BANDS.find(entry=>entry.id===levelBand):undefined;
     const result=searched.filter(item=>{
       if(!inCategory(item))return false;
       if(!inFacet(item))return false;
       if(refineable&&!item.refineable)return false;
       if(slotFilter!==null&&(item.slots??0)!==slotFilter)return false;
-      if(band){const level=item.equipLevelMin??0;if(level<band.min||level>band.max)return false}
       return true;
     });
     return result.sort((left,right)=>
@@ -248,16 +242,16 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
       sort==="level"?(left.equipLevelMin??0)-(right.equipLevelMin??0)||left.id-right.id:
       sort==="type"?left.type.localeCompare(right.type)||left.id-right.id:
       left.id-right.id);
-  },[searched,inCategory,inFacet,refineable,slotFilter,levelBand,sort]);
+  },[searched,inCategory,inFacet,refineable,slotFilter,sort]);
 
   const activeDetail=detail?.id===selectedItemId?detail:null;
   const activeSources=sourceResult?.itemId===selectedItemId?sourceResult.sources:null;
   const showGear=activeCategory.facets==="slot"||activeCategory.facets==="weapon";
-  const anyFilter=category!=="all"||facet!==null||slotFilter!==null||levelBand!==null||refineable||query.trim()!=="";
+  const anyFilter=category!=="all"||facet!==null||slotFilter!==null||refineable||query.trim()!=="";
 
-  const pickCategory=(id:string)=>{setCategory(id);setFacet(null);setSlotFilter(null);setLevelBand(null);setLimit(80)};
-  const pickFacet=(id:string)=>{setFacet(current=>current===id?null:id);setLimit(80)};
-  const clearAll=()=>{setQuery("");setCategory("all");setFacet(null);setSlotFilter(null);setLevelBand(null);setRefineable(false);setLimit(80)};
+  const pickCategory=(id:string)=>{setCategory(id);setFacet(null);setSlotFilter(null);setLimit(80);setCategoryExpanded(id==="all");setFacetExpanded(true)};
+  const pickFacet=(id:string)=>{setFacet(current=>{const next=current===id?null:id;setFacetExpanded(next===null);return next});setLimit(80)};
+  const clearAll=()=>{setQuery("");setCategory("all");setFacet(null);setSlotFilter(null);setRefineable(false);setLimit(80);setCategoryExpanded(true);setFacetExpanded(true)};
 
   if(error)return <section className="catalog-fatal"><h1>{t.catalog.fatalTitle}</h1><p>{t.catalog.fatalCopy}</p></section>;
   if(!catalog)return <section className="catalog-loading"><div className="loader"/><p>{t.catalog.opening}</p></section>;
@@ -283,44 +277,43 @@ export function ItemCatalog({selectedItemId,initialQuery,onSelectItem,onOpenMons
     <div className="catalog-filters">
       <div className="filter-row">
         <span className="filter-label">{t.catalog.filterCategory}</span>
-        <div className="chip-set">{CATEGORIES.map(entry=>{
+        <div className="chip-set">{(categoryExpanded?CATEGORIES:CATEGORIES.filter(entry=>entry.id===category)).map(entry=>{
           const total=categoryCounts[entry.id]??0;
           return <button key={entry.id} type="button" className={category===entry.id?"filter-chip active":"filter-chip"} disabled={total===0&&entry.id!=="all"} aria-pressed={category===entry.id} onClick={()=>pickCategory(entry.id)}>
             <i aria-hidden="true">{entry.sigil}</i>{categoryLabel(t,entry.id)}<em>{total.toLocaleString("es-ES")}</em>
           </button>;
-        })}</div>
+        })}
+        {!categoryExpanded&&<button type="button" className="filter-chip change-chip" onClick={()=>setCategoryExpanded(true)}>{t.catalog.change}</button>}</div>
       </div>
 
       {activeCategory.archive&&<p className="archive-note">{t.catalog.archiveNote}</p>}
 
       {(activeCategory.facets==="slot"||activeCategory.facets==="cardSlot")&&<div className="filter-row">
         <span className="filter-label">{t.catalog.filterSlot}</span>
-        <div className="chip-set">{(activeCategory.facets==="cardSlot"?CARD_SLOTS:EQUIP_SLOTS).map(slot=>{
+        <div className="chip-set">{(facetExpanded?(activeCategory.facets==="cardSlot"?CARD_SLOTS:EQUIP_SLOTS):(activeCategory.facets==="cardSlot"?CARD_SLOTS:EQUIP_SLOTS).filter(slot=>slot.location===facet)).map(slot=>{
           const total=facetCounts[slot.location]??0;
           return <button key={slot.id} type="button" className={facet===slot.location?"filter-chip active":"filter-chip"} disabled={total===0} aria-pressed={facet===slot.location} onClick={()=>pickFacet(slot.location)}>
             <i aria-hidden="true">{slot.icon}</i>{locationLabel(t,slot.location)}<em>{total}</em>
           </button>;
-        })}</div>
+        })}
+        {!facetExpanded&&<button type="button" className="filter-chip change-chip" onClick={()=>setFacetExpanded(true)}>{t.catalog.change}</button>}</div>
       </div>}
 
       {activeCategory.facets==="weapon"&&<div className="filter-row">
         <span className="filter-label">{t.catalog.filterWeapon}</span>
-        <div className="chip-set">{WEAPON_KINDS.map(kind=>{
+        <div className="chip-set">{(facetExpanded?WEAPON_KINDS:WEAPON_KINDS.filter(kind=>kind.subType===facet)).map(kind=>{
           const total=facetCounts[kind.subType]??0;
           return <button key={kind.id} type="button" className={facet===kind.subType?"filter-chip active":"filter-chip"} disabled={total===0} aria-pressed={facet===kind.subType} onClick={()=>pickFacet(kind.subType)}>
             <i aria-hidden="true">{kind.icon}</i>{weaponLabel(t,kind.subType)}<em>{total}</em>
           </button>;
-        })}</div>
+        })}
+        {!facetExpanded&&<button type="button" className="filter-chip change-chip" onClick={()=>setFacetExpanded(true)}>{t.catalog.change}</button>}</div>
       </div>}
 
       {showGear&&<div className="filter-row">
         <span className="filter-label">{t.catalog.filterSlots}</span>
         <div className="chip-set">{SLOT_CHOICES.map(value=>
           <button key={value} type="button" className={slotFilter===value?"filter-chip slim active":"filter-chip slim"} aria-pressed={slotFilter===value} onClick={()=>{setSlotFilter(current=>current===value?null:value);setLimit(80)}}>{value}</button>
-        )}</div>
-        <span className="filter-label">{t.catalog.filterLevel}</span>
-        <div className="chip-set">{LEVEL_BANDS.map(band=>
-          <button key={band.id} type="button" className={levelBand===band.id?"filter-chip slim active":"filter-chip slim"} aria-pressed={levelBand===band.id} onClick={()=>{setLevelBand(current=>current===band.id?null:band.id);setLimit(80)}}>{band.label}</button>
         )}</div>
       </div>}
     </div>

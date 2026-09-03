@@ -239,6 +239,8 @@ button.source-row{width:100%;text-align:left;color:inherit}
 .filter-chip:disabled{opacity:.32;cursor:default}
 .filter-chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .filter-chip.slim{min-width:36px;justify-content:center;padding:0 12px}
+.filter-chip.change-chip{border-style:dashed;background:transparent;color:#9b938c}
+.filter-chip.change-chip:hover{border-style:dashed}
 .clear-filters{
   padding:5px 12px;border:1px solid #51463e;border-radius:999px;background:#1d191b;color:#bdb5ad;
   font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;

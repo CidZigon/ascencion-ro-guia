@@ -365,7 +365,7 @@ function NeonCursor(){
 function Library({openModule,t}:{openModule:(id:number)=>void;t:Dict}){
   return <section className="library">
     <div className="server-banner"><span className="mark">A</span><div><h1>AscencionRO</h1><p>{t.tagline}</p></div></div>
-    <div className="section-title"><div><h2>{t.library.byTopic}</h2><p>{t.library.byTopicCopy}</p></div></div>
+    <div className="section-title"><div><h2>{t.library.byTopic}</h2></div></div>
     <div className="module-grid">{MODULES.map(topic=><button className="module-card" key={topic.id} style={{"--tint":MODULE_TINTS[topic.id-1]} as CSSProperties} onClick={()=>openModule(topic.id)}><span className="card-icon">{topic.icon}</span><span className="card-open">{t.library.open}<b>→</b></span><span className="card-copy"><h3>{t.modules[topic.id-1].title}</h3><p>{t.modules[topic.id-1].description}</p></span></button>)}</div>
   </section>
 }

@@ -326,6 +326,19 @@ test("la auditoría exhaustiva resuelve localmente cada enlace",async()=>{
   assert.equal(report.external.length,0);
 });
 
+// Complementa la prueba anterior: aquella audita enlaces de texto (<a href>
+// a fichas locales), esta audita recursos binarios (sprites de objetos y
+// monstruos, imágenes de mapas/NPC, <img> incrustados en las guías) contra
+// lo que existe de verdad en public/, y detecta mayúsculas/minúsculas que
+// romperían en GitHub Pages (Linux) aunque funcionen en Windows.
+test("la auditoría de medios no encuentra sprites ni imágenes rotas",async()=>{
+  const report=JSON.parse(await readFile(new URL("../public/data/media-link-audit.json",import.meta.url),"utf8"));
+  assert.equal(report.summary.problems,0);
+  assert.equal(report.summary.caseIssues,0);
+  assert.deepEqual(report.problems,[]);
+  assert.deepEqual(report.caseIssues,[]);
+});
+
 test("el selector de idioma ofrece los dos idiomas y el diccionario está completo",async()=>{
   const strings=await readFile(new URL("../app/i18n.ts",import.meta.url),"utf8");
   const portal=await readFile(new URL("../app/GuidePortal.tsx",import.meta.url),"utf8");

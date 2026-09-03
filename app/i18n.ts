@@ -56,7 +56,7 @@ export const STRINGS = {
       filterSlot: "Parte del cuerpo",
       filterWeapon: "Tipo de arma",
       filterSlots: "Ranuras",
-      filterLevel: "Nivel mínimo",
+      change: "Cambiar",
       matches: "coincidencias",
       clearFilters: "Limpiar filtros",
       more: "Mostrar 80 más",
@@ -255,7 +255,6 @@ export const STRINGS = {
       world: { title: "Explora ciudades y mapas", copy: "Planos locales con los NPC y las quests vinculadas a cada zona." },
       explore: "EXPLORAR",
       byTopic: "Explora por tema",
-      byTopicCopy: "Ocho caminos claros, sin códigos ni versiones que aprender.",
       open: "Explorar",
     },
 
@@ -325,7 +324,7 @@ export const STRINGS = {
       filterSlot: "Body part",
       filterWeapon: "Weapon type",
       filterSlots: "Card slots",
-      filterLevel: "Required level",
+      change: "Change",
       matches: "matches",
       clearFilters: "Clear filters",
       more: "Show 80 more",
@@ -524,7 +523,6 @@ export const STRINGS = {
       world: { title: "Explore towns and maps", copy: "Local layouts with the NPCs and quests tied to each area." },
       explore: "EXPLORE",
       byTopic: "Explore by topic",
-      byTopicCopy: "Eight clear paths — no codes or versions to learn.",
       open: "Open",
     },
 

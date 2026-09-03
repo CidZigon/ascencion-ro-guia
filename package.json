@@ -27,6 +27,7 @@
     "data:world:media": "node scripts/cache-world-media.mjs",
     "data:world:spawn-maps": "node scripts/cache-spawn-map-media.mjs",
     "audit:links": "node scripts/audit-module-links.mjs --write",
+    "audit:media": "node scripts/audit-media-links.mjs --write",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },

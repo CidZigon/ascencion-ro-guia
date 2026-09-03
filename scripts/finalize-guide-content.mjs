@@ -15,6 +15,21 @@ const monstersById = await (async () => {
   }
 })();
 
+// Unos 67 items no tienen sprite propio en RMS/Divine Pride y el catálogo de
+// Objetos ya resuelve eso mostrando el sprite de otro item con la misma
+// apariencia (ver items-index.json). Las guías deben consultar ese mismo
+// mapeo en vez de asumir "/world/items/{id}.gif": adivinar rompió el ID 10021
+// (Circular Headgear) en la guía de Compañeros, cuyo sprite real vive en
+// 10001.gif y no tenía ni el archivo adivinado ni su fallback .png.
+const itemSpriteById = await (async () => {
+  try {
+    const catalog = JSON.parse(await readFile(new URL("../public/data/items-index.json", import.meta.url), "utf8"));
+    return new Map(catalog.items.map(item => [item.id, item.sprite]));
+  } catch {
+    return new Map(); // Se regenera después en data:build; sin datos, se conserva la ruta adivinada como respaldo.
+  }
+})();
+
 const moduleNames = new Map([
   [1, "Progresión y EXP"],
   [2, "Accesos y dungeons"],
@@ -147,13 +162,20 @@ function removeSummaryStatGrids(html) {
   return html.replace(/<div class="grid">(?:\s*<div class="card"><b(?: class="big")?>[^<]*<\/b>[^<]*<\/div>)+\s*<\/div>\s*/g, "");
 }
 
+function itemSpriteTag(id, className) {
+  const resolved = itemSpriteById.get(Number(id));
+  if (resolved) return `<img class="${className}" src="${resolved}" alt="" loading="lazy" onerror="this.style.display='none'"/>`;
+  // Sin catálogo de items disponible (bootstrap): se conserva la ruta adivinada de antes, con su respaldo .png.
+  return `<img class="${className}" src="/world/items/${id}.gif" alt="" loading="lazy" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='/world/items/${id}.png'}else{this.style.display='none'}"/>`;
+}
+
 function addPetSprites(html) {
   return html.replace(/<tr class="petrow searchable"[\s\S]*?<\/tr>/g, row => {
     let fixed = row.replace(/<span class="id">Mob ID (\d+)<\/span>/, (match, id) => {
       return `<img class="pet-sprite" src="/world/sprites/${id}.gif" alt="" loading="lazy" onerror="this.style.display='none'"/>${match}`;
     });
     fixed = fixed.replace(/>([A-Za-z][^<]*?) <span class="id">ID (\d+)<\/span>/g, (match, label, id) => {
-      return `>${label} <img class="pet-item-sprite" src="/world/items/${id}.gif" alt="" loading="lazy" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='/world/items/${id}.png'}else{this.style.display='none'}"/><span class="id">ID ${id}</span>`;
+      return `>${label} ${itemSpriteTag(id, "pet-item-sprite")}<span class="id">ID ${id}</span>`;
     });
     return fixed;
   });
@@ -179,7 +201,7 @@ function removeEquipmentProvenanceNotes(html) {
 
 function addEquipmentSprites(html) {
   return html.replace(/<div class="item-name">#(\d+) · ([^<]*)<\/div>/g, (_match, id, label) => {
-    return `<div class="item-name"><img class="item-name-sprite" src="/world/items/${id}.gif" alt="" loading="lazy" onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='/world/items/${id}.png'}else{this.style.display='none'}"/>#${id} · ${label}</div>`;
+    return `<div class="item-name">${itemSpriteTag(id, "item-name-sprite")}#${id} · ${label}</div>`;
   });
 }
 
