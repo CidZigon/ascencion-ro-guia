@@ -215,8 +215,12 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(portal,/a\[href\^="#item-"\]/);
   assert.match(portal,/#objeto-\$\{id\}/);
   assert.match(portal,/#mapa-\$\{map\}/);
-  assert.match(portal,/#referencia-\$\{id\}/);
-  assert.match(portal,/a\[href\*="irowiki\.org\/classic\/"\]/);
+  // Los links a iRO Wiki Classic ya no se reescriben a una referencia local
+  // (el popup solo repetía o corrompía texto que ya está en la guía, sin
+  // cumplir lo que el link promete): quedan como enlaces externos normales,
+  // interceptados por el mismo aviso de "vas a salir de AscencionRO".
+  assert.doesNotMatch(portal,/a\[href\*="irowiki\.org\/classic\/"\]/);
+  assert.match(portal,/openExternalLink\(\{href,label:cleanUserText/);
   assert.doesNotMatch(portal,/>M\{m\.id\}</);
   assert.doesNotMatch(portal,/MÓDULO \{m\.id\}/);
   assert.doesNotMatch(portal,/window\.open/);

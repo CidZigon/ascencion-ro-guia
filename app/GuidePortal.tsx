@@ -318,7 +318,7 @@ export function GuidePortal(){
     </section>
     {worldPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)} t={t}/></Suspense>}
     {monsterSpawnPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setMonsterSpawnPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><MonsterSpawnDialog key={`spawn-${monsterSpawnPreview.id}`} monsterId={monsterSpawnPreview.id} monsterName={monsterSpawnPreview.name} mvp={monsterSpawnPreview.mvp} maps={monsterSpawnPreview.maps} onClose={()=>setMonsterSpawnPreview(null)} t={t}/></Suspense>}
-    {externalLink&&<ExternalLinkDialog destination={externalLink} onClose={()=>setExternalLink(null)}/>}
+    {externalLink&&<ExternalLinkDialog destination={externalLink} onClose={()=>setExternalLink(null)} t={t}/>}
     <NeonCursor/>
   </main>;
 }
@@ -337,7 +337,7 @@ function RailIcon({name}:{name:keyof typeof RAIL_ICONS}){
   return <svg viewBox="0 0 24 24" aria-hidden="true" strokeLinecap="round" strokeLinejoin="round">{RAIL_ICONS[name]}</svg>;
 }
 
-function ExternalLinkDialog({destination,onClose}:{destination:ExternalDestination;onClose:()=>void}){
+function ExternalLinkDialog({destination,onClose,t}:{destination:ExternalDestination;onClose:()=>void;t:Dict}){
   let host="sitio externo";
   try{host=new URL(destination.href).hostname.replace(/^www\./,"")}catch{/* El destino ya fue validado al crear el enlace. */}
   return <ModalShell eyebrow="Recurso externo" title="Este contenido está fuera de AscencionRO" className="external-dialog" onClose={onClose}>
@@ -429,17 +429,13 @@ function localizeWorldLinks(shadow:ShadowRoot){
     const point=(link.closest(".npcref")??link.closest("tr")??link.closest("p")??link.parentElement)?.querySelector<HTMLAnchorElement>("a.maplink")?.textContent?.match(/(?:^|\D)(\d{1,3})\s*,\s*(\d{1,3})(?:\D|$)/);
     if(point){link.dataset.worldX=point[1];link.dataset.worldY=point[2]}
   });
-  shadow.querySelectorAll<HTMLAnchorElement>('a[href*="irowiki.org/classic/"]').forEach(link=>{
-    try{
-      const url=new URL((link.getAttribute("href")||"").replaceAll("&amp;","&"));
-      const raw=url.pathname.split("/").filter(Boolean).at(-1)||"referencia";
-      let name=raw;
-      try{name=decodeURIComponent(raw)}catch{/* La ruta ya está en texto utilizable. */}
-      const id=worldSlug(name.replaceAll("_"," "))||"referencia";
-      setLocalLink(link,`#referencia-${id}`,`Abrir referencia local: ${name.replaceAll("_"," ")}`);
-      link.dataset.localWorld="reference";
-    }catch{return}
-  });
+  // Los enlaces a iRO Wiki Classic (irowiki.org/classic/...) ya NO se
+  // reescriben a una referencia local: antes abrían un popup con un
+  // fragmento de texto scrapeado (a menudo roto o repetido del propio
+  // párrafo de la guía) mientras el texto del link prometía "Guía completa
+  // en iRO Wiki Classic". Se dejan como enlaces externos normales — el
+  // manejador de clics ya los intercepta con el mismo aviso de "vas a salir
+  // de AscencionRO" que usa cualquier otro link externo.
 }
 
 function bindModule(shadow:ShadowRoot,module:number,openModule:(id:number,anchor?:string)=>void,openCatalog:(options?:{id?:number;query?:string})=>void,openMonster:(options?:{id?:number;query?:string})=>void,openWorldReference:(selection:WorldSelection)=>void,openExternalLink:(destination:ExternalDestination)=>void){
