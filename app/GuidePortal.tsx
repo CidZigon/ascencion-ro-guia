@@ -6,11 +6,12 @@ import { STRINGS, getLang, getServerLang, setLang, subscribeLang, type Dict, typ
 import { ModalShell } from "./ModalShell";
 import type { WorldKind, WorldSelection } from "./WorldCatalog";
 
-type NavMenu = "guides";
 type ActiveView = number | "items" | "world" | "equipment" | "weapons" | "monsters" | null;
 
+const ExpGuide=lazy(async()=>({default:(await import("./ExpGuide")).ExpGuide}));
 const ItemCatalog=lazy(async()=>({default:(await import("./ItemCatalog")).ItemCatalog}));
 const MonsterCatalog=lazy(async()=>({default:(await import("./MonsterCatalog")).MonsterCatalog}));
+const MonsterQuickViewDialog=lazy(async()=>({default:(await import("./MonsterCatalog")).MonsterQuickViewDialog}));
 const WorldCatalog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldCatalog}));
 const WorldReferenceDialog=lazy(async()=>({default:(await import("./WorldCatalog")).WorldReferenceDialog}));
 const MonsterSpawnDialog=lazy(async()=>({default:(await import("./WorldCatalog")).MonsterSpawnDialog}));
@@ -23,7 +24,7 @@ function loadModuleStyle(){
 
 type ModuleInfo = { id:number; icon:string; title:string; description:string };
 type SearchEntry = { module:number; anchor:string; title:string; text:string; moduleTitle:string; icon:string };
-type ExternalDestination = { href:string; label:string };
+export type ExternalDestination = { href:string; label:string };
 
 const MODULES: ModuleInfo[] = [
   { id:1, icon:"🧭", title:"Progresión y EXP", description:"Rutas de leveo, cacerías, quests de EXP y progresión eficiente." },
@@ -70,11 +71,9 @@ export function GuidePortal(){
   const [worldSelection,setWorldSelection]=useState<WorldSelection|null>(null);
   const [worldPreview,setWorldPreview]=useState<WorldSelection|null>(null);
   const [monsterSpawnPreview,setMonsterSpawnPreview]=useState<{id:number;name:string;mvp?:boolean;maps:string[]}|null>(null);
+  const [monsterQuickView,setMonsterQuickView]=useState<number|null>(null);
   const [externalLink,setExternalLink]=useState<ExternalDestination|null>(null);
-  const [navMenu,setNavMenu]=useState<NavMenu|null>(null);
   const headerRef=useRef<HTMLElement>(null);
-  const railRef=useRef<HTMLElement>(null);
-  const navTimer=useRef(0);
   const hostRef=useRef<HTMLDivElement>(null);
   const shadowRef=useRef<ShadowRoot|null>(null);
   const preparedModules=useRef<Record<string,string>>({});
@@ -83,14 +82,17 @@ export function GuidePortal(){
   const openModule=useCallback((id:number,anchor="")=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     pendingAnchor.current=anchor;
     setLoadError(false);
     setActive(previous=>{
-      if(previous===id&&anchor)setTimeout(()=>{if(shadowRef.current)scrollInside(shadowRef.current,anchor)},30);
+      if(previous===id&&anchor){
+        if(id===1)setTimeout(()=>scrollLightDom(anchor),30);
+        else setTimeout(()=>{if(shadowRef.current)scrollInside(shadowRef.current,anchor)},30);
+      }
       return id;
     });
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     setSelectedMonsterId(null);
@@ -101,11 +103,11 @@ export function GuidePortal(){
   const openCatalog=useCallback((options:{id?:number;query?:string}={})=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     setActive("items");
     setSelectedItemId(options.id??null);
     setCatalogQuery(options.query??"");
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     setSelectedMonsterId(null);
@@ -123,11 +125,11 @@ export function GuidePortal(){
   const openMonster=useCallback((options:{id?:number;query?:string}={})=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     setActive("monsters");
     setSelectedMonsterId(options.id??null);
     setMonsterQuery(options.query??"");
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     history.replaceState(null,"",options.id?`#monstruo-${options.id}`:"#monstruos");
@@ -142,11 +144,11 @@ export function GuidePortal(){
   const openWorld=useCallback((options:{kind?:WorldKind;id?:string;query?:string}={})=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     setActive("world");
     setWorldSelection(options.kind&&options.id?{kind:options.kind,id:options.id}:null);
     setWorldQuery(options.query??"");
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     setSelectedMonsterId(null);
@@ -164,9 +166,9 @@ export function GuidePortal(){
   const showLibrary=useCallback(()=>{
     setWorldPreview(null);
     setExternalLink(null);
+    setMonsterQuickView(null);
     setActive(null);
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     setSelectedMonsterId(null);
@@ -179,20 +181,12 @@ export function GuidePortal(){
   const switchLang=useCallback((next:Lang)=>setLang(next),[]);
   const t=STRINGS[lang];
 
-  const openNavMenu=useCallback((menu:NavMenu)=>{window.clearTimeout(navTimer.current);setNavMenu(menu)},[]);
-  const closeNavMenu=useCallback(()=>{window.clearTimeout(navTimer.current);setNavMenu(null)},[]);
-
-  useEffect(()=>{
-    const close=(event:PointerEvent)=>{if(railRef.current&&!railRef.current.contains(event.target as Node))closeNavMenu()};
-    const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")closeNavMenu()};
-    document.addEventListener("pointerdown",close);
-    document.addEventListener("keydown",escape);
-    return()=>{document.removeEventListener("pointerdown",close);document.removeEventListener("keydown",escape)};
-  },[closeNavMenu]);
-
-  const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setWorldPreview(selection)},[]);
-  const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setExternalLink(destination)},[]);
-  const previewMonster=useCallback((id:number,name:string,maps:string[],mvp?:boolean)=>{setExternalLink(null);setWorldPreview(null);setMonsterSpawnPreview({id,name,mvp,maps})},[]);
+  const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setMonsterQuickView(null);setWorldPreview(selection)},[]);
+  const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setMonsterQuickView(null);setExternalLink(destination)},[]);
+  const previewMonster=useCallback((id:number,name:string,maps:string[],mvp?:boolean)=>{setExternalLink(null);setWorldPreview(null);setMonsterQuickView(null);setMonsterSpawnPreview({id,name,mvp,maps})},[]);
+  // A diferencia de openMonster (navega al catálogo completo), esto abre una
+  // vista rápida en modal sin abandonar la guía ni perder sus filtros.
+  const openMonsterQuickView=useCallback((options:{id:number})=>{setExternalLink(null);setWorldPreview(null);setMonsterSpawnPreview(null);setMonsterQuickView(options.id)},[]);
 
   useEffect(()=>{
     const applyHash=()=>{
@@ -214,7 +208,9 @@ export function GuidePortal(){
   },[]);
 
   useEffect(()=>{
-    if(typeof active!=="number")return;
+    // El módulo 1 (Progresión y EXP) ya no es HTML inyectado: lo renderiza
+    // ExpGuide con su propio contenido bilingüe (app/data/expGuideContent.ts).
+    if(typeof active!=="number"||active===1)return;
     const key=`${active}:${lang}`;
     if(moduleData[key])return;
     let live=true;
@@ -265,6 +261,16 @@ export function GuidePortal(){
     if(anchor)setTimeout(()=>scrollInside(shadow,anchor),80);
   },[active,lang,moduleData,openModule,openCatalog,openMonster,openWorldPreview,openExternalLink,t.guide.exploreGuide]);
 
+  // ExpGuide vive en DOM normal, no en un shadow root, así que un resultado
+  // de búsqueda que apunta a #module-1#portal-f1-N necesita su propio scroll
+  // (mismo criterio que scrollInside: abre los <details> ancestros primero).
+  useEffect(()=>{
+    if(active!==1)return;
+    const anchor=pendingAnchor.current;
+    pendingAnchor.current="";
+    if(anchor)setTimeout(()=>scrollLightDom(anchor),80);
+  },[active]);
+
   const results=useMemo(()=>{
     const term=query.trim();
     if(term.length<2)return[];
@@ -277,20 +283,13 @@ export function GuidePortal(){
 
   return <main className={active===null?"portal portal-home":"portal"}>
     <div className="portal-backdrop" aria-hidden="true"/>
-    <aside className="side-rail" ref={railRef}>
+    <aside className="side-rail">
       <button className="brand" onClick={showLibrary} aria-label={t.goHome}><span className="brand-mark">A</span><span><b>AscencionRO</b><small>{t.tagline}</small></span></button>
       <nav className="side-rail-nav" aria-label="Navegación principal">
         <button className={active===null?"active":""} onClick={showLibrary}><RailIcon name="home"/>{t.nav.home}</button>
         <button className={active==="items"?"active":""} onClick={()=>openCatalog()}><RailIcon name="items"/>{t.nav.items}</button>
         <button className={active==="monsters"?"active":""} onClick={()=>openMonster()}><RailIcon name="monsters"/>{t.nav.monsters}</button>
         <button className={active==="world"?"active":""} onClick={()=>openWorld()}><RailIcon name="world"/>{t.nav.world}</button>
-        <div className="rail-menu-wrap">
-          <button className={typeof active==="number"?"active":""} aria-expanded={navMenu==="guides"} aria-controls="guide-menu" onClick={()=>navMenu==="guides"?closeNavMenu():openNavMenu("guides")}><RailIcon name="guides"/>{t.nav.guides}</button>
-          {navMenu==="guides"&&<div className="rail-menu" id="guide-menu">
-            <div className="rail-menu-intro"><b>{t.guidesMenu.title}</b><span>{t.guidesMenu.copy}</span></div>
-            <div className="rail-menu-grid">{MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>{closeNavMenu();openModule(topic.id)}}><span>{topic.icon}</span><span><b>{t.modules[topic.id-1].title}</b><small>{t.modules[topic.id-1].description}</small></span><i aria-hidden="true">→</i></button>)}</div>
-          </div>}
-        </div>
       </nav>
     </aside>
     <header className="site-header" ref={headerRef}>
@@ -313,11 +312,13 @@ export function GuidePortal(){
         {active==="weapons"&&selectedWeapon&&<Suspense fallback={<SurfaceLoading label={t.loading.items}/>}><ItemCatalog key={`arma-${selectedWeapon.id}`} selectedItemId={selectedItemId} initialQuery="" onSelectItem={selectItem} onOpenMonster={openMonster} onPreviewMonster={previewMonster} t={t} scope={{kind:"weapon",subType:selectedWeapon.subType,eyebrow:"Armas",title:selectedWeapon.title,description:`Todas las armas de tipo ${selectedWeapon.title.toLowerCase()}. Las fichas se abren aquí mismo.`}}/></Suspense>}
         {active==="monsters"&&<Suspense fallback={<SurfaceLoading label={t.loading.monsters}/>}><MonsterCatalog key={`monsters-${monsterQuery}`} selectedMonsterId={selectedMonsterId} initialQuery={monsterQuery} onSelectMonster={selectMonster} onOpenItem={id=>openCatalog({id})} onPreviewMonster={previewMonster} t={t}/></Suspense>}
         {active==="world"&&<Suspense fallback={<SurfaceLoading label={t.loading.world}/>}><WorldCatalog key={worldQuery} selection={worldSelection} initialQuery={worldQuery} onSelect={selectWorld} t={t}/></Suspense>}
-        {typeof active==="number"&&<section className="module-view">{lang==="en"&&!moduleData[`${active}:${lang}`]?.translated&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[`${active}:${lang}`]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
+        {active===1&&<Suspense fallback={<SurfaceLoading label={t.guide.preparing}/>}><ExpGuide lang={lang} onOpenMonster={openMonsterQuickView} onOpenWorld={openWorldPreview} onOpenExternal={openExternalLink}/></Suspense>}
+        {typeof active==="number"&&active!==1&&<section className="module-view">{lang==="en"&&!moduleData[`${active}:${lang}`]?.translated&&<div className="guide-notice"><b>{t.guideNotice.title}</b><span>{t.guideNotice.copy}</span></div>}{loadError?<div className="fatal"><h2>{t.guide.loadError}</h2><p>{t.guide.retry}</p></div>:!moduleData[`${active}:${lang}`]?<div className="module-loading"><div className="loader"/><p>{t.guide.preparing}</p></div>:null}<div ref={hostRef} className="shadow-host"/></section>}
       </div>
     </section>
     {worldPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setWorldPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><WorldReferenceDialog key={`${worldPreview.kind}-${worldPreview.id}`} selection={worldPreview} onClose={()=>setWorldPreview(null)} t={t}/></Suspense>}
     {monsterSpawnPreview&&<Suspense fallback={<ModalShell eyebrow={t.world.dialogEyebrow} title={t.world.dialogTitle} onClose={()=>setMonsterSpawnPreview(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><MonsterSpawnDialog key={`spawn-${monsterSpawnPreview.id}`} monsterId={monsterSpawnPreview.id} monsterName={monsterSpawnPreview.name} mvp={monsterSpawnPreview.mvp} maps={monsterSpawnPreview.maps} onClose={()=>setMonsterSpawnPreview(null)} t={t}/></Suspense>}
+    {monsterQuickView!==null&&<Suspense fallback={<ModalShell eyebrow={t.monsters.eyebrow} title={t.monsters.heroTitle} onClose={()=>setMonsterQuickView(null)}><div className="world-dialog-message"><div className="loader"/><span>{t.world.searching}</span></div></ModalShell>}><MonsterQuickViewDialog key={`quickview-${monsterQuickView}`} monsterId={monsterQuickView} onClose={()=>setMonsterQuickView(null)} onOpenItem={id=>{setMonsterQuickView(null);openCatalog({id})}} onPreviewMonster={previewMonster} t={t}/></Suspense>}
     {externalLink&&<ExternalLinkDialog destination={externalLink} onClose={()=>setExternalLink(null)} t={t}/>}
     <NeonCursor/>
   </main>;
@@ -330,7 +331,6 @@ const RAIL_ICONS:Record<string,ReactNode>={
   items:<><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
   monsters:<><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/><circle cx="12" cy="8" r="4"/></>,
   world:<><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></>,
-  guides:<><path d="M4 19V5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M9 8h6M9 12h6M9 16h4"/></>,
 };
 
 function RailIcon({name}:{name:keyof typeof RAIL_ICONS}){
@@ -384,6 +384,8 @@ function prepareGuideNavigation(shadow:ShadowRoot,exploreLabel:string){
 
 function openDetailsTo(element:HTMLElement){let current:HTMLElement|null=element;while(current){if(current.tagName==="DETAILS")(current as HTMLDetailsElement).open=true;current=current.parentElement}}
 function scrollInside(shadow:ShadowRoot,anchor:string){const el=shadow.getElementById(anchor.replace(/^#/,""));if(el){openDetailsTo(el);setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),30)}}
+// ExpGuide (módulo 1) vive en DOM normal, no en un shadow root.
+function scrollLightDom(anchor:string){const el=document.getElementById(anchor.replace(/^#/,""));if(el){openDetailsTo(el);el.scrollIntoView({behavior:"smooth",block:"start"})}}
 
 function localizeItemLinks(shadow:ShadowRoot){
   shadow.querySelectorAll<HTMLAnchorElement>('a[href^="#item-"]').forEach(link=>{

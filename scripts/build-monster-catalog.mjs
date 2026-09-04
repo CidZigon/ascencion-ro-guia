@@ -152,6 +152,11 @@ try {
   const spawns = [];
   for (const file of await filesInside(join(root, "npc"))) {
     if (file.includes(`${join("npc", "re")}`) || file.includes("/npc/re/") || file.includes("\\npc\\re\\")) continue;
+    // npc/events/* son eventos de temporada (Navidad, Halloween, etc.) que rAthena
+    // trae comentados por defecto en scripts_athena.conf: sin esto, mobs que solo
+    // aparecen unos días al año (Santa Poring, Snake Lord's Minion...) contaminaban
+    // el spawn "real" de mapas como mjolnir_01.
+    if (file.includes(`${join("npc", "events")}`) || file.includes("/npc/events/") || file.includes("\\npc\\events\\")) continue;
     const content = await readFile(file, "utf8");
     for (const line of content.split(/\r?\n/)) parseSpawnLine(line, spawns);
   }

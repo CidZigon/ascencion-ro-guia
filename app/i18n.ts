@@ -18,7 +18,7 @@ export const STRINGS = {
   es: {
     tagline: "Guía Pre-Renewal",
     goHome: "Ir al inicio de AscencionRO",
-    nav: { home: "Inicio", items: "Objetos", monsters: "Monstruos", world: "Mundo", guides: "Guías" },
+    nav: { home: "Inicio", items: "Objetos", monsters: "Monstruos", world: "Mundo" },
     langSwitch: { label: "Cambiar idioma", toEs: "Ver en español", toEn: "View in English" },
 
     search: {
@@ -34,8 +34,6 @@ export const STRINGS = {
       results: (n: number) => `${n} RESULTADOS EN LAS GUÍAS`,
       empty: "SIN RESULTADOS EN LAS GUÍAS",
     },
-
-    guidesMenu: { title: "¿Qué quieres hacer?", copy: "Elige un tema y abre la guía directamente." },
 
     loading: { items: "Abriendo el catálogo local…", monsters: "Abriendo el bestiario local…", world: "Abriendo el atlas local…" },
 
@@ -192,8 +190,10 @@ export const STRINGS = {
       noNpcs: "Aún no hay NPC vinculados a este mapa en las guías.",
       noCoordinate: "Ubicación sin coordenada publicada",
       representativeSprite: "Sprite representativo",
-      questsHere: "Quests y referencias relacionadas",
-      noQuests: "Este mapa está disponible, pero todavía no tiene una quest o referencia asociada.",
+      monstersHere: "Monstruos de este mapa",
+      noMonsters: "No hay monstruos con spawn registrado en este mapa.",
+      questsHere: "Quests relacionadas",
+      noQuests: "Este mapa está disponible, pero todavía no tiene una quest asociada.",
       dialogEyebrow: "Referencia rápida",
       dialogTitle: "Consulta sin salir de la guía",
       dialogError: "No se pudo abrir esta referencia.",
@@ -286,7 +286,7 @@ export const STRINGS = {
   en: {
     tagline: "Pre-Renewal Guide",
     goHome: "Back to the AscencionRO home page",
-    nav: { home: "Home", items: "Items", monsters: "Monsters", world: "World", guides: "Guides" },
+    nav: { home: "Home", items: "Items", monsters: "Monsters", world: "World" },
     langSwitch: { label: "Change language", toEs: "Ver en español", toEn: "View in English" },
 
     search: {
@@ -302,8 +302,6 @@ export const STRINGS = {
       results: (n: number) => `${n} RESULTS IN THE GUIDES`,
       empty: "NO RESULTS IN THE GUIDES",
     },
-
-    guidesMenu: { title: "What do you want to do?", copy: "Pick a topic and open the guide straight away." },
 
     loading: { items: "Opening the local catalogue…", monsters: "Opening the local bestiary…", world: "Opening the local atlas…" },
 
@@ -460,8 +458,10 @@ export const STRINGS = {
       noNpcs: "No NPCs are linked to this map in the guides yet.",
       noCoordinate: "Location with no published coordinate",
       representativeSprite: "Representative sprite",
-      questsHere: "Related quests and references",
-      noQuests: "This map is available, but has no quest or reference attached yet.",
+      monstersHere: "Monsters on this map",
+      noMonsters: "No monsters have a recorded spawn on this map.",
+      questsHere: "Related quests",
+      noQuests: "This map is available, but has no quest attached yet.",
       dialogEyebrow: "Quick reference",
       dialogTitle: "Look it up without leaving the guide",
       dialogError: "This reference could not be opened.",

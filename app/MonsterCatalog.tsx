@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Dict } from "./i18n";
 import { damageTakenFromElements } from "./attr-fix";
+import { ModalShell } from "./ModalShell";
 import { ReportIssueLink } from "./report-issue";
 
 type CatalogMeta = {
@@ -144,6 +145,32 @@ export function MonsterCatalog({selectedMonsterId,initialQuery,onSelectMonster,o
       <aside className="item-detail">{selectedMonsterId===null?<div className="detail-placeholder"><span>♜</span><h2>{t.monsters.pickTitle}</h2><p>{t.monsters.pickCopy}</p></div>:!activeDetail?<div className="detail-placeholder"><div className="loader"/><p>{t.monsters.loadingCard}</p></div>:<MonsterDetailCard key={activeDetail.id} monster={activeDetail} onOpenItem={onOpenItem} onPreviewMonster={onPreviewMonster} t={t}/>}</aside>
     </div>
   </section>;
+}
+
+/* Vista rápida de un monstruo en un modal, sin abandonar la pantalla desde
+   donde se abrió (ExpGuide, hoy) — igual que WorldReferenceDialog para NPCs
+   y mapas, pero para monstruos. Antes se navegaba al catálogo completo de
+   Monstruos, perdiendo filtros y posición de scroll de donde se venía. */
+export function MonsterQuickViewDialog({monsterId,onClose,onOpenItem,onPreviewMonster,t}:{monsterId:number;onClose:()=>void;onOpenItem:(id:number)=>void;onPreviewMonster:(id:number,name:string,maps:string[],mvp?:boolean)=>void;t:Dict}){
+  const [catalog,setCatalog]=useState<CatalogPayload|null>(null);
+  const [detail,setDetail]=useState<MonsterDetail|null>(null);
+  const [error,setError]=useState(false);
+
+  useEffect(()=>{let live=true;loadCatalog().then(data=>{if(live)setCatalog(data)}).catch(()=>{if(live)setError(true)});return()=>{live=false}},[]);
+  useEffect(()=>{
+    if(!catalog)return;
+    const entry=catalog.items.find(item=>item.id===monsterId);
+    let live=true;
+    if(!entry){Promise.resolve().then(()=>{if(live)setError(true)});return()=>{live=false}}
+    loadChunk(entry.chunk).then(items=>{if(live)setDetail(items.find(item=>item.id===monsterId)??null)}).catch(()=>{if(live)setError(true)});
+    return()=>{live=false};
+  },[catalog,monsterId]);
+
+  return <ModalShell eyebrow={t.monsters.eyebrow} title={t.monsters.heroTitle} onClose={onClose}>
+    {error?<div className="world-dialog-message"><b>{t.monsters.fatalTitle}</b><span>{t.monsters.fatalCopy}</span></div>
+      :!detail?<div className="world-dialog-message"><div className="loader"/><span>{t.monsters.loadingCard}</span></div>
+      :<MonsterDetailCard monster={detail} onOpenItem={onOpenItem} onPreviewMonster={onPreviewMonster} t={t}/>}
+  </ModalShell>;
 }
 
 const TOP_MAPS=4;
