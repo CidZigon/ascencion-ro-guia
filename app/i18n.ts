@@ -18,7 +18,7 @@ export const STRINGS = {
   es: {
     tagline: "Guía Pre-Renewal",
     goHome: "Ir al inicio de AscencionRO",
-    nav: { home: "Inicio", items: "Objetos", monsters: "Monstruos", world: "Mundo", guides: "Guías" },
+    nav: { home: "Inicio", items: "Objetos", monsters: "Monstruos", world: "Mundo" },
     langSwitch: { label: "Cambiar idioma", toEs: "Ver en español", toEn: "View in English" },
 
     search: {
@@ -34,8 +34,6 @@ export const STRINGS = {
       results: (n: number) => `${n} RESULTADOS EN LAS GUÍAS`,
       empty: "SIN RESULTADOS EN LAS GUÍAS",
     },
-
-    guidesMenu: { title: "¿Qué quieres hacer?", copy: "Elige un tema y abre la guía directamente." },
 
     loading: { items: "Abriendo el catálogo local…", monsters: "Abriendo el bestiario local…", world: "Abriendo el atlas local…" },
 
@@ -286,7 +284,7 @@ export const STRINGS = {
   en: {
     tagline: "Pre-Renewal Guide",
     goHome: "Back to the AscencionRO home page",
-    nav: { home: "Home", items: "Items", monsters: "Monsters", world: "World", guides: "Guides" },
+    nav: { home: "Home", items: "Items", monsters: "Monsters", world: "World" },
     langSwitch: { label: "Change language", toEs: "Ver en español", toEn: "View in English" },
 
     search: {
@@ -302,8 +300,6 @@ export const STRINGS = {
       results: (n: number) => `${n} RESULTS IN THE GUIDES`,
       empty: "NO RESULTS IN THE GUIDES",
     },
-
-    guidesMenu: { title: "What do you want to do?", copy: "Pick a topic and open the guide straight away." },
 
     loading: { items: "Opening the local catalogue…", monsters: "Opening the local bestiary…", world: "Opening the local atlas…" },
 

@@ -21,7 +21,9 @@ test("renderiza la biblioteca limpia y el acceso al catálogo local",async()=>{
   assert.match(html,/>Objetos</);
   assert.match(html,/>Monstruos</);
   assert.match(html,/>Mundo</);
-  assert.match(html,/>Guías</);
+  // El botón "Guías" del rail se quitó: las 8 guías ya son accesibles desde
+  // las tarjetas de Inicio, tenerlo repetido ahí era redundante.
+  assert.doesNotMatch(html,/>Guías</);
   assert.doesNotMatch(html,/Your site is taking shape|codex-preview/i);
 });
 test("el catálogo contiene todos los registros y bloques declarados",async()=>{

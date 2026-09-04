@@ -6,7 +6,6 @@ import { STRINGS, getLang, getServerLang, setLang, subscribeLang, type Dict, typ
 import { ModalShell } from "./ModalShell";
 import type { WorldKind, WorldSelection } from "./WorldCatalog";
 
-type NavMenu = "guides";
 type ActiveView = number | "items" | "world" | "equipment" | "weapons" | "monsters" | null;
 
 const ExpGuide=lazy(async()=>({default:(await import("./ExpGuide")).ExpGuide}));
@@ -74,10 +73,7 @@ export function GuidePortal(){
   const [monsterSpawnPreview,setMonsterSpawnPreview]=useState<{id:number;name:string;mvp?:boolean;maps:string[]}|null>(null);
   const [monsterQuickView,setMonsterQuickView]=useState<number|null>(null);
   const [externalLink,setExternalLink]=useState<ExternalDestination|null>(null);
-  const [navMenu,setNavMenu]=useState<NavMenu|null>(null);
   const headerRef=useRef<HTMLElement>(null);
-  const railRef=useRef<HTMLElement>(null);
-  const navTimer=useRef(0);
   const hostRef=useRef<HTMLDivElement>(null);
   const shadowRef=useRef<ShadowRoot|null>(null);
   const preparedModules=useRef<Record<string,string>>({});
@@ -97,7 +93,6 @@ export function GuidePortal(){
       return id;
     });
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     setSelectedMonsterId(null);
@@ -113,7 +108,6 @@ export function GuidePortal(){
     setSelectedItemId(options.id??null);
     setCatalogQuery(options.query??"");
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     setSelectedMonsterId(null);
@@ -136,7 +130,6 @@ export function GuidePortal(){
     setSelectedMonsterId(options.id??null);
     setMonsterQuery(options.query??"");
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     history.replaceState(null,"",options.id?`#monstruo-${options.id}`:"#monstruos");
@@ -156,7 +149,6 @@ export function GuidePortal(){
     setWorldSelection(options.kind&&options.id?{kind:options.kind,id:options.id}:null);
     setWorldQuery(options.query??"");
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     setSelectedMonsterId(null);
@@ -177,7 +169,6 @@ export function GuidePortal(){
     setMonsterQuickView(null);
     setActive(null);
     setQuery("");
-    setNavMenu(null);
     setEquipmentSlot(null);
     setWeaponType(null);
     setSelectedMonsterId(null);
@@ -189,17 +180,6 @@ export function GuidePortal(){
   useEffect(()=>{document.documentElement.lang=lang},[lang]);
   const switchLang=useCallback((next:Lang)=>setLang(next),[]);
   const t=STRINGS[lang];
-
-  const openNavMenu=useCallback((menu:NavMenu)=>{window.clearTimeout(navTimer.current);setNavMenu(menu)},[]);
-  const closeNavMenu=useCallback(()=>{window.clearTimeout(navTimer.current);setNavMenu(null)},[]);
-
-  useEffect(()=>{
-    const close=(event:PointerEvent)=>{if(railRef.current&&!railRef.current.contains(event.target as Node))closeNavMenu()};
-    const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")closeNavMenu()};
-    document.addEventListener("pointerdown",close);
-    document.addEventListener("keydown",escape);
-    return()=>{document.removeEventListener("pointerdown",close);document.removeEventListener("keydown",escape)};
-  },[closeNavMenu]);
 
   const openWorldPreview=useCallback((selection:WorldSelection)=>{setExternalLink(null);setMonsterQuickView(null);setWorldPreview(selection)},[]);
   const openExternalLink=useCallback((destination:ExternalDestination)=>{setWorldPreview(null);setMonsterQuickView(null);setExternalLink(destination)},[]);
@@ -303,20 +283,13 @@ export function GuidePortal(){
 
   return <main className={active===null?"portal portal-home":"portal"}>
     <div className="portal-backdrop" aria-hidden="true"/>
-    <aside className="side-rail" ref={railRef}>
+    <aside className="side-rail">
       <button className="brand" onClick={showLibrary} aria-label={t.goHome}><span className="brand-mark">A</span><span><b>AscencionRO</b><small>{t.tagline}</small></span></button>
       <nav className="side-rail-nav" aria-label="Navegación principal">
         <button className={active===null?"active":""} onClick={showLibrary}><RailIcon name="home"/>{t.nav.home}</button>
         <button className={active==="items"?"active":""} onClick={()=>openCatalog()}><RailIcon name="items"/>{t.nav.items}</button>
         <button className={active==="monsters"?"active":""} onClick={()=>openMonster()}><RailIcon name="monsters"/>{t.nav.monsters}</button>
         <button className={active==="world"?"active":""} onClick={()=>openWorld()}><RailIcon name="world"/>{t.nav.world}</button>
-        <div className="rail-menu-wrap">
-          <button className={typeof active==="number"?"active":""} aria-expanded={navMenu==="guides"} aria-controls="guide-menu" onClick={()=>navMenu==="guides"?closeNavMenu():openNavMenu("guides")}><RailIcon name="guides"/>{t.nav.guides}</button>
-          {navMenu==="guides"&&<div className="rail-menu" id="guide-menu">
-            <div className="rail-menu-intro"><b>{t.guidesMenu.title}</b><span>{t.guidesMenu.copy}</span></div>
-            <div className="rail-menu-grid">{MODULES.map(topic=><button key={topic.id} className={active===topic.id?"active":""} onClick={()=>{closeNavMenu();openModule(topic.id)}}><span>{topic.icon}</span><span><b>{t.modules[topic.id-1].title}</b><small>{t.modules[topic.id-1].description}</small></span><i aria-hidden="true">→</i></button>)}</div>
-          </div>}
-        </div>
       </nav>
     </aside>
     <header className="site-header" ref={headerRef}>
@@ -358,7 +331,6 @@ const RAIL_ICONS:Record<string,ReactNode>={
   items:<><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
   monsters:<><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/><circle cx="12" cy="8" r="4"/></>,
   world:<><path d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3z"/><path d="M9 4v13"/><path d="M15 7v13"/></>,
-  guides:<><path d="M4 19V5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M9 8h6M9 12h6M9 16h4"/></>,
 };
 
 function RailIcon({name}:{name:keyof typeof RAIL_ICONS}){
