@@ -281,6 +281,18 @@ export const STRINGS = {
 
     // Solo se muestra a quien navega en inglés; en español no aparece.
     guideNotice: { title: "", copy: "" },
+
+    access: {
+      title: "Access Quests",
+      tagline: "Ragnarok Online Pre-Renewal. Elige una zona, sigue su ruta y abre cada quest cuando la necesites. Base documental: iRO Wiki Classic.",
+      badges: ["ACCESS QUESTS", "POR ZONAS", "EPISODIO 13.2", "rAthena / Pre-Re"],
+      introTitle: "🧭 Cómo encontrar un acceso",
+      introCopy: "Piensa primero “¿a dónde quiero ir?”. Dentro de la zona, la ruta superior te muestra el orden recomendado. Si una quest menciona otra quest, el nombre es clicable: el sitio te lleva directo a esa tarjeta.",
+      allLevels: "Todos los niveles",
+      clearFilters: "Limpiar filtros",
+      mvpTitle: "👑 MVPs detrás de acceso restringido",
+      backButton: "↩ Volver",
+    },
   },
 
   en: {
@@ -550,6 +562,18 @@ export const STRINGS = {
     guideNotice: {
       title: "This guide has not been translated yet",
       copy: "The interface, the item catalogue, the bestiary and the atlas are in English. The eight written guides are still Spanish-only and are shown below in their original language.",
+    },
+
+    access: {
+      title: "Access Quests",
+      tagline: "Ragnarok Online Pre-Renewal. Pick a zone, follow its route and open each quest as you need it. Source: iRO Wiki Classic.",
+      badges: ["ACCESS QUESTS", "BY ZONE", "EPISODE 13.2", "rAthena / Pre-Re"],
+      introTitle: "🧭 How to find an access quest",
+      introCopy: "Start from “where do I want to go?”. Inside a zone, the route bar shows the recommended order. If a quest mentions another quest, its name is clickable and jumps straight to that card.",
+      allLevels: "All levels",
+      clearFilters: "Clear filters",
+      mvpTitle: "👑 MVPs behind a restricted access",
+      backButton: "↩ Back",
     },
   },
 } as const;
