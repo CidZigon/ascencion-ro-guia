@@ -29,8 +29,35 @@ export function loadWorld(){
   return worldPromise;
 }
 
+export type MapMonsterSpawn={id:number;name:string;sprite:string|null;mvp?:boolean;count?:number};
+type MonsterDetailLite={id:number;name:string;sprite?:string;mvp?:boolean;maps?:{map:string;count?:number}[]};
+let mapMonstersPromise:Promise<Map<string,MapMonsterSpawn[]>>|null=null;
+// world-index.json solo trae los monstruos que las guías mencionan por nombre;
+// para saber TODO lo que vive en un mapa (con la cantidad real) hace falta el
+// bestiario completo — se invierte una sola vez (map -> monstruos) contra los
+// mismos chunks que usa MonsterCatalog, cacheado a nivel de módulo.
+export function loadMapMonsters(){
+  mapMonstersPromise??=(async()=>{
+    const index=await fetch("/data/monsters-index.json").then(response=>{if(!response.ok)throw new Error("monsters");return response.json()});
+    const chunkNumbers=[...new Set<number>(index.items.map((item:{chunk:number})=>item.chunk))];
+    const chunks=await Promise.all(chunkNumbers.map(chunk=>fetch(`/data/monsters/chunk-${String(chunk).padStart(3,"0")}.json`).then(response=>{if(!response.ok)throw new Error("chunk");return response.json()})));
+    const byMap=new Map<string,MapMonsterSpawn[]>();
+    for(const payload of chunks as {items:MonsterDetailLite[]}[]){
+      for(const monster of payload.items){
+        for(const spot of monster.maps??[]){
+          const list=byMap.get(spot.map)??[];
+          list.push({id:monster.id,name:monster.name,sprite:monster.sprite??null,mvp:monster.mvp,count:spot.count});
+          byMap.set(spot.map,list);
+        }
+      }
+    }
+    for(const list of byMap.values())list.sort((a,b)=>(b.count??0)-(a.count??0));
+    return byMap;
+  })();
+  return mapMonstersPromise;
+}
+
 function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
-function uniqueStrings(values:string[]){const seen=new Set<string>();return values.filter(value=>{const key=normalize(value.trim());if(!key||seen.has(key))return false;seen.add(key);return true})}
 function escapeRegExp(value:string){return value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
 
 const kindLabel=(t:Dict,kind:WorldKind)=>(t.world.kinds as Record<string,string>)[kind]??kind;
@@ -135,6 +162,13 @@ export function WorldCatalog({selection,initialQuery,onSelect,t}:{selection:Worl
 }
 
 function WorldAtlasDetail({map,payload,t}:{map:MapEntry;payload:WorldPayload;t:Dict}){
+  const [mapMonsters,setMapMonsters]=useState<MapMonsterSpawn[]|null>(null);
+  useEffect(()=>{
+    let live=true;
+    loadMapMonsters().then(byMap=>{if(live)setMapMonsters(byMap.get(map.code)??[])}).catch(()=>{if(live)setMapMonsters([])});
+    return()=>{live=false};
+  },[map.code]);
+
   const npcs=payload.npcs.filter(npc=>npc.map===map.id).sort((a,b)=>a.name.localeCompare(b.name));
   const pinsByCoordinate=new Map<string,WorldPoint>();
   for(const point of map.points){if(point.kind==="reference"&&point.x>=0&&point.y>=0&&isMeaningfulMapReference(point.label,map.code))pinsByCoordinate.set(`${point.x}-${point.y}`,point)}
@@ -154,13 +188,13 @@ function WorldAtlasDetail({map,payload,t}:{map:MapEntry;payload:WorldPayload;t:D
     const number=point.x>=0&&point.y>=0?pinNumber.get(`${point.x}-${point.y}`):undefined;
     return[{text,number}];
   });
-  const contextNotes=uniqueStrings(map.contexts).filter(note=>isMeaningfulMapReference(note,"")&&!seenNotes.has(normalize(note))).map(text=>({text,number:undefined}));
-  const notes=[...referenceNotes,...contextNotes];
+  const notes=referenceNotes;
 
   return <div className="world-detail-card world-atlas-detail">
     <div className="world-detail-title"><span>⌖</span><div><small>{isCity(map)?"Ciudad":"Mapa de Midgard"}</small><h2>{map.code}</h2><code>{mapDisplayName(map)}</code></div></div>
     <section className="map-section"><div className="atlas-map-heading"><h3>{t.world.localMap}</h3><span>{npcs.length} {t.world.npcShort} · {notes.length} {t.world.references}</span></div><MapBoard key={map.code} code={map.code} image={map.image} points={[...pinsByCoordinate.values()]} showCoordinateList={false} t={t}/></section>
     <section><div className="atlas-map-heading"><h3>{t.world.npcsHere}</h3><span>{npcs.length}</span></div>{npcs.length?<div className="map-npc-grid">{npcs.map(npc=>{const point=primaryNpcPoints(npc)[0];const number=npcPinNumber(npc);return <article key={npc.id}><span className="map-npc-sprite">{npc.sprite?<img src={npc.sprite} alt={`Sprite de ${npc.name}`} loading="lazy"/>:<i>♙</i>}</span><div><b>{number&&<i className="pin-badge">{number}</i>}{npc.name}</b><small>{point?`${point.x}, ${point.y}`:t.world.noCoordinate}</small>{npc.spriteApproximate&&<em>{t.world.representativeSprite}</em>}</div></article>})}</div>:<p className="atlas-empty-note">{t.world.noNpcs}</p>}</section>
+    <section><div className="atlas-map-heading"><h3>{t.world.monstersHere}</h3><span>{mapMonsters?.length??"…"}</span></div>{mapMonsters===null?<p className="atlas-empty-note">{t.world.searching}</p>:mapMonsters.length?<div className="map-npc-grid">{mapMonsters.map(monster=><article key={monster.id}><span className="map-npc-sprite">{monster.sprite?<img src={monster.sprite} alt={`Sprite de ${monster.name}`} loading="lazy"/>:<i>♜</i>}</span><div><b>{monster.name}{monster.mvp&&<span className="mvp">MVP</span>}</b>{monster.count&&monster.count>1?<small>{t.monsters.spawnCount(monster.count)}</small>:null}</div></article>)}</div>:<p className="atlas-empty-note">{t.world.noMonsters}</p>}</section>
     <section><div className="atlas-map-heading"><h3>{t.world.questsHere}</h3><span>{notes.length}</span></div>{notes.length?<div className="map-reference-list">{notes.map((note,index)=><article key={`${normalize(note.text)}-${index}`}>{note.number?<i className="pin-badge">{note.number}</i>:<span>◇</span>}<p>{note.text}</p></article>)}</div>:<p className="atlas-empty-note">{t.world.noQuests}</p>}</section>
     <ReportIssueLink kind="Mapa" id={map.code} name={mapDisplayName(map)} label={t.world.reportIssue}/>
   </div>;

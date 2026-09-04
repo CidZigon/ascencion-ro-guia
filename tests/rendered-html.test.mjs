@@ -241,9 +241,16 @@ test("los módulos se cargan por separado y sus enlaces de objetos se resuelven 
   assert.match(atlasStrings,/npcsHere: "NPC registrados en este mapa"/);
   assert.match(atlasStrings,/npcsHere: "NPCs on record for this map"/);
   assert.match(atlas,/\{t\.world\.npcsHere\}/);
-  assert.match(atlasStrings,/questsHere: "Quests y referencias relacionadas"/);
-  assert.match(atlasStrings,/questsHere: "Related quests and references"/);
+  assert.match(atlasStrings,/questsHere: "Quests relacionadas"/);
+  assert.match(atlasStrings,/questsHere: "Related quests"/);
   assert.match(atlas,/\{t\.world\.questsHere\}/);
+  // "Quests relacionadas" ya no mezcla referencias sueltas de otras guías
+  // (map.contexts): solo los puntos de referencia reales de ESE mapa.
+  assert.match(atlas,/const notes=referenceNotes;/);
+  assert.doesNotMatch(atlas,/contextNotes/);
+  assert.match(atlasStrings,/monstersHere: "Monstruos de este mapa"/);
+  assert.match(atlas,/loadMapMonsters\(\)/);
+  assert.match(atlas,/\{t\.world\.monstersHere\}/);
   assert.match(atlas,/findEntry\(payload,current\)/);
   assert.doesNotMatch(atlas,/option value="monster"/);
   assert.doesNotMatch(atlas,/function worldEntries/);
