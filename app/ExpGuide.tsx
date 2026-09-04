@@ -1,21 +1,12 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- sprites oficiales pequeños servidos desde la caché local */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EXP_GUIDE, type ExpMapRef, type ExpQuestLike } from "./data/expGuideContent";
 import type { ExternalDestination } from "./GuidePortal";
+import { MobButton, NpcLink, npcSlug, parseCoords, REPORT_LABEL } from "./guideShared";
 import type { Lang } from "./i18n";
 import { ReportIssueLink } from "./report-issue";
 import { loadWorld, type WorldSelection } from "./WorldCatalog";
-
-function normalize(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
-function npcSlug(value:string){return normalize(value).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
-// Las coordenadas siempre vienen embebidas en el texto ("\ud83d\udccd lighthalzen 337,232");
-// se extraen para armar el comando /navi (que exige "x/y", no "x,y" \u2014 ver docs/comandos-cliente-ro.md).
-function parseCoords(label:string){
-  const match=label.match(/(\d{1,3})\s*,\s*(\d{1,3})/);
-  return match?{x:Number(match[1]),y:Number(match[2])}:null;
-}
 
 const LEVEL_BANDS=[
   {id:"1-39",label:"1–39",min:1,max:39},
@@ -23,12 +14,6 @@ const LEVEL_BANDS=[
   {id:"60-69",label:"60–69",min:60,max:69},
   {id:"70+",label:"70+",min:70,max:Infinity},
 ];
-
-const REPORT_LABEL={es:"Reportar un error en esta guía",en:"Report an issue with this guide"};
-const NAVI_LABEL={
-  es:{copy:"📋 /navi",copied:"✓ copiado",title:(cmd:string)=>`Copiar ${cmd} (pegalo en el chat del juego)`},
-  en:{copy:"📋 /navi",copied:"✓ copied",title:(cmd:string)=>`Copy ${cmd} (paste it into the game chat)`},
-};
 
 type Callbacks={onOpenMonster:(options:{id:number})=>void;onOpenWorld:(selection:WorldSelection)=>void;onOpenExternal:(destination:ExternalDestination)=>void};
 
@@ -159,32 +144,6 @@ export function ExpGuide({lang,onOpenMonster,onOpenWorld,onOpenExternal}:Callbac
 
     <ReportIssueLink kind="Guía" id={1} name={data.title} label={REPORT_LABEL[lang==="en"?"en":"es"]}/>
   </section>;
-}
-
-function MobButton({mob,onOpenMonster}:{mob:{id:number;name:string};onOpenMonster:(options:{id:number})=>void}){
-  return <button type="button" className="exp-mob-btn" onClick={()=>onOpenMonster({id:mob.id})}>
-    <span className="exp-mob-sprite"><img src={`/world/sprites/${mob.id}.gif`} alt="" loading="lazy" onError={event=>{event.currentTarget.style.display="none"}}/></span>
-    <b>{mob.name}</b>
-  </button>;
-}
-
-function NpcLink({name,map,coords,sprites,lang,onOpenWorld}:{name:string;map?:string;coords?:{x:number;y:number}|null;sprites:Map<string,string>;lang:Lang;onOpenWorld:(selection:WorldSelection)=>void}){
-  const [copied,setCopied]=useState(false);
-  if(!map)return <b>{name}</b>;
-  const id=`${npcSlug(name)}-${map}`;
-  const sprite=sprites.get(id);
-  const naviCommand=coords?`/navi ${map} ${coords.x}/${coords.y}`:null;
-  const labels=NAVI_LABEL[lang==="en"?"en":"es"];
-  const copyNavi=async(event:React.MouseEvent)=>{
-    event.stopPropagation();
-    if(!naviCommand)return;
-    try{await navigator.clipboard.writeText(naviCommand);setCopied(true);setTimeout(()=>setCopied(false),1500)}catch{/* Portapapeles no disponible en este navegador. */}
-  };
-  return <span className="exp-npc">
-    {sprite&&<img className="exp-npc-sprite" src={sprite} alt="" loading="lazy" onError={event=>{event.currentTarget.style.display="none"}}/>}
-    <button type="button" className="exp-inline-link" onClick={()=>onOpenWorld({kind:"npc",id})}>{name}</button>
-    {naviCommand&&<button type="button" className="exp-navi-btn" title={labels.title(naviCommand)} onClick={copyNavi}>{copied?labels.copied:labels.copy}</button>}
-  </span>;
 }
 
 function MapChip({mapRef,onOpenWorld}:{mapRef:ExpMapRef;onOpenWorld:(selection:WorldSelection)=>void}){
